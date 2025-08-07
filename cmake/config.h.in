@@ -1,0 +1,25 @@
+
+#ifndef CONFIG_H_IN
+#define CONFIG_H_IN
+
+// Info
+#define APP_NAME "@APP_NAME@"
+#define APP_CREATOR "@APP_CREATOR@"
+
+// Version
+#define VERSION_MAJOR "@VERSION_MAJOR@"
+#define VERSION_MINOR "@VERSION_MINOR@"
+#define VERSION_PATCH "@VERSION_PATCH@"
+#define VERSION_FULL "@VERSION_FULL@"
+
+// Directories
+#define EXAMPLES_DIR "@EXAMPLES_DIR@"
+#define RESOURCES_DIR "@RESOURCES_DIR@"
+#define TRANSLATIONS_DIR "@TRANSLATIONS_DIR@"
+#define TEMP_DIR "@TEMP_DIR@"
+
+// Files
+#define RESOURCES_FILE "@RESOURCES_FILE@"
+#define INFO_FILE "@INFO_FILE@"
+
+#endif // CONFIG_H_IN
