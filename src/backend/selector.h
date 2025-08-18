@@ -27,6 +27,7 @@ public:
     SelectionSet& get(int index);
     int find(QString const& name) const;
     bool contains(QString const& name) const;
+    int numSets() const;
 
 private:
     KCL::Model const* mpModel;

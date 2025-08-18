@@ -7,11 +7,13 @@ set(BACKEND_HEADERS
     fileutility.h
     selector.h
     selectionset.h
+    constraints.h
 )
 
 set(BACKEND_SOURCES
     selector.cpp
     selectionset.cpp
+    constraints.cpp
 )
 
 qt_add_library(backend STATIC
@@ -29,4 +31,5 @@ target_link_libraries(backend PUBLIC
     Eigen3::Eigen
     Ceres::ceres
     ${KCL_LIB}
+    magicenum
 )

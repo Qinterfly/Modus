@@ -14,7 +14,7 @@ SelectionSet::SelectionSet(KCL::Model const* pModel, QString const& name)
     : mpModel(pModel)
     , mName(name)
 {
-    initialize();
+    reset();
 }
 
 KCL::Model const* SelectionSet::model() const
@@ -47,7 +47,7 @@ int SelectionSet::numSelected() const
     return result;
 }
 
-//! Select all the elements
+//! Select all elements
 void SelectionSet::selectAll()
 {
     QList<Selection> const selections = mDataSet.keys();
@@ -55,7 +55,7 @@ void SelectionSet::selectAll()
         mDataSet[selection] = true;
 }
 
-//! Deselect all the elements
+//! Deselect all elements
 void SelectionSet::selectNone()
 {
     QList<Selection> const selections = mDataSet.keys();
@@ -81,7 +81,7 @@ void SelectionSet::setSelected(Selection const& selection, bool flag)
         mDataSet[selection] = flag;
 }
 
-//! Set the selected state by the surface index
+//! Set the selected state by surface index
 void SelectionSet::setSelectedBySurface(int iSurface, bool flag)
 {
     QList<Selection> const selections = mDataSet.keys();
@@ -92,7 +92,7 @@ void SelectionSet::setSelectedBySurface(int iSurface, bool flag)
     }
 }
 
-//! Set the selected state by the element type
+//! Set the selected state by element type
 void SelectionSet::setSelectedByType(KCL::ElementType type, bool flag)
 {
     QList<Selection> const selections = mDataSet.keys();
@@ -103,8 +103,8 @@ void SelectionSet::setSelectedByType(KCL::ElementType type, bool flag)
     }
 }
 
-//! Initialize the selections
-void SelectionSet::initialize()
+//! Clean up the selections
+void SelectionSet::reset()
 {
     mDataSet.clear();
     if (mpModel == nullptr)
@@ -136,7 +136,7 @@ void SelectionSet::initialize()
 void SelectionSet::validate()
 {
     QMap<Selection, bool> const oldDataSet = mDataSet;
-    initialize();
+    reset();
     for (auto const& [selection, flag] : oldDataSet.asKeyValueRange())
     {
         if (mDataSet.contains(selection))

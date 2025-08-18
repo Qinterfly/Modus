@@ -17,7 +17,7 @@ namespace Backend
 struct Selection;
 
 /*!
- * Class to select of model entities
+ * Class to select model entities
  * 
  * By default none of entities are selected 
  */
@@ -41,7 +41,7 @@ public:
     void setSelectedByType(KCL::ElementType type, bool flag);
 
 private:
-    void initialize();
+    void reset();
     void validate();
 
 private:

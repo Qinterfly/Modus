@@ -65,8 +65,14 @@ int Selector::find(QString const& name) const
     return iFound;
 }
 
-//! Check if the selection set with the specified name exists
+//! Check if the selection set of the specified name exists
 bool Selector::contains(QString const& name) const
 {
     return find(name) >= 0;
+}
+
+//! Acquire the number of sets
+int Selector::numSets() const
+{
+    return mSets.size();
 }
