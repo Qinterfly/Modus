@@ -11,7 +11,7 @@ namespace KCL
 struct Model;
 }
 
-namespace Backend
+namespace Backend::Core
 {
 
 struct Selection;
@@ -33,12 +33,14 @@ public:
     bool isSelected(Selection const& selection) const;
     int numSelected() const;
 
+    void setModel(KCL::Model const* pModel);
     void selectAll();
     void selectNone();
     void inverse();
     void setSelected(Selection const& selection, bool flag);
-    void setSelectedBySurface(int iSurface, bool flag);
-    void setSelectedByType(KCL::ElementType type, bool flag);
+    void setSelected(int iSurface, bool flag);
+    void setSelected(KCL::ElementType type, bool flag);
+    void setSelected(int iSurface, KCL::ElementType type, bool flag);
 
 private:
     void reset();

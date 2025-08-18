@@ -4,7 +4,7 @@
 
 #include "constraints.h"
 
-using namespace Backend;
+using namespace Backend::Core;
 
 Constraints::Constraints()
 {

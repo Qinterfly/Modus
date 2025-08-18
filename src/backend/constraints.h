@@ -3,7 +3,7 @@
 
 #include <QMap>
 
-namespace Backend
+namespace Backend::Core
 {
 
 //! Types of variables to be used for updating

@@ -4,7 +4,7 @@
 
 #include "selector.h"
 
-using namespace Backend;
+using namespace Backend::Core;
 
 Selector::Selector()
     : mpModel(nullptr)
@@ -14,6 +14,14 @@ Selector::Selector()
 Selector::Selector(KCL::Model const* pModel)
     : mpModel(pModel)
 {
+}
+
+//! Substitute the model
+void Selector::setModel(KCL::Model const* pModel)
+{
+    mpModel = pModel;
+    for (SelectionSet& set : mSets)
+        set.setModel(mpModel);
 }
 
 //! Insert a new selection set
@@ -37,14 +45,20 @@ bool Selector::remove(QString const& name)
     return false;
 }
 
+//! Remove all the sets
+void Selector::clear()
+{
+    mSets.clear();
+}
+
 //! Get all the selection sets
-QList<Backend::SelectionSet>& Selector::get()
+QList<SelectionSet>& Selector::get()
 {
     return mSets;
 }
 
 //! Get the selection set located at the specified index
-Backend::SelectionSet& Selector::get(int index)
+SelectionSet& Selector::get(int index)
 {
     return mSets[index];
 }
@@ -75,4 +89,10 @@ bool Selector::contains(QString const& name) const
 int Selector::numSets() const
 {
     return mSets.size();
+}
+
+//! Check if there are any selection sets
+bool Selector::isEmpty() const
+{
+    return numSets() == 0;
 }

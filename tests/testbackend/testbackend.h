@@ -2,19 +2,12 @@
 #ifndef TESTBACKEND_H
 #define TESTBACKEND_H
 
-#include <kcl/model.h>
 #include <QTest>
+
+#include "project.h"
 
 namespace Tests
 {
-
-enum class ExampleModel
-{
-    kSimpleWing,
-    kHunterWing,
-    kFullHunterSym,
-    kFullHunterASym
-};
 
 class TestBackend : public QObject
 {
@@ -26,9 +19,14 @@ public:
 
 private slots:
     void testLoadModels();
+    void testSelector();
+    void testUpdateSimpleWing();
 
 private:
-    QMap<ExampleModel, KCL::Model> mModels;
+    double generateDouble(QPair<double, double> const& limits);
+
+private:
+    Backend::Core::Project mProject;
 };
 
 }

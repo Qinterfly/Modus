@@ -4,16 +4,28 @@ find_package(Eigen3 CONFIG REQUIRED)
 find_package(Ceres CONFIG REQUIRED)
 
 set(BACKEND_HEADERS
+    identifier.h
     fileutility.h
+    mathutility.h
+    project.h
+    abstractsubproject.h
+    kclsubproject.h
     selector.h
     selectionset.h
     constraints.h
+    optimsolver.h
 )
 
 set(BACKEND_SOURCES
+    identifier.cpp
+    mathutility.cpp
+    project.cpp
+    abstractsubproject.cpp
+    kclsubproject.cpp
     selector.cpp
     selectionset.cpp
     constraints.cpp
+    optimsolver.cpp
 )
 
 qt_add_library(backend STATIC

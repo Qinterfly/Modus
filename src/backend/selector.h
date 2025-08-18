@@ -10,7 +10,7 @@ namespace KCL
 struct Model;
 }
 
-namespace Backend
+namespace Backend::Core
 {
 
 //! Class to handle selection sets of a model
@@ -21,17 +21,20 @@ public:
     Selector(KCL::Model const* pModel);
     ~Selector() = default;
 
-    SelectionSet& add(QString const& name);
+    void setModel(KCL::Model const* pModel);
+    SelectionSet& add(QString const& name = QString());
     bool remove(QString const& name);
-    QList<Backend::SelectionSet>& get();
+    void clear();
+    QList<Backend::Core::SelectionSet>& get();
     SelectionSet& get(int index);
     int find(QString const& name) const;
     bool contains(QString const& name) const;
     int numSets() const;
+    bool isEmpty() const;
 
 private:
     KCL::Model const* mpModel;
-    QList<Backend::SelectionSet> mSets;
+    QList<Backend::Core::SelectionSet> mSets;
 };
 
 }

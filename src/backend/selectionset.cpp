@@ -3,7 +3,7 @@
 
 #include "selectionset.h"
 
-using namespace Backend;
+using namespace Backend::Core;
 
 SelectionSet::SelectionSet()
     : mpModel(nullptr)
@@ -47,6 +47,12 @@ int SelectionSet::numSelected() const
     return result;
 }
 
+void SelectionSet::setModel(KCL::Model const* pModel)
+{
+    mpModel = pModel;
+    validate();
+}
+
 //! Select all elements
 void SelectionSet::selectAll()
 {
@@ -60,7 +66,7 @@ void SelectionSet::selectNone()
 {
     QList<Selection> const selections = mDataSet.keys();
     for (Selection const& selection : selections)
-        mDataSet[selection] = true;
+        mDataSet[selection] = false;
 }
 
 //! Inverse the selections
@@ -82,7 +88,7 @@ void SelectionSet::setSelected(Selection const& selection, bool flag)
 }
 
 //! Set the selected state by surface index
-void SelectionSet::setSelectedBySurface(int iSurface, bool flag)
+void SelectionSet::setSelected(int iSurface, bool flag)
 {
     QList<Selection> const selections = mDataSet.keys();
     for (Selection const& selection : selections)
@@ -93,12 +99,23 @@ void SelectionSet::setSelectedBySurface(int iSurface, bool flag)
 }
 
 //! Set the selected state by element type
-void SelectionSet::setSelectedByType(KCL::ElementType type, bool flag)
+void SelectionSet::setSelected(KCL::ElementType type, bool flag)
 {
     QList<Selection> const selections = mDataSet.keys();
     for (Selection const& selection : selections)
     {
         if (selection.type == type)
+            mDataSet[selection] = flag;
+    }
+}
+
+//! Set the selected state by surface index and element type
+void SelectionSet::setSelected(int iSurface, KCL::ElementType type, bool flag)
+{
+    QList<Selection> const selections = mDataSet.keys();
+    for (Selection const& selection : selections)
+    {
+        if (selection.iSurface == iSurface && selection.type == type)
             mDataSet[selection] = flag;
     }
 }
@@ -158,12 +175,12 @@ bool Selection::isValid() const
 
 bool Selection::operator==(Selection const& another) const
 {
-    return iSurface == another.iSurface && type == another.type && iElement == another.iElement;
+    return std::tie(iSurface, type, iElement) == std::tie(another.iSurface, another.type, another.iElement);
 }
 
 bool Selection::operator<(Selection const& another) const
 {
-    return iSurface < another.iSurface && type < another.type && iElement < another.iElement;
+    return std::tie(iSurface, type, iElement) < std::tie(another.iSurface, another.type, another.iElement);
 }
 
 bool Selection::operator>(Selection const& another) const
