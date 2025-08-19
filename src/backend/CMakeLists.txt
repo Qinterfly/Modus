@@ -8,24 +8,24 @@ set(BACKEND_HEADERS
     fileutility.h
     mathutility.h
     project.h
-    abstractsubproject.h
-    kclsubproject.h
+    subproject.h
     selector.h
     selectionset.h
     constraints.h
     optimsolver.h
+    modalsolution.h
 )
 
 set(BACKEND_SOURCES
     identifier.cpp
     mathutility.cpp
     project.cpp
-    abstractsubproject.cpp
-    kclsubproject.cpp
+    subproject.cpp
     selector.cpp
     selectionset.cpp
     constraints.cpp
     optimsolver.cpp
+    modalsolution.cpp
 )
 
 qt_add_library(backend STATIC

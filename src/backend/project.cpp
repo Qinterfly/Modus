@@ -7,11 +7,6 @@ Project::Project()
 {
 }
 
-Project::~Project()
-{
-    clear();
-}
-
 QString const& Project::name() const
 {
     return mName;
@@ -22,7 +17,7 @@ QString const& Project::pathFile() const
     return mPathFile;
 }
 
-QList<AbstractSubproject*>& Project::subprojects()
+QList<Subproject>& Project::subprojects()
 {
     return mSubprojects;
 }
@@ -32,39 +27,26 @@ void Project::setName(QString const& name)
     mName = name;
 }
 
-void Project::addSubproject(AbstractSubproject* pSubproject)
+void Project::addSubproject(Subproject const& subproject)
 {
-    mSubprojects.push_back(pSubproject);
+    mSubprojects.push_back(subproject);
 }
 
 void Project::removeSubproject(QUuid const& id)
 {
     int iRemove = Utility::getIndexByID(mSubprojects, id);
     if (iRemove >= 0)
-    {
-        AbstractSubproject* pSubproject = mSubprojects[iRemove];
-        delete pSubproject;
         mSubprojects.remove(iRemove);
-    }
 }
 
-void Project::setSubprojects(QList<AbstractSubproject*>&& subprojects)
+void Project::setSubprojects(QList<Subproject> const& subprojects)
 {
-    clear();
-    mSubprojects = std::move(subprojects);
+    mSubprojects = subprojects;
 }
 
 void Project::setPathFile(QString const& pathFile)
 {
     mPathFile = pathFile;
-}
-
-void Project::clear()
-{
-    mName = QString();
-    mPathFile = QString();
-    qDeleteAll(mSubprojects.begin(), mSubprojects.end());
-    mSubprojects.clear();
 }
 
 int Project::numSubprojects() const

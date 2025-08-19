@@ -2,9 +2,9 @@
 
 #include "config.h"
 #include "fileutility.h"
-#include "kclsubproject.h"
-#include "mathutility.h"
+#include "magicenum/magic_enum.hpp"
 #include "selector.h"
+#include "subproject.h"
 #include "testbackend.h"
 
 using namespace Tests;
@@ -15,40 +15,53 @@ using namespace KCL;
 TestBackend::TestBackend()
 {
     mProject.setName("Examples");
+    mExampleFileNames[simpleWing] = "DATWEXA";
+    mExampleFileNames[hunterWing] = "DATW70";
+    mExampleFileNames[fullHunterSym] = "DATH70s";
+    mExampleFileNames[fullHunterASym] = "DATH70a";
 }
 
 //! Load all the models and write them to temporary text files
 void TestBackend::testLoadModels()
 {
-    QStringList const fileNames = {"DATWEXA", "DATW70", "DATH70s", "DATH70a"};
-    QStringList const modelNames = {"SimpleWing", "HunterWing", "FullHunterSym", "FullHunterASym"};
-    int numModels = modelNames.size();
-    for (int i = 0; i != numModels; ++i)
+    for (auto [key, value] : mExampleFileNames.asKeyValueRange())
     {
-        QString const& fileName = fileNames[i];
-        QString inPathFile = Utility::combineFilePath(EXAMPLES_DIR, fileName + ".dat");
-        QString outPathFile = Utility::combineFilePath(TEMP_DIR, fileName + ".txt");
+        QString exampleName = magic_enum::enum_name(key).data();
+        QString inPathFile = Utility::combineFilePath(EXAMPLES_DIR, value + ".dat");
+        QString outPathFile = Utility::combineFilePath(TEMP_DIR, value + ".txt");
         Model model(inPathFile.toStdString());
         model.write(outPathFile.toStdString());
         QVERIFY(!model.isEmpty());
-        KCLSubproject* pSubproject = new KCLSubproject(modelNames[i]);
-        pSubproject->model() = model;
-        mProject.addSubproject(pSubproject);
+        Subproject subproject(exampleName);
+        subproject.model() = model;
+        mProject.addSubproject(subproject);
     }
-    QVERIFY(mProject.numSubprojects() == fileNames.size());
+    QVERIFY(mProject.numSubprojects() == mExampleFileNames.size());
 };
 
-//! Try to select model entities
-void TestBackend::testSelector()
+//! Load the experimental obtained modal solutions
+void TestBackend::testLoadModalSolution()
 {
-    QString const name = "SimpleWing";
+    Example const example = Example::hunterWing;
 
     // Slice the subproject
-    int iSubproject = Utility::getIndexByName(mProject.subprojects(), name);
-    KCLSubproject* pSubproject = (KCLSubproject*) mProject.subprojects()[iSubproject];
+    Subproject& subproject = mProject.subprojects()[example];
+    ModalSolution& solution = subproject.configuration().data.targetSolution;
+
+    // Read the geometry and modal data
+    solution.read(Utility::combineFilePath(EXAMPLES_DIR, mExampleFileNames[example]));
+}
+
+//! Try to select elements
+void TestBackend::testSelector()
+{
+    Example const example = Example::simpleWing;
+
+    // Slice the subproject
+    Subproject& subproject = mProject.subprojects()[example];
 
     // Select all the elements
-    Selector selector(&pSubproject->model());
+    Selector selector(&subproject.model());
     SelectionSet& set = selector.add();
     set.selectAll();
     QVERIFY(set.numSelected() == 78);
@@ -74,37 +87,36 @@ void TestBackend::testSelector()
 //! Update the model of the simple wing
 void TestBackend::testUpdateSimpleWing()
 {
+    Example const example = Example::simpleWing;
     int numModes = 3;
-    double error = 0.05;
-    QString const name = "SimpleWing";
+    double error = 0.01;
 
     // Slice the subproject
-    int iSubproject = Utility::getIndexByName(mProject.subprojects(), name);
-    KCLSubproject* pSubproject = (KCLSubproject*) mProject.subprojects()[iSubproject];
+    Subproject& subproject = mProject.subprojects()[example];
 
     // Obtain the initial solution
-    KCL::Model const& model = pSubproject->model();
-    auto initSolution = model.solveEigen();
+    KCL::Model const& model = subproject.model();
+    auto eigenSolution = model.solveEigen();
 
     // Select all the entities
-    KCLConfiguration& config = pSubproject->configuration();
+    Configuration& config = subproject.configuration();
     OptimOptions& options = config.options;
-    options.selector.add().selectAll();
+    OptimData& data = config.data;
+    data.selector.add().selectAll();
 
     // Set the objectives
-    int numDOFs = initSolution.geometry.vertices.rows();
-    options.resize(numDOFs, numModes);
-    for (int i = 0; i != numModes; ++i)
-    {
-        options.indices[i] = i;
-        options.frequencies[i] = initSolution.frequencies[i] * (1 + generateDouble({-error / 2.0, error / 2.0}));
-        options.modeShapes[i] = initSolution.modeShapes[i];
-        options.weights[i] = 1.0;
-    }
+    ModalSolution solution(eigenSolution);
+    Eigen::VectorXd targetFrequencies = solution.frequencies();
+    data.resize(numModes);
+    data.indices.setLinSpaced(0, numModes - 1);
+    data.weights.setOnes();
+    for (double& value : targetFrequencies)
+        value *= 1.0 + generateDouble({-error, error});
+    data.targetSolution = ModalSolution(solution.geometry(), targetFrequencies, solution.modeShapes());
 
     // Start the solver
     OptimSolver solver;
-    solver.solve(model, options);
+    solver.solve(model, data, options);
 }
 
 //! Generate a bounded double value

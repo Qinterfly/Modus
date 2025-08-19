@@ -4,6 +4,7 @@
 #include <Eigen/Core>
 
 #include "constraints.h"
+#include "modalsolution.h"
 #include "selector.h"
 
 namespace KCL
@@ -14,32 +15,35 @@ class Model;
 namespace Backend::Core
 {
 
-//! Optimization parameters
-struct OptimOptions
+struct OptimData
 {
-    OptimOptions();
-    ~OptimOptions() = default;
+    OptimData();
+    ~OptimData() = default;
 
+    bool isEmpty() const;
     bool isValid() const;
-    void resize(int numDOFs, int numModes);
+    void resize(int numModes);
 
     //! Indices of the modes to be updated
     Eigen::VectorXi indices;
 
-    //! Target frequencies
-    Eigen::VectorXd frequencies;
-
-    //! Target modeshapes
-    QList<Eigen::MatrixXd> modeShapes;
-
     //! Participation factors of mode residuals
     Eigen::VectorXd weights;
+
+    //! Target modal solution
+    ModalSolution targetSolution;
 
     //! Selection of entities to be updated
     Selector selector;
 
     //! Optimization constraints
     Constraints constraints;
+};
+
+struct OptimOptions
+{
+    OptimOptions();
+    ~OptimOptions() = default;
 
     //! Flag which disables one mode to be paired several times
     bool isExclusiveMAC;
@@ -54,7 +58,7 @@ public:
     OptimSolver();
     ~OptimSolver() = default;
 
-    void solve(KCL::Model const& model, OptimOptions const& options);
+    void solve(KCL::Model const& model, OptimData const& data, OptimOptions const& options);
 };
 
 }

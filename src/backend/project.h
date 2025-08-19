@@ -1,7 +1,7 @@
 #ifndef PROJECT_H
 #define PROJECT_H
 
-#include "kclsubproject.h"
+#include "subproject.h"
 
 #include <QList>
 #include <QString>
@@ -13,18 +13,17 @@ class Project : public Identifier
 {
 public:
     Project();
-    ~Project();
+    ~Project() = default;
 
     QString const& name() const;
     QString const& pathFile() const;
-    QList<AbstractSubproject*>& subprojects();
+    QList<Subproject>& subprojects();
 
     void setName(QString const& name);
     void setPathFile(QString const& pathFile);
-    void addSubproject(AbstractSubproject* pSubproject);
+    void addSubproject(Subproject const& subproject);
     void removeSubproject(QUuid const& id);
-    void setSubprojects(QList<AbstractSubproject*>&& subprojects);
-    void clear();
+    void setSubprojects(QList<Subproject> const& subprojects);
 
     int numSubprojects() const;
     bool isEmpty() const;
@@ -33,7 +32,7 @@ public:
 private:
     QString mName;
     QString mPathFile;
-    QList<AbstractSubproject*> mSubprojects;
+    QList<Subproject> mSubprojects;
 };
 
 }

@@ -1,6 +1,7 @@
-#include "mathutility.h"
-#include "abstractsubproject.h"
 #include <QList>
+
+#include "mathutility.h"
+#include "subproject.h"
 
 using namespace Backend;
 
@@ -15,7 +16,7 @@ QList<QUuid> getIDs(Objects const& objects)
     uint numObjects = objects.size();
     result.reserve(numObjects);
     for (auto const& item : objects)
-        result.push_back(item->id());
+        result.push_back(item.id());
     return result;
 }
 
@@ -26,7 +27,7 @@ int getIndexByID(Objects const& objects, QUuid const& id)
     int numObjects = objects.size();
     for (int i = 0; i != numObjects; ++i)
     {
-        if (objects[i]->id() == id)
+        if (objects[i].id() == id)
             return i;
     }
     return -1;
@@ -39,14 +40,14 @@ int getIndexByName(Objects const& objects, QString const& name, Qt::CaseSensitiv
     int numObjects = objects.size();
     for (int i = 0; i != numObjects; ++i)
     {
-        if (QString::compare(objects[i]->name(), name, sensitivity) == 0)
+        if (QString::compare(objects[i].name(), name, sensitivity) == 0)
             return i;
     }
     return -1;
 }
 
 // Explicit template instantiation
-template QList<QUuid> getIDs(QList<Core::AbstractSubproject*> const&);
-template int getIndexByID(QList<Core::AbstractSubproject*> const&, QUuid const&);
-template int getIndexByName(QList<Core::AbstractSubproject*> const&, QString const&, Qt::CaseSensitivity);
+template QList<QUuid> getIDs(QList<Core::Subproject> const&);
+template int getIndexByID(QList<Core::Subproject> const&, QUuid const&);
+template int getIndexByName(QList<Core::Subproject> const&, QString const&, Qt::CaseSensitivity);
 }

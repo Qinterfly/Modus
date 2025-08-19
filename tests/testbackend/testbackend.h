@@ -9,6 +9,14 @@
 namespace Tests
 {
 
+enum Example
+{
+    simpleWing,
+    hunterWing,
+    fullHunterSym,
+    fullHunterASym
+};
+
 class TestBackend : public QObject
 {
     Q_OBJECT
@@ -19,6 +27,7 @@ public:
 
 private slots:
     void testLoadModels();
+    void testLoadModalSolution();
     void testSelector();
     void testUpdateSimpleWing();
 
@@ -27,6 +36,7 @@ private:
 
 private:
     Backend::Core::Project mProject;
+    QMap<Example, QString> mExampleFileNames;
 };
 
 }
