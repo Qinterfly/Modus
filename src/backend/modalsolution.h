@@ -46,6 +46,8 @@ public:
     ModalSolution(KCL::EigenSolution const& solution);
     ~ModalSolution() = default;
 
+    int numModes() const;
+    bool isEmpty() const;
     Geometry const& geometry() const;
     Eigen::VectorXd const& frequencies() const;
     QList<Eigen::MatrixXd> const& modeShapes() const;
@@ -63,6 +65,7 @@ private:
     Geometry mGeometry;
     Eigen::VectorXd mFrequencies;
     QList<Eigen::MatrixXd> mModeShapes;
+    QList<QString> mNames;
 };
 
 }

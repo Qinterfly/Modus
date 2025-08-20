@@ -47,6 +47,16 @@ ModalSolution::ModalSolution(KCL::EigenSolution const& solution)
     }
 }
 
+int ModalSolution::numModes() const
+{
+    return mFrequencies.size();
+}
+
+bool ModalSolution::isEmpty() const
+{
+    return mFrequencies.size() > 0 && mModeShapes.size() > 0;
+}
+
 Geometry const& ModalSolution::geometry() const
 {
     return mGeometry;
@@ -132,7 +142,81 @@ void ModalSolution::readGeometry(QString const& pathFile)
 //! Read the file which contains several modesets
 void ModalSolution::readModesets(QString const& pathFile)
 {
-    // TODO
+    double const kDummy = std::nan("0");
+    QMap<QString, Direction> const kMapDirections = {{"X", Direction::kX}, {"Y", Direction::kY}, {"Z", Direction::kZ}};
+
+    QFile file(pathFile);
+
+    // Check if the file exists
+    if (!file.exists())
+    {
+        qWarning() << QObject::tr("The file %1 is not found").arg(pathFile);
+        return;
+    }
+
+    // Open the file for reading
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        qWarning() << QObject::tr("Could not read the modesets from the file: %1").arg(pathFile);
+        return;
+    }
+    QTextStream stream(&file);
+
+    // Map the vertices
+    int numVertices = mGeometry.vertices.size();
+    QMap<QString, int> mapVertices;
+    for (int i = 0; i != numVertices; ++i)
+        mapVertices[mGeometry.vertices[i].name] = i;
+
+    // Retrieve the number of modesets
+    int numModes;
+    stream >> numModes;
+
+    // Loop through all the modes
+    mFrequencies.resize(numModes);
+    mModeShapes.resize(numModes);
+    mNames.resize(numModes);
+    for (int iMode = 0; iMode != numModes; ++iMode)
+    {
+        // Read the header
+        stream.readLine();
+        mNames[iMode] = stream.readLine();
+        stream >> mFrequencies[iMode];
+        int numDOFs;
+        stream >> numDOFs;
+
+        // Read the modeshape data
+        MatrixXd& modeShape = mModeShapes[iMode];
+        modeShape.resize(numVertices, skNumDirections);
+        modeShape.fill(kDummy);
+        for (int iDOF = 0; iDOF != numDOFs; ++iDOF)
+        {
+            // Parse the vertex name
+            QString fullName;
+            stream >> fullName;
+            int offset = fullName.lastIndexOf(":");
+            QString vertexName = fullName.left(offset);
+
+            // Parse the direction
+            QString fullDirName = fullName.mid(offset + 1);
+            QString dirSignName = fullDirName.left(1);
+            int sign = 1;
+            if (dirSignName == '-')
+                sign = -1;
+            QString dirName = fullDirName.right(1);
+            Direction direction = kMapDirections[dirName];
+            int iDir = (int) direction;
+
+            // Read the value
+            double value;
+            stream >> value;
+            if (mapVertices.contains(vertexName))
+            {
+                int iVertex = mapVertices[vertexName];
+                modeShape(iVertex, iDir) = sign * value;
+            }
+        }
+    }
 }
 
 //! Reallocate the data fields

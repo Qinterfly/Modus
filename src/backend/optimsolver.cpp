@@ -12,7 +12,7 @@ OptimData::OptimData()
 
 bool OptimData::isEmpty() const
 {
-    return indices.size() > 0;
+    return indices.size() == 0;
 }
 
 bool OptimData::isValid() const

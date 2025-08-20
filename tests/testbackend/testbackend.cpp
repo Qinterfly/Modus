@@ -50,6 +50,7 @@ void TestBackend::testLoadModalSolution()
 
     // Read the geometry and modal data
     solution.read(Utility::combineFilePath(EXAMPLES_DIR, mExampleFileNames[example]));
+    QVERIFY(solution.numModes() == 8);
 }
 
 //! Try to select elements
