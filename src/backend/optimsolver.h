@@ -2,6 +2,7 @@
 #define OPTIMSOLVER_H
 
 #include <Eigen/Core>
+#include <kcl/model.h>
 
 #include "constraints.h"
 #include "modalsolution.h"
@@ -15,7 +16,7 @@ class Model;
 namespace Backend::Core
 {
 
-using ElementList = QList<QMap<KCL::ElementType, QList<KCL::AbstractElement>>>;
+using ElementMap = QMap<KCL::ElementType, QList<KCL::AbstractElement*>>;
 
 struct OptimData
 {
@@ -63,10 +64,14 @@ public:
     void solve(KCL::Model const& model, OptimData const& data, OptimOptions const& options);
 
 private:
-    void wrap(KCL::Model const& model, Selector const& selector, Constraints const& constraints);
+    void wrapModel();
+    Eigen::MatrixXd getProperties(QList<KCL::AbstractElement*> const& elements, VariableType type);
 
 private:
-    ElementList mElements;
+    QMap<VariableType, QList<int>> mVariableIndices;
+    KCL::Model mModel;
+    Constraints mConstraints;
+    QList<ElementMap> mSurfaceElements;
 };
 }
 

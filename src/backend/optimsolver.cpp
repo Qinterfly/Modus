@@ -38,12 +38,18 @@ OptimOptions::OptimOptions()
 
 OptimSolver::OptimSolver()
 {
+    QList<int> const beamIndices = {4, 5, 6, 7};
+    mVariableIndices[VariableType::kBendingStiffness] = beamIndices;
+    mVariableIndices[VariableType::kTorsionalStiffness] = beamIndices;
+    mVariableIndices[VariableType::kYoungsModulus1] = {12};
+    mVariableIndices[VariableType::kYoungsModulus2] = {17};
+    mVariableIndices[VariableType::kShearModulus] = {14};
+    mVariableIndices[VariableType::kPoissonRatio] = {13};
+    mVariableIndices[VariableType::kSpringStiffness] = {};
 }
 
 void OptimSolver::solve(KCL::Model const& model, OptimData const& data, OptimOptions const& options)
 {
-    mElements.clear();
-
     // Check if the optimization data is valid
     if (!data.isValid())
     {
@@ -51,35 +57,65 @@ void OptimSolver::solve(KCL::Model const& model, OptimData const& data, OptimOpt
         return;
     }
 
-    // Slice the selected elements
-    // QList<Selection> selections = data.selector.allSelections();
-    // mElements.resize(model.surfaces.size());
-    // for (auto const& item : selections)
-    // {
-    //     AbstractElement* pElement = model.surfaces[item.iSurface].element(item.type, item.iElement);
-    //     mElements[selection.iSurface][selection.type].push_back();
-    // }
+    // Initialize the fields
+    mModel = model;
+    mConstraints = data.constraints;
+
+    // Slice the elements for updating
+    mSurfaceElements.clear();
+    mSurfaceElements.resize(mModel.surfaces.size());
+    QList<Selection> const selections = data.selector.allSelections();
+    for (auto const& selection : selections)
+    {
+        AbstractElement* pElement = mModel.surfaces[selection.iSurface].element(selection.type, selection.iElement);
+        mSurfaceElements[selection.iSurface][selection.type].push_back(pElement);
+    }
 
     // Wrap the model
-
-    // wrap(model, data.selector, data.constraints);
+    wrapModel();
 }
 
-//! Wrap the model to the vector of parameters
-void OptimSolver::wrap(KCL::Model const& model, Selector const& selector, Constraints const& constraints)
+//! Wrap the model parameters according to the constraints
+void OptimSolver::wrapModel()
 {
-    int numSets = selector.numSets();
-    // Loop through all the selection sets
-    for (int iSet = 0; iSet != numSets; ++iSet)
+    int numSurfaces = mSurfaceElements.size();
+    for (int iSurface = 0; iSurface != numSurfaces; ++iSurface)
     {
-        SelectionSet const& set = selector.get(iSet);
-        auto const& selections = set.selections();
-        // Loop through all the selections
-        for (auto [selection, flag] : selections.asKeyValueRange())
+        ElementMap elementMap = mSurfaceElements[iSurface];
+        QList<KCL::ElementType> types = elementMap.keys();
+        int numTypes = types.size();
+        for (int iType = 0; iType != numTypes; ++iType)
         {
-            if (!flag)
-                continue;
-            AbstractElement const* pElement = model.surfaces[selection.iSurface].element(selection.type, selection.iElement);
+            KCL::ElementType type = types[iType];
+            QList<AbstractElement*> const& elements = elementMap[type];
+            switch (type)
+            {
+            case KCL::BI:
+                getProperties(elements, VariableType::kBendingStiffness);
+                break;
+            default:
+                break;
+            }
         }
     }
+}
+
+//! Retrieve element properties by indices
+MatrixXd OptimSolver::getProperties(QList<KCL::AbstractElement*> const& elements, VariableType type)
+{
+    MatrixXd result;
+    if (mConstraints.isEnabled(type))
+    {
+        QList<int> indices = mVariableIndices[type];
+        int numIndices = indices.size();
+        int numElements = elements.size();
+        result.resize(numElements, numIndices);
+        for (int i = 0; i != numElements; ++i)
+        {
+            VecN values = elements[i]->get();
+            for (int j = 0; j != numIndices; ++j)
+                result(i, j) = values[indices[j]];
+        }
+    }
+    return result;
 }

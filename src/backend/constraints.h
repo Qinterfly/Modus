@@ -14,7 +14,8 @@ enum class VariableType
     kTorsionalStiffness,
     // Panels
     kThickness,
-    kYoungsModulus,
+    kYoungsModulus1,
+    kYoungsModulus2,
     kShearModulus,
     kPoissonRatio,
     // Springs
