@@ -31,6 +31,13 @@ struct Slave
 
 struct Geometry
 {
+    Geometry();
+    ~Geometry() = default;
+
+    bool isEmpty() const;
+    void move(Eigen::Vector3d const& shift);
+    void rotate(double angle, Direction direction);
+
     QList<Vertex> vertices;
     QList<Slave> slaves;
     Eigen::MatrixXi lines;

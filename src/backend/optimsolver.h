@@ -60,7 +60,6 @@ public:
 
     void solve(KCL::Model const& model, OptimData const& data, OptimOptions const& options);
 };
-
 }
 
 #endif // OPTIMSOLVER_H

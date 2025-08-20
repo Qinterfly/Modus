@@ -1,3 +1,4 @@
+#include <Eigen/Geometry>
 #include <QObject>
 
 #include "fileutility.h"
@@ -54,7 +55,7 @@ int ModalSolution::numModes() const
 
 bool ModalSolution::isEmpty() const
 {
-    return mFrequencies.size() > 0 && mModeShapes.size() > 0;
+    return mFrequencies.size() == 0 && mModeShapes.size() == 0;
 }
 
 Geometry const& ModalSolution::geometry() const
@@ -320,4 +321,41 @@ QList<Slave> ModalSolution::readSlaves(QTextStream& stream, QMap<QString, int> c
     }
     result.resize(numRows);
     return result;
+}
+
+Geometry::Geometry()
+{
+}
+
+bool Geometry::isEmpty() const
+{
+    return vertices.empty();
+}
+
+//! Shift the geometry
+void Geometry::move(Eigen::Vector3d const& shift)
+{
+    for (Vertex& vertex : vertices)
+        vertex.position += shift;
+}
+
+//! Rotate the geometry around the specified axis
+void Geometry::rotate(double angle, Direction direction)
+{
+    Vector3d axis;
+    switch (direction)
+    {
+    case Direction::kX:
+        axis = Vector3d::UnitX();
+        break;
+    case Direction::kY:
+        axis = Vector3d::UnitY();
+        break;
+    case Direction::kZ:
+        axis = Vector3d::UnitZ();
+        break;
+    }
+    auto transformation = AngleAxisd(angle, axis);
+    for (Vertex& vertex : vertices)
+        vertex.position = transformation * vertex.position;
 }
