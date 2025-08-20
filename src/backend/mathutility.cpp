@@ -46,8 +46,23 @@ int getIndexByName(Objects const& objects, QString const& name, Qt::CaseSensitiv
     return -1;
 }
 
+template<typename T>
+QList<T> combine(QList<T> const& first, QList<T> const& second)
+{
+    int numFirst = first.size();
+    int numSecond = second.size();
+    QList<T> result(numFirst + numSecond);
+    for (int i = 0; i != numFirst; ++i)
+        result[i] = first[i];
+    for (int i = 0; i != numSecond; ++i)
+        result[numFirst + i] = second[i];
+    return result;
+}
+
 // Explicit template instantiation
 template QList<QUuid> getIDs(QList<Core::Subproject> const&);
 template int getIndexByID(QList<Core::Subproject> const&, QUuid const&);
 template int getIndexByName(QList<Core::Subproject> const&, QString const&, Qt::CaseSensitivity);
+template QList<double> combine(QList<double> const& first, QList<double> const& second);
+template QList<QPair<double, double>> combine(QList<QPair<double, double>> const& first, QList<QPair<double, double>> const& second);
 }

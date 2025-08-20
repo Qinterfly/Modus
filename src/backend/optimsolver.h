@@ -66,12 +66,17 @@ public:
 private:
     void wrapModel();
     Eigen::MatrixXd getProperties(QList<KCL::AbstractElement*> const& elements, VariableType type);
+    void wrapProperties(Eigen::MatrixXd const& properties, VariableType type);
 
 private:
     QMap<VariableType, QList<int>> mVariableIndices;
+    QMap<KCL::ElementType, QList<VariableType>> mElementVariables;
     KCL::Model mModel;
     Constraints mConstraints;
     QList<ElementMap> mSurfaceElements;
+    QList<double> mParamValues;
+    QList<double> mParamScales;
+    QList<PairDouble> mParamBounds;
 };
 }
 

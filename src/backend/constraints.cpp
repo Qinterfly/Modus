@@ -40,7 +40,7 @@ double Constraints::scale(VariableType type) const
     return mScales[type];
 }
 
-QPair<double, double> Constraints::limits(VariableType type) const
+PairDouble Constraints::limits(VariableType type) const
 {
     return mLimits[type];
 }
@@ -57,13 +57,13 @@ QList<VariableType> Constraints::types()
 }
 
 //! Enable the variable for updating
-void Constraints::enable(VariableType type, bool flag)
+void Constraints::setEnabled(VariableType type, bool flag)
 {
     mEnabledState[type] = flag;
 }
 
 //! Set united state of variables
-void Constraints::unite(VariableType type, bool flag)
+void Constraints::setUnited(VariableType type, bool flag)
 {
     if (mMultipliedState[type])
     {
@@ -75,7 +75,7 @@ void Constraints::unite(VariableType type, bool flag)
 }
 
 //! Set multiplied state of variables
-void Constraints::multiply(VariableType type, bool flag)
+void Constraints::setMultiplied(VariableType type, bool flag)
 {
     if (mUnitedState[type])
     {
@@ -93,7 +93,7 @@ void Constraints::setScale(VariableType type, double value)
 }
 
 //! Assign the variable limits
-void Constraints::setLimits(VariableType type, QPair<double, double> const& limits)
+void Constraints::setLimits(VariableType type, PairDouble const& limits)
 {
     mLimits[type] = limits;
 }
