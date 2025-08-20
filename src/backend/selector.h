@@ -18,22 +18,25 @@ class Selector
 {
 public:
     Selector();
-    Selector(KCL::Model const* pModel);
     ~Selector() = default;
 
-    void setModel(KCL::Model const* pModel);
-    SelectionSet& add(QString const& name = QString());
+    SelectionSet& add(KCL::Model const& model, QString const& name);
     bool remove(QString const& name);
     void clear();
+    void update(KCL::Model const& model);
+
+    QList<Backend::Core::SelectionSet> const& get() const;
+    SelectionSet const& get(int index) const;
     QList<Backend::Core::SelectionSet>& get();
     SelectionSet& get(int index);
+    QList<Selection> allSelections() const;
+
     int find(QString const& name) const;
     bool contains(QString const& name) const;
     int numSets() const;
     bool isEmpty() const;
 
 private:
-    KCL::Model const* mpModel;
     QList<Backend::Core::SelectionSet> mSets;
 };
 

@@ -6,20 +6,13 @@
 using namespace Backend::Core;
 
 SelectionSet::SelectionSet()
-    : mpModel(nullptr)
 {
 }
 
-SelectionSet::SelectionSet(KCL::Model const* pModel, QString const& name)
-    : mpModel(pModel)
-    , mName(name)
+SelectionSet::SelectionSet(KCL::Model const& model, QString const& name)
+    : mName(name)
 {
-    reset();
-}
-
-KCL::Model const* SelectionSet::model() const
-{
-    return mpModel;
+    reset(model);
 }
 
 QString const& SelectionSet::name() const
@@ -47,10 +40,9 @@ int SelectionSet::numSelected() const
     return result;
 }
 
-void SelectionSet::setModel(KCL::Model const* pModel)
+QMap<Selection, bool> const& SelectionSet::selections() const
 {
-    mpModel = pModel;
-    validate();
+    return mDataSet;
 }
 
 //! Select all elements
@@ -121,12 +113,10 @@ void SelectionSet::setSelected(int iSurface, KCL::ElementType type, bool flag)
 }
 
 //! Clean up the selections
-void SelectionSet::reset()
+void SelectionSet::reset(KCL::Model const& model)
 {
     mDataSet.clear();
-    if (mpModel == nullptr)
-        return;
-    auto const& surfaces = mpModel->surfaces;
+    auto const& surfaces = model.surfaces;
     int numSurfaces = surfaces.size();
     for (int iSurface = 0; iSurface != numSurfaces; ++iSurface)
     {
@@ -149,11 +139,11 @@ void SelectionSet::reset()
     }
 }
 
-//! Validate the selected items in case the model has been changed
-void SelectionSet::validate()
+//! Update the selected items in case the model has been changed
+void SelectionSet::update(KCL::Model const& model)
 {
     QMap<Selection, bool> const oldDataSet = mDataSet;
-    reset();
+    reset(model);
     for (auto const& [selection, flag] : oldDataSet.asKeyValueRange())
     {
         if (mDataSet.contains(selection))

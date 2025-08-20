@@ -25,15 +25,14 @@ class SelectionSet
 {
 public:
     SelectionSet();
-    SelectionSet(KCL::Model const* pModel, QString const& name);
+    SelectionSet(KCL::Model const& model, QString const& name);
     ~SelectionSet() = default;
 
-    KCL::Model const* model() const;
     QString const& name() const;
     bool isSelected(Selection const& selection) const;
     int numSelected() const;
+    QMap<Selection, bool> const& selections() const;
 
-    void setModel(KCL::Model const* pModel);
     void selectAll();
     void selectNone();
     void inverse();
@@ -41,13 +40,12 @@ public:
     void setSelected(int iSurface, bool flag);
     void setSelected(KCL::ElementType type, bool flag);
     void setSelected(int iSurface, KCL::ElementType type, bool flag);
+    void update(KCL::Model const& model);
 
 private:
-    void reset();
-    void validate();
+    void reset(KCL::Model const& model);
 
 private:
-    KCL::Model const* mpModel;
     QString mName;
     QMap<Selection, bool> mDataSet;
 };

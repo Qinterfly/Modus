@@ -4,7 +4,6 @@ using namespace Backend::Core;
 
 Subproject::Subproject()
 {
-    mConfiguration.data.selector.setModel(&mModel);
 }
 
 Subproject::Subproject(QString const& name)

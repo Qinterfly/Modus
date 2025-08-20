@@ -62,8 +62,8 @@ void TestBackend::testSelector()
     Subproject& subproject = mProject.subprojects()[example];
 
     // Select all the elements
-    Selector selector(&subproject.model());
-    SelectionSet& set = selector.add();
+    Selector selector;
+    SelectionSet& set = selector.add(subproject.model(), "all");
     set.selectAll();
     QVERIFY(set.numSelected() == 78);
 
@@ -103,7 +103,7 @@ void TestBackend::testUpdateSimpleWing()
     Configuration& config = subproject.configuration();
     OptimOptions& options = config.options;
     OptimData& data = config.data;
-    data.selector.add().selectAll();
+    data.selector.add(model, "all").selectAll();
 
     // Set the objectives
     ModalSolution solution(eigenSolution);

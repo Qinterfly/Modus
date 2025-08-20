@@ -15,6 +15,8 @@ class Model;
 namespace Backend::Core
 {
 
+using ElementList = QList<QMap<KCL::ElementType, QList<KCL::AbstractElement>>>;
+
 struct OptimData
 {
     OptimData();
@@ -59,6 +61,12 @@ public:
     ~OptimSolver() = default;
 
     void solve(KCL::Model const& model, OptimData const& data, OptimOptions const& options);
+
+private:
+    void wrap(KCL::Model const& model, Selector const& selector, Constraints const& constraints);
+
+private:
+    ElementList mElements;
 };
 }
 
