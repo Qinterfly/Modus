@@ -1,6 +1,7 @@
 #ifndef MATHUTILITY_H
 #define MATHUTILITY_H
 
+#include <Eigen/Core>
 #include <QString>
 #include <QUuid>
 
@@ -18,6 +19,8 @@ int getIndexByName(Objects const& objects, QString const& name, Qt::CaseSensitiv
 
 template<typename T>
 QList<T> combine(QList<T> const& first, QList<T> const& second);
+
+Eigen::VectorXi rowIndicesAbsMax(Eigen::MatrixXd const& data);
 }
 
 #endif // MATHUTILITY_H

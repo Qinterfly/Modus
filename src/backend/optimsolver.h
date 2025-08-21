@@ -61,19 +61,23 @@ public:
     OptimSolver();
     ~OptimSolver() = default;
 
-    void solve(KCL::Model const& model, OptimData const& data, OptimOptions const& options);
+    void solve(KCL::Model const& initModel, OptimData const& data, OptimOptions const& options);
 
 private:
     void wrapModel();
+    KCL::Model unwrapModel();
     Eigen::MatrixXd getProperties(QList<KCL::AbstractElement*> const& elements, VariableType type);
+    void setProperties(Eigen::MatrixXd const& properties, QList<KCL::AbstractElement*>& elements, VariableType type);
     void wrapProperties(Eigen::MatrixXd const& properties, VariableType type);
+    Eigen::MatrixXd unwrapProperties(int& iParameter, Eigen::MatrixXd const& initProperties, VariableType type);
+    QList<ElementMap> getSurfaceElements(KCL::Model& model);
+    QMap<VariableType, QList<int>> getVariableIndices();
+    QMap<KCL::ElementType, QList<VariableType>> getElementVariables();
 
 private:
-    QMap<VariableType, QList<int>> mVariableIndices;
-    QMap<KCL::ElementType, QList<VariableType>> mElementVariables;
-    KCL::Model mModel;
+    KCL::Model mInitModel;
+    QList<Selection> mSelections;
     Constraints mConstraints;
-    QList<ElementMap> mSurfaceElements;
     QList<double> mParamValues;
     QList<double> mParamScales;
     QList<PairDouble> mParamBounds;

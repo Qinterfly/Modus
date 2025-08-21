@@ -59,6 +59,29 @@ QList<T> combine(QList<T> const& first, QList<T> const& second)
     return result;
 }
 
+Eigen::VectorXi rowIndicesAbsMax(Eigen::MatrixXd const& data)
+{
+    int numRows = data.rows();
+    int numCols = data.cols();
+    Eigen::VectorXi result(numRows);
+    for (int i = 0; i != numRows; ++i)
+    {
+        int iMax = -1;
+        double absMax = 0.0;
+        for (int j = 0; j != numCols; ++j)
+        {
+            double absValue = std::abs(data(i, j));
+            if (absValue > absMax)
+            {
+                absMax = absValue;
+                iMax = j;
+            }
+        }
+        result[i] = iMax;
+    }
+    return result;
+}
+
 // Explicit template instantiation
 template QList<QUuid> getIDs(QList<Core::Subproject> const&);
 template int getIndexByID(QList<Core::Subproject> const&, QUuid const&);

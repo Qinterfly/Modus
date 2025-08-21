@@ -39,6 +39,10 @@ public:
     double scale(VariableType type) const;
     PairDouble limits(VariableType type) const;
 
+    void setAllEnabled(bool flag);
+    void setAllUnited(bool flag);
+    void setAllMultiplied(bool flag);
+
     void setEnabled(VariableType type, bool flag);
     void setUnited(VariableType type, bool flag);
     void setMultiplied(VariableType type, bool flag);

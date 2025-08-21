@@ -99,11 +99,14 @@ void TestBackend::testUpdateSimpleWing()
     KCL::Model const& model = subproject.model();
     auto eigenSolution = model.solveEigen();
 
-    // Select all the entities
+    // Select elements
     Configuration& config = subproject.configuration();
     OptimOptions& options = config.options;
     OptimData& data = config.data;
-    data.selector.add(model, "all").selectAll();
+    SelectionSet& set = data.selector.add(model, "main");
+    set.selectAll();
+    set.setSelected(KCL::DB, false);
+    set.setSelected(KCL::BK, false);
 
     // Set the objectives
     ModalSolution solution(eigenSolution);

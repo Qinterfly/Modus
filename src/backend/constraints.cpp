@@ -56,6 +56,30 @@ QList<VariableType> Constraints::types()
     return result;
 }
 
+//! Enable all the variables for updating
+void Constraints::setAllEnabled(bool flag)
+{
+    QList<VariableType> const keys = types();
+    for (VariableType key : keys)
+        mEnabledState[key] = flag;
+}
+
+//! Set united state of all the variables
+void Constraints::setAllUnited(bool flag)
+{
+    QList<VariableType> const keys = types();
+    for (VariableType key : keys)
+        mUnitedState[key] = flag;
+}
+
+//! Set multiplied state of all the variables
+void Constraints::setAllMultiplied(bool flag)
+{
+    QList<VariableType> const keys = types();
+    for (VariableType key : keys)
+        mMultipliedState[key] = flag;
+}
+
 //! Enable the variable for updating
 void Constraints::setEnabled(VariableType type, bool flag)
 {
