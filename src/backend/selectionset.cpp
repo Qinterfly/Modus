@@ -1,8 +1,10 @@
 #include <kcl/model.h>
 #include <QMap>
 
+#include "constants.h"
 #include "selectionset.h"
 
+using namespace Backend;
 using namespace Backend::Core;
 
 SelectionSet::SelectionSet()
@@ -116,6 +118,8 @@ void SelectionSet::setSelected(int iSurface, KCL::ElementType type, bool flag)
 void SelectionSet::reset(KCL::Model const& model)
 {
     mDataSet.clear();
+
+    // Process elastic surfaces
     auto const& surfaces = model.surfaces;
     int numSurfaces = surfaces.size();
     for (int iSurface = 0; iSurface != numSurfaces; ++iSurface)
@@ -135,6 +139,23 @@ void SelectionSet::reset(KCL::Model const& model)
                 selection.iElement = iElement;
                 mDataSet[selection] = false;
             }
+        }
+    }
+
+    // Process the special surface
+    auto types = model.specialSurface.types();
+    int numTypes = types.size();
+    for (int iType = 0; iType != numTypes; ++iType)
+    {
+        auto type = types[iType];
+        int numElements = model.specialSurface.numElements(type);
+        for (int iElement = 0; iElement != numElements; ++iElement)
+        {
+            Selection selection;
+            selection.iSurface = Constants::skISpecialSurface;
+            selection.type = type;
+            selection.iElement = iElement;
+            mDataSet[selection] = false;
         }
     }
 }

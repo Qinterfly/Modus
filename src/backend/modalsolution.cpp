@@ -1,10 +1,9 @@
 #include <Eigen/Geometry>
 #include <QObject>
 
+#include "constants.h"
 #include "fileutility.h"
 #include "modalsolution.h"
-
-static int const skNumDirections = 3;
 
 using namespace Backend;
 using namespace Backend::Core;
@@ -35,7 +34,7 @@ ModalSolution::ModalSolution(KCL::EigenSolution const& solution)
     {
         Vertex& vertex = mGeometry.vertices[i];
         vertex.name = QString::number(i);
-        for (int j = 0; j != skNumDirections; ++j)
+        for (int j = 0; j != Constants::skNumDirections; ++j)
             vertex.position[j] = solution.geometry.vertices(i, j);
     }
     mGeometry.quadrangles = solution.geometry.quadrangles;
@@ -112,7 +111,7 @@ void ModalSolution::readGeometry(QString const& pathFile)
         Vertex& vertex = vertices[i];
         stream >> vertex.name;
         mapVertices[vertex.name] = i;
-        for (int j = 0; j != skNumDirections; ++j)
+        for (int j = 0; j != Constants::skNumDirections; ++j)
             stream >> vertex.position[j];
     }
 
@@ -188,7 +187,7 @@ void ModalSolution::readModesets(QString const& pathFile)
 
         // Read the modeshape data
         MatrixXd& modeShape = mModeShapes[iMode];
-        modeShape.resize(numVertices, skNumDirections);
+        modeShape.resize(numVertices, Constants::skNumDirections);
         modeShape.fill(kDummy);
         for (int iDOF = 0; iDOF != numDOFs; ++iDOF)
         {
@@ -227,7 +226,7 @@ void ModalSolution::resize(int numDOFs, int numModes)
     mFrequencies.resize(numModes);
     mModeShapes.resize(numModes);
     for (MatrixXd& item : mModeShapes)
-        item.resize(numDOFs, skNumDirections);
+        item.resize(numDOFs, Constants::skNumDirections);
 }
 
 //! Retrieve the polygon indices from the text stream
@@ -297,7 +296,7 @@ QList<Slave> ModalSolution::readSlaves(QTextStream& stream, QMap<QString, int> c
             // Get the direction
             int flag;
             int index = -1;
-            for (int j = 0; j != skNumDirections; ++j)
+            for (int j = 0; j != Constants::skNumDirections; ++j)
             {
                 stream >> flag;
                 if (flag == 1)

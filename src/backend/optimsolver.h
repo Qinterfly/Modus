@@ -67,10 +67,12 @@ private:
     void wrapModel();
     KCL::Model unwrapModel();
     Eigen::MatrixXd getProperties(QList<KCL::AbstractElement*> const& elements, VariableType type);
+    Eigen::MatrixXd getProperties(KCL::SpringDamper* pElement, QList<bool>& mask);
     void setProperties(Eigen::MatrixXd const& properties, QList<KCL::AbstractElement*>& elements, VariableType type);
+    void setProperties(Eigen::MatrixXd const& properties, KCL::SpringDamper* pElement, QList<bool> const& mask);
     void wrapProperties(Eigen::MatrixXd const& properties, VariableType type);
     Eigen::MatrixXd unwrapProperties(int& iParameter, Eigen::MatrixXd const& initProperties, VariableType type);
-    QList<ElementMap> getSurfaceElements(KCL::Model& model);
+    QMap<int, ElementMap> getSurfaceElements(KCL::Model& model);
     QMap<VariableType, QList<int>> getVariableIndices();
     QMap<KCL::ElementType, QList<VariableType>> getElementVariables();
 

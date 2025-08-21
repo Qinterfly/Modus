@@ -9,15 +9,24 @@ using namespace Backend::Core;
 Constraints::Constraints()
 {
     double inf = std::numeric_limits<double>::infinity();
-    QList<VariableType> const keys = types();
-    for (auto key : keys)
+    // Insert the keys
+    auto const keys = types();
+    for (auto type : keys)
     {
-        mEnabledState[key] = true;
-        mUnitedState[key] = false;
-        mMultipliedState[key] = false;
-        mScales[key] = 1.0;
-        mLimits[key] = {-inf, inf};
+        mEnabledState[type] = true;
+        mUnitedState[type] = false;
+        mMultipliedState[type] = false;
+        mNonzeroState[type] = false;
+        mScales[type] = 1.0;
+        mLimits[type] = {-inf, inf};
     }
+    // Set the default values of fields
+    setDefaultEnabled();
+    setDefaultUnited();
+    setDefaultMultiplied();
+    setDefaultNonzero();
+    setDefaultScales();
+    setDefaultLimits();
 }
 
 bool Constraints::isEnabled(VariableType type) const
@@ -33,6 +42,11 @@ bool Constraints::isUnited(VariableType type) const
 bool Constraints::isMultiplied(VariableType type) const
 {
     return mMultipliedState[type];
+}
+
+bool Constraints::isNonzero(VariableType type) const
+{
+    return mNonzeroState[type];
 }
 
 double Constraints::scale(VariableType type) const
@@ -61,7 +75,7 @@ void Constraints::setAllEnabled(bool flag)
 {
     QList<VariableType> const keys = types();
     for (VariableType key : keys)
-        mEnabledState[key] = flag;
+        setEnabled(key, flag);
 }
 
 //! Set united state of all the variables
@@ -69,7 +83,7 @@ void Constraints::setAllUnited(bool flag)
 {
     QList<VariableType> const keys = types();
     for (VariableType key : keys)
-        mUnitedState[key] = flag;
+        setUnited(key, flag);
 }
 
 //! Set multiplied state of all the variables
@@ -77,7 +91,15 @@ void Constraints::setAllMultiplied(bool flag)
 {
     QList<VariableType> const keys = types();
     for (VariableType key : keys)
-        mMultipliedState[key] = flag;
+        setMultiplied(key, flag);
+}
+
+//! Set nonzero state of all the variables
+void Constraints::setAllNonzero(bool flag)
+{
+    QList<VariableType> const keys = types();
+    for (VariableType key : keys)
+        setNonzero(key, flag);
 }
 
 //! Enable the variable for updating
@@ -89,7 +111,7 @@ void Constraints::setEnabled(VariableType type, bool flag)
 //! Set united state of variables
 void Constraints::setUnited(VariableType type, bool flag)
 {
-    if (mMultipliedState[type])
+    if (flag && mMultipliedState[type])
     {
         QString typeName = magic_enum::enum_name(type).data();
         qWarning() << QObject::tr("Multiplication is already enabled for type: %1. Unification request is ignored").arg(typeName);
@@ -101,13 +123,25 @@ void Constraints::setUnited(VariableType type, bool flag)
 //! Set multiplied state of variables
 void Constraints::setMultiplied(VariableType type, bool flag)
 {
-    if (mUnitedState[type])
+    if (flag && mUnitedState[type])
     {
         QString typeName = magic_enum::enum_name(type).data();
         qWarning() << QObject::tr("Unification is already enabled for type: %1. Multiplication request is ignored").arg(typeName);
         return;
     }
     mMultipliedState[type] = flag;
+}
+
+//! Set nonzero state of variables
+void Constraints::setNonzero(VariableType type, bool flag)
+{
+    if (flag && (mUnitedState[type] || mMultipliedState[type]))
+    {
+        QString typeName = magic_enum::enum_name(type).data();
+        qWarning() << QObject::tr("Unification or multiplication is already enabled for type: %1. Nonzero request is ignored").arg(typeName);
+        return;
+    }
+    mNonzeroState[type] = flag;
 }
 
 //! Set the variable scaling factor
@@ -120,4 +154,67 @@ void Constraints::setScale(VariableType type, double value)
 void Constraints::setLimits(VariableType type, PairDouble const& limits)
 {
     mLimits[type] = limits;
+}
+
+//! Enable default variables
+void Constraints::setDefaultEnabled()
+{
+    // Beams
+    mEnabledState[VariableType::kBeamStiffness] = true;
+    // Panels
+    mEnabledState[VariableType::kYoungsModulus1] = true;
+    mEnabledState[VariableType::kYoungsModulus2] = true;
+    mEnabledState[VariableType::kShearModulus] = true;
+    mEnabledState[VariableType::kPoissonRatio] = false;
+    // Springs
+    mEnabledState[VariableType::kSpringStiffness] = true;
+}
+
+//! Set default united state
+void Constraints::setDefaultUnited()
+{
+    setAllUnited(false);
+}
+
+//! Set default multiplied state
+void Constraints::setDefaultMultiplied()
+{
+    setAllMultiplied(true);
+    mMultipliedState[VariableType::kSpringStiffness] = false;
+}
+
+//! Set default nonzero state
+void Constraints::setDefaultNonzero()
+{
+    setAllNonzero(false);
+    mNonzeroState[VariableType::kSpringStiffness] = true;
+}
+
+//! Set default scales
+void Constraints::setDefaultScales()
+{
+    // Beams
+    mScales[VariableType::kBeamStiffness] = 1e-4;
+    // Panels
+    mScales[VariableType::kThickness] = 1e2;
+    mScales[VariableType::kYoungsModulus1] = 1e-8;
+    mScales[VariableType::kYoungsModulus1] = mScales[VariableType::kYoungsModulus2];
+    mScales[VariableType::kShearModulus] = mScales[VariableType::kYoungsModulus1];
+    mScales[VariableType::kPoissonRatio] = 1;
+    // Springs
+    mScales[VariableType::kSpringStiffness] = 0;
+}
+
+//! Set default limits
+void Constraints::setDefaultLimits()
+{
+    // Beams
+    mLimits[VariableType::kBeamStiffness] = {0, 1e9};
+    // Panels
+    mLimits[VariableType::kThickness] = {1e-3, 0.2};
+    mLimits[VariableType::kYoungsModulus1] = {1e2, 1e13};
+    mLimits[VariableType::kYoungsModulus2] = mLimits[VariableType::kYoungsModulus1];
+    mLimits[VariableType::kShearModulus] = mLimits[VariableType::kYoungsModulus1];
+    // Springs
+    mLimits[VariableType::kSpringStiffness] = {1e-9, 1e9};
 }

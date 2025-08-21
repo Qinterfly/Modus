@@ -4,6 +4,7 @@ find_package(Eigen3 CONFIG REQUIRED)
 find_package(Ceres CONFIG REQUIRED)
 
 set(BACKEND_HEADERS
+    constants.h
     identifier.h
     fileutility.h
     mathutility.h

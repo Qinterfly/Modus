@@ -65,7 +65,7 @@ void TestBackend::testSelector()
     Selector selector;
     SelectionSet& set = selector.add(subproject.model(), "all");
     set.selectAll();
-    QVERIFY(set.numSelected() == 78);
+    QVERIFY(set.numSelected() == 84);
 
     // Reset the selection
     set.selectNone();
@@ -101,7 +101,6 @@ void TestBackend::testUpdateSimpleWing()
 
     // Select elements
     Configuration& config = subproject.configuration();
-    OptimOptions& options = config.options;
     OptimData& data = config.data;
     SelectionSet& set = data.selector.add(model, "main");
     set.selectAll();
@@ -119,6 +118,7 @@ void TestBackend::testUpdateSimpleWing()
     data.targetSolution = ModalSolution(solution.geometry(), targetFrequencies, solution.modeShapes());
 
     // Start the solver
+    OptimOptions& options = config.options;
     OptimSolver solver;
     solver.solve(model, data, options);
 }

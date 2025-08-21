@@ -12,8 +12,7 @@ using PairDouble = QPair<double, double>;
 enum class VariableType
 {
     // Beams
-    kBendingStiffness,
-    kTorsionalStiffness,
+    kBeamStiffness,
     // Panels
     kThickness,
     kYoungsModulus1,
@@ -36,23 +35,35 @@ public:
     bool isEnabled(VariableType type) const;
     bool isUnited(VariableType type) const;
     bool isMultiplied(VariableType type) const;
+    bool isNonzero(VariableType type) const;
     double scale(VariableType type) const;
     PairDouble limits(VariableType type) const;
 
     void setAllEnabled(bool flag);
     void setAllUnited(bool flag);
     void setAllMultiplied(bool flag);
+    void setAllNonzero(bool flag);
 
     void setEnabled(VariableType type, bool flag);
     void setUnited(VariableType type, bool flag);
     void setMultiplied(VariableType type, bool flag);
+    void setNonzero(VariableType type, bool flag);
     void setScale(VariableType type, double value);
     void setLimits(VariableType type, PairDouble const& limits);
+
+private:
+    void setDefaultEnabled();
+    void setDefaultUnited();
+    void setDefaultMultiplied();
+    void setDefaultNonzero();
+    void setDefaultScales();
+    void setDefaultLimits();
 
 private:
     QMap<VariableType, bool> mEnabledState;
     QMap<VariableType, bool> mUnitedState;
     QMap<VariableType, bool> mMultipliedState;
+    QMap<VariableType, bool> mNonzeroState;
     QMap<VariableType, double> mScales;
     QMap<VariableType, PairDouble> mLimits;
 };
