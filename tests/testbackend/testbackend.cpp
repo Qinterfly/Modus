@@ -46,7 +46,7 @@ void TestBackend::testLoadModalSolution()
 
     // Slice the subproject
     Subproject& subproject = mProject.subprojects()[example];
-    ModalSolution& solution = subproject.configuration().data.targetSolution;
+    ModalSolution& solution = subproject.configuration().problem.targetSolution;
 
     // Read the geometry and modal data
     solution.read(Utility::combineFilePath(EXAMPLES_DIR, mExampleFileNames[example]));
@@ -101,26 +101,30 @@ void TestBackend::testUpdateSimpleWing()
 
     // Select elements
     Configuration& config = subproject.configuration();
-    OptimData& data = config.data;
-    SelectionSet& set = data.selector.add(model, "main");
+    OptimProblem& problem = config.problem;
+    Constraints& constraints = problem.constraints;
+    problem.model = model;
+    SelectionSet& set = problem.selector.add(model, "main");
     set.selectAll();
+    set.setSelected(KCL::BI, false);
     set.setSelected(KCL::DB, false);
     set.setSelected(KCL::BK, false);
+    set.setSelected(KCL::PR, true);
 
     // Set the objectives
     ModalSolution solution(eigenSolution);
     Eigen::VectorXd targetFrequencies = solution.frequencies();
-    data.resize(numModes);
-    data.indices.setLinSpaced(0, numModes - 1);
-    data.weights.setOnes();
+    problem.resize(numModes);
+    problem.indices.setLinSpaced(0, numModes - 1);
+    problem.weights.setOnes();
     for (double& value : targetFrequencies)
         value *= 1.0 + generateDouble({-error, error});
-    data.targetSolution = ModalSolution(solution.geometry(), targetFrequencies, solution.modeShapes());
+    problem.targetSolution = ModalSolution(solution.geometry(), targetFrequencies, solution.modeShapes());
 
     // Start the solver
     OptimOptions& options = config.options;
     OptimSolver solver;
-    solver.solve(model, data, options);
+    solver.solve(problem, options);
 }
 
 //! Generate a bounded double value

@@ -1,9 +1,12 @@
+#include <future>
+#include <kcl/solver.h>
 #include <QList>
 
 #include "mathutility.h"
 #include "subproject.h"
 
 using namespace Backend;
+using namespace Eigen;
 
 namespace Backend::Utility
 {
@@ -59,11 +62,30 @@ QList<T> combine(QList<T> const& first, QList<T> const& second)
     return result;
 }
 
-Eigen::VectorXi rowIndicesAbsMax(Eigen::MatrixXd const& data)
+template<typename T>
+T solve(std::function<T()> fun, double timeout)
+{
+    double const kTimeFactor = 1e6;
+    if (timeout > 0)
+    {
+        std::future<T> future = std::async(fun);
+        auto duration = std::chrono::microseconds((int) std::round(timeout * kTimeFactor));
+        std::future_status status = future.wait_for(duration);
+        if (status != std::future_status::ready)
+            return T();
+        return future.get();
+    }
+    else
+    {
+        return fun();
+    }
+}
+
+VectorXi rowIndicesAbsMax(MatrixXd const& data)
 {
     int numRows = data.rows();
     int numCols = data.cols();
-    Eigen::VectorXi result(numRows);
+    VectorXi result(numRows);
     for (int i = 0; i != numRows; ++i)
     {
         int iMax = -1;
@@ -82,10 +104,91 @@ Eigen::VectorXi rowIndicesAbsMax(Eigen::MatrixXd const& data)
     return result;
 }
 
+//! Compute the modal assurance criterion (MAC) between two modal vectors
+double computeMAC(Eigen::VectorXd const& first, Eigen::VectorXd const& second)
+{
+    double numerator = std::pow(std::abs(first.dot(second)), 2.0);
+    double denominator = std::abs(first.dot(first) * second.dot(second));
+    return numerator / denominator;
+}
+
+//! Compute the MAC-matrix between two modeshapes
+double computeMAC(MatrixXd const& first, MatrixXd const& second, Core::Matches const& matches)
+{
+    int numMatches = matches.size();
+    int numDirections = first.cols();
+
+    // Count the number of the common values
+    int numValues = 0;
+    for (int i = 0; i != numMatches; ++i)
+    {
+        int iFirstMatch = matches[i].first;
+        int iSecondMatch = matches[i].second;
+        for (int j = 0; j != numDirections; ++j)
+        {
+            if (!std::isnan(first(iFirstMatch, j)) && !std::isnan(second(iSecondMatch, j)))
+                ++numValues;
+        }
+    }
+
+    // Slice the common values
+    VectorXd firstVector(numValues);
+    VectorXd secondVector(numValues);
+    numValues = 0;
+    for (int i = 0; i != numMatches; ++i)
+    {
+        int iFirstMatch = matches[i].first;
+        int iSecondMatch = matches[i].second;
+        for (int j = 0; j != numDirections; ++j)
+        {
+            if (!std::isnan(first(iFirstMatch, j)) && !std::isnan(second(iSecondMatch, j)))
+            {
+                firstVector[numValues] = first(iFirstMatch, j);
+                secondVector[numValues] = second(iSecondMatch, j);
+                ++numValues;
+            }
+        }
+    }
+    return computeMAC(firstVector, secondVector);
+}
+
+//! Pair the modesets by indices of the modeshapes that maximize the MAC-criterion
+Core::PairingSet pairByMAC(MatrixXd const& MAC, double threshold)
+{
+    uint numRows = MAC.rows();
+    uint numCols = MAC.cols();
+    Core::PairingSet result(numRows, {-1, 0});
+    QList<bool> mask(numCols, true);
+    for (uint iRow = 0; iRow != numRows; ++iRow)
+    {
+        // Find the maximum value
+        double maxValue = threshold;
+        int iMax = -1;
+        for (uint jCol = 0; jCol != numCols; ++jCol)
+        {
+            double value = std::abs(MAC(iRow, jCol));
+            if (value > maxValue && mask[jCol])
+            {
+                maxValue = value;
+                iMax = jCol;
+            }
+        }
+        // Set the result
+        if (iMax >= 0)
+        {
+            mask[iMax] = false;
+            result[iRow].first = iMax;
+            result[iRow].second = maxValue;
+        }
+    }
+    return result;
+}
+
 // Explicit template instantiation
 template QList<QUuid> getIDs(QList<Core::Subproject> const&);
 template int getIndexByID(QList<Core::Subproject> const&, QUuid const&);
 template int getIndexByName(QList<Core::Subproject> const&, QString const&, Qt::CaseSensitivity);
 template QList<double> combine(QList<double> const& first, QList<double> const& second);
 template QList<QPair<double, double>> combine(QList<QPair<double, double>> const& first, QList<QPair<double, double>> const& second);
+template KCL::EigenSolution solve(std::function<KCL::EigenSolution()>, double);
 }

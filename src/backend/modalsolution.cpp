@@ -3,6 +3,7 @@
 
 #include "constants.h"
 #include "fileutility.h"
+#include "mathutility.h"
 #include "modalsolution.h"
 
 using namespace Backend;
@@ -47,6 +48,11 @@ ModalSolution::ModalSolution(KCL::EigenSolution const& solution)
     }
 }
 
+int ModalSolution::numVertices() const
+{
+    return mGeometry.vertices.size();
+}
+
 int ModalSolution::numModes() const
 {
     return mFrequencies.size();
@@ -70,6 +76,35 @@ Eigen::VectorXd const& ModalSolution::frequencies() const
 QList<Eigen::MatrixXd> const& ModalSolution::modeShapes() const
 {
     return mModeShapes;
+}
+
+//! Compare the modal and eigen solutions
+ModalComparison ModalSolution::compare(ModalSolution const& another, VectorXi const& indices, Matches const& matches, double minMAC) const
+{
+    ModalComparison result;
+
+    // Compute MAC table
+    int numBaseModes = indices.size();
+    int numCompareModes = another.numModes();
+    MatrixXd tableMAC(numBaseModes, numCompareModes);
+    for (int i = 0; i != numBaseModes; ++i)
+    {
+        int iBaseMode = indices[i];
+        MatrixXd baseModeShape = mModeShapes[iBaseMode];
+        for (int j = 0; j != numCompareModes; ++j)
+        {
+            int iCompareMode = j;
+            MatrixXd compareModeShape = another.mModeShapes[iCompareMode];
+            tableMAC(i, j) = Utility::computeMAC(baseModeShape, compareModeShape, matches);
+        }
+    }
+
+    // Pair the modeshapes
+    PairingSet pairingSet = Utility::pairByMAC(tableMAC, minMAC);
+
+    // TODO
+
+    return result;
 }
 
 //! Read the files with geometry and modal solution located in the same directory
@@ -357,4 +392,21 @@ void Geometry::rotate(double angle, Direction direction)
     auto transformation = AngleAxisd(angle, axis);
     for (Vertex& vertex : vertices)
         vertex.position = transformation * vertex.position;
+}
+
+ModalComparison::ModalComparison()
+{
+}
+
+bool ModalComparison::isEmpty() const
+{
+    return absoluteErrorFrequencies.size() == 0;
+}
+
+void ModalComparison::resize(int numModes)
+{
+    absoluteErrorFrequencies.resize(numModes);
+    relativeErrorFrequencies.resize(numModes);
+    errorMAC.resize(numModes);
+    pairingTable.resize(numModes, 2);
 }

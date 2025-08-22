@@ -10,33 +10,54 @@ using namespace Backend;
 using namespace Backend::Core;
 using namespace KCL;
 
-QList<double> getStiffnessVector(KCL::SpringDamper const* pElement);
+QList<double> getStiffnessVector(SpringDamper const* pElement);
 
-OptimData::OptimData()
+ObjectiveFunctor::ObjectiveFunctor(OptimProblem const& problem, OptimOptions const& options, UnwrapFun unwrapFun, SolverFun solverFun)
+    : mProblem(problem)
+    , mOptions(options)
+    , mUnwrapFun(unwrapFun)
+    , mSolverFun(solverFun)
 {
 }
 
-bool OptimData::isEmpty() const
+//! Compute the residuals
+bool ObjectiveFunctor::operator()(double const* const* parameters, double* residuals) const
 {
-    return indices.size() == 0;
+    Model model = mUnwrapFun(*parameters);
+
+    // Obtain the solution
+    ModalSolution solution = mSolverFun(model);
+    if (solution.isEmpty())
+        return false;
+    ModalComparison comparison = mProblem.targetSolution.compare(solution, mProblem.targetIndices, mProblem.targetMatches, mOptions.minMAC);
+
+    return true;
 }
 
-bool OptimData::isValid() const
+OptimProblem::OptimProblem()
 {
-    int numModes = indices.size();
-    bool isSlice = numModes == weights.size() && numModes <= targetSolution.frequencies().size()
+}
+
+bool OptimProblem::isValid() const
+{
+    int numModes = targetIndices.size();
+    bool isSlice = numModes == targetWeights.size() && numModes <= targetSolution.frequencies().size()
                    && numModes <= targetSolution.modeShapes().size();
-    return !isEmpty() && isSlice;
+    return !model.isEmpty() && numModes > 0 && isSlice;
 }
 
-void OptimData::resize(int numModes)
+void OptimProblem::resize(int numModes)
 {
-    indices.resize(numModes);
-    weights.resize(numModes);
+    targetIndices.resize(numModes);
+    targetWeights.resize(numModes);
 }
 
 OptimOptions::OptimOptions()
-    : isExclusiveMAC(true)
+    : maxNumIterations(256)
+    , timeoutIteration(10.0)
+    , numThreads(1)
+    , diffStepSize(1.0e-6)
+    , minMAC(0)
     , penaltyMAC(20)
 {
 }
@@ -46,34 +67,75 @@ OptimSolver::OptimSolver()
 }
 
 //! Perform the updating
-void OptimSolver::solve(KCL::Model const& initModel, OptimData const& data, OptimOptions const& options)
+void OptimSolver::solve(OptimProblem const& problem, OptimOptions const& options)
 {
     // Check if the optimization data is valid
-    if (!data.isValid())
+    if (!problem.isValid())
     {
         qWarning() << QObject::tr("Optimization data is not valid");
         return;
     }
 
     // Initialize the fields
-    mInitModel = initModel;
-    mSelections = data.selector.allSelections();
-    mConstraints = data.constraints;
+    mInitModel = problem.model;
+    mSelections = problem.selector.allSelections();
+    mConstraints = problem.constraints;
 
     // Wrap the model
-    wrapModel();
+    QList<double> parameterValues = wrapModel();
+    int numParameters = parameterValues.size();
 
-    // Unwrap the model
-    KCL::Model model = unwrapModel();
+    // Create the auxiliary function
+    int numResiduals = problem.targetIndices.size();
+    UnwrapFun unwrapFun = [this, &numParameters](const double* const x)
+    {
+        QList<double> params(x, x + numParameters);
+        return unwrapModel(params);
+    };
+    SolverFun solverFun = [&options](Model const& model)
+    {
+        std::function<EigenSolution()> fun = [&model]() { return model.solveEigen(); };
+        return Utility::solve(fun, options.timeoutIteration);
+    };
+
+    // Assign options to compute Jacobian
+    ceres::NumericDiffOptions diffOptions;
+    diffOptions.relative_step_size = options.diffStepSize;
+
+    // Create the cost function
+    ObjectiveFunctor functor(problem, options, unwrapFun, solverFun);
+    auto* costFunction = new ceres::DynamicNumericDiffCostFunction<ObjectiveFunctor, ceres::FORWARD>(&functor, ceres::DO_NOT_TAKE_OWNERSHIP,
+                                                                                                     diffOptions);
+    costFunction->AddParameterBlock(numParameters);
+    costFunction->SetNumResiduals(numResiduals);
+
+    // Set the problem
+    ceres::Problem ceresProblem;
+    ceresProblem.AddResidualBlock(costFunction, nullptr, parameterValues.data());
+
+    // Assign the solver settings
+    ceres::Solver::Options ceresOptions;
+    ceresOptions.max_num_iterations = options.maxNumIterations;
+    ceresOptions.num_threads = options.numThreads;
+    ceresOptions.minimizer_type = ceres::TRUST_REGION;
+    ceresOptions.linear_solver_type = ceres::DENSE_QR;
+    ceresOptions.use_nonmonotonic_steps = true;
+    // ceresOptions.logging_type = ceres::SILENT;
+    // ceresOptions.minimizer_progress_to_stdout = false;
+
+    // Solve the problem
+    ceres::Solver::Summary ceresSummary;
+    ceres::Solve(ceresOptions, &ceresProblem, &ceresSummary);
 }
 
 //! Wrap the model parameters according to the constraints
-void OptimSolver::wrapModel()
+QList<double> OptimSolver::wrapModel()
 {
+    QList<double> parameterValues;
+
     // Clear the previous parameters
-    mParamValues.clear();
-    mParamScales.clear();
-    mParamBounds.clear();
+    mParameterScales.clear();
+    mParameterBounds.clear();
 
     // Obtain the selected elements
     auto surfaceElements = getSurfaceElements(mInitModel);
@@ -86,11 +148,11 @@ void OptimSolver::wrapModel()
         if (!surfaceElements.contains(iSurface))
             continue;
         ElementMap const& elementMap = surfaceElements[iSurface];
-        QList<KCL::ElementType> types = elementMap.keys();
+        QList<ElementType> types = elementMap.keys();
         int numTypes = types.size();
         for (int iType = 0; iType != numTypes; ++iType)
         {
-            KCL::ElementType type = types[iType];
+            ElementType type = types[iType];
             QList<AbstractElement*> const& elements = elementMap[type];
             if (elementVariables.contains(type))
             {
@@ -100,7 +162,7 @@ void OptimSolver::wrapModel()
                 {
                     auto variable = variables[iVariable];
                     MatrixXd properties = getProperties(elements, variable);
-                    wrapProperties(properties, variable);
+                    wrapProperties(parameterValues, properties, variable);
                 }
             }
         }
@@ -110,26 +172,27 @@ void OptimSolver::wrapModel()
     if (surfaceElements.contains(Constants::skISpecialSurface))
     {
         ElementMap elementMap = surfaceElements[Constants::skISpecialSurface];
-        if (elementMap.contains(KCL::PR))
+        if (elementMap.contains(PR))
         {
-            QList<AbstractElement*> const& elements = elementMap[KCL::PR];
+            QList<AbstractElement*> const& elements = elementMap[PR];
             int numElements = elements.size();
             for (int iElement = 0; iElement != numElements; ++iElement)
             {
                 SpringDamper* pElement = (SpringDamper*) elements[iElement];
                 QList<bool> mask;
                 MatrixXd properties = getProperties(pElement, mask);
-                wrapProperties(properties, VariableType::kSpringStiffness);
+                wrapProperties(parameterValues, properties, VariableType::kSpringStiffness);
             }
         }
     }
+    return parameterValues;
 }
 
 //! Unwrap the model parameters according to the constraints
-KCL::Model OptimSolver::unwrapModel()
+Model OptimSolver::unwrapModel(QList<double> const& parameterValues)
 {
     int iParameter = -1;
-    KCL::Model model = mInitModel;
+    Model model = mInitModel;
 
     // Obtain the selected elements
     auto surfaceElements = getSurfaceElements(model);
@@ -142,11 +205,11 @@ KCL::Model OptimSolver::unwrapModel()
         if (!surfaceElements.contains(iSurface))
             continue;
         ElementMap& elementMap = surfaceElements[iSurface];
-        QList<KCL::ElementType> types = elementMap.keys();
+        QList<ElementType> types = elementMap.keys();
         int numTypes = types.size();
         for (int iType = 0; iType != numTypes; ++iType)
         {
-            KCL::ElementType type = types[iType];
+            ElementType type = types[iType];
             QList<AbstractElement*>& elements = elementMap[type];
             if (elementVariables.contains(type))
             {
@@ -156,7 +219,7 @@ KCL::Model OptimSolver::unwrapModel()
                 {
                     auto variable = variables[iVariable];
                     MatrixXd initProperties = getProperties(elements, variable);
-                    MatrixXd properties = unwrapProperties(iParameter, initProperties, variable);
+                    MatrixXd properties = unwrapProperties(iParameter, parameterValues, initProperties, variable);
                     setProperties(properties, elements, variable);
                 }
             }
@@ -167,29 +230,29 @@ KCL::Model OptimSolver::unwrapModel()
     if (surfaceElements.contains(Constants::skISpecialSurface))
     {
         ElementMap elementMap = surfaceElements[Constants::skISpecialSurface];
-        if (elementMap.contains(KCL::PR))
+        if (elementMap.contains(PR))
         {
-            QList<AbstractElement*> const& elements = elementMap[KCL::PR];
+            QList<AbstractElement*> const& elements = elementMap[PR];
             int numElements = elements.size();
             for (int iElement = 0; iElement != numElements; ++iElement)
             {
                 SpringDamper* pElement = (SpringDamper*) elements[iElement];
                 QList<bool> mask;
                 MatrixXd initProperties = getProperties(pElement, mask);
-                MatrixXd properties = unwrapProperties(iParameter, initProperties, VariableType::kSpringStiffness);
+                MatrixXd properties = unwrapProperties(iParameter, parameterValues, initProperties, VariableType::kSpringStiffness);
                 setProperties(properties, pElement, mask);
             }
         }
     }
 
     // Check if all the parameters are processed
-    if (iParameter != mParamValues.size() - 1)
+    if (iParameter != parameterValues.size() - 1)
         qWarning() << QObject::tr("Some parameters were not unwrapped during updating. Check the results carefully");
     return model;
 }
 
 //! Retrieve element properties by indices
-MatrixXd OptimSolver::getProperties(QList<KCL::AbstractElement*> const& elements, VariableType type)
+MatrixXd OptimSolver::getProperties(QList<AbstractElement*> const& elements, VariableType type)
 {
     MatrixXd result;
     auto variableIndices = getVariableIndices();
@@ -210,7 +273,7 @@ MatrixXd OptimSolver::getProperties(QList<KCL::AbstractElement*> const& elements
 }
 
 //! Retrieve spring properties
-MatrixXd OptimSolver::getProperties(KCL::SpringDamper* pElement, QList<bool>& mask)
+MatrixXd OptimSolver::getProperties(SpringDamper* pElement, QList<bool>& mask)
 {
     MatrixXd result;
     VariableType type = VariableType::kSpringStiffness;
@@ -284,7 +347,7 @@ MatrixXd OptimSolver::getProperties(KCL::SpringDamper* pElement, QList<bool>& ma
 }
 
 //! Set element properties by indices
-void OptimSolver::setProperties(Eigen::MatrixXd const& properties, QList<KCL::AbstractElement*>& elements, VariableType type)
+void OptimSolver::setProperties(Eigen::MatrixXd const& properties, QList<AbstractElement*>& elements, VariableType type)
 {
     auto variableIndices = getVariableIndices();
     QList<int> indices = variableIndices[type];
@@ -300,9 +363,9 @@ void OptimSolver::setProperties(Eigen::MatrixXd const& properties, QList<KCL::Ab
 }
 
 //! Set spring properties by mask
-void OptimSolver::setProperties(Eigen::MatrixXd const& properties, KCL::SpringDamper* pElement, QList<bool> const& mask)
+void OptimSolver::setProperties(Eigen::MatrixXd const& properties, SpringDamper* pElement, QList<bool> const& mask)
 {
-    KCL::Mat6x6& stiffness = pElement->stiffness;
+    Mat6x6& stiffness = pElement->stiffness;
     int numMat = stiffness.size();
     int iSlice = 0;
     if (mask.size() == numMat)
@@ -318,24 +381,24 @@ void OptimSolver::setProperties(Eigen::MatrixXd const& properties, KCL::SpringDa
     }
     else
     {
-        int iMask = 0;
+        int k = 0;
         for (int i = 0; i != numMat; ++i)
         {
             for (int j = 0; j != numMat; ++j)
             {
-                if (mask[iMask])
+                if (mask[k])
                 {
                     stiffness[i][j] = properties(0, iSlice);
                     ++iSlice;
                 }
-                ++iMask;
+                ++k;
             }
         }
     }
 }
 
 //! Vectorize properties
-void OptimSolver::wrapProperties(Eigen::MatrixXd const& properties, VariableType type)
+void OptimSolver::wrapProperties(QList<double>& parameterValues, Eigen::MatrixXd const& properties, VariableType type)
 {
     // Check if there are any properties to vectorize
     if (properties.size() == 0)
@@ -344,6 +407,7 @@ void OptimSolver::wrapProperties(Eigen::MatrixXd const& properties, VariableType
     // Acquire the state and constraints
     bool isUnite = mConstraints.isUnited(type);
     bool isMultiply = mConstraints.isMultiplied(type);
+    bool isNonzero = mConstraints.isNonzero(type);
     double scale = mConstraints.scale(type);
     PairDouble limits = mConstraints.limits(type);
 
@@ -366,14 +430,16 @@ void OptimSolver::wrapProperties(Eigen::MatrixXd const& properties, VariableType
     }
     else
     {
-        values.resize(numRows * numCols);
-        int k = 0;
         for (int i = 0; i != numRows; ++i)
         {
             for (int j = 0; j != numCols; ++j)
             {
-                values[k] = properties(i, j);
-                ++k;
+                bool isInsert = true;
+                double value = properties(i, j);
+                if (isNonzero && std::abs(value) <= std::numeric_limits<double>::epsilon())
+                    isInsert = false;
+                if (isInsert)
+                    values.push_back(value);
             }
         }
     }
@@ -411,13 +477,13 @@ void OptimSolver::wrapProperties(Eigen::MatrixXd const& properties, VariableType
     }
 
     // Append the result
-    mParamValues = Utility::combine(mParamValues, values);
-    mParamScales = Utility::combine(mParamScales, scales);
-    mParamBounds = Utility::combine(mParamBounds, bounds);
+    parameterValues = Utility::combine(parameterValues, values);
+    mParameterScales = Utility::combine(mParameterScales, scales);
+    mParameterBounds = Utility::combine(mParameterBounds, bounds);
 }
 
 //! Unwrap properties from a vector
-MatrixXd OptimSolver::unwrapProperties(int& iParameter, MatrixXd const& initProperties, VariableType type)
+MatrixXd OptimSolver::unwrapProperties(int& iParameter, QList<double> const& parameterValues, MatrixXd const& initProperties, VariableType type)
 {
     MatrixXd properties = initProperties;
 
@@ -428,6 +494,7 @@ MatrixXd OptimSolver::unwrapProperties(int& iParameter, MatrixXd const& initProp
     // Acquire the state and constraints
     bool isUnite = mConstraints.isUnited(type);
     bool isMultiply = mConstraints.isMultiplied(type);
+    bool isNonzero = mConstraints.isNonzero(type);
 
     // Find the indices of maximum valies
     auto indices = Utility::rowIndicesAbsMax(properties);
@@ -443,8 +510,8 @@ MatrixXd OptimSolver::unwrapProperties(int& iParameter, MatrixXd const& initProp
         iEnd = iParameter + numValues;
         for (int i = 0; i != numValues; ++i)
         {
-            double scale = mParamScales[iStart + i];
-            double value = mParamValues[iStart + i];
+            double scale = mParameterScales[iStart + i];
+            double value = parameterValues[iStart + i];
             if (scale != 0)
                 value /= scale;
             else
@@ -457,8 +524,8 @@ MatrixXd OptimSolver::unwrapProperties(int& iParameter, MatrixXd const& initProp
     else if (isMultiply)
     {
         iEnd = iStart;
-        double scale = mParamScales[iEnd];
-        double value = mParamValues[iEnd];
+        double scale = mParameterScales[iEnd];
+        double value = parameterValues[iEnd];
         if (scale != 0)
             value /= scale;
         else
@@ -475,14 +542,20 @@ MatrixXd OptimSolver::unwrapProperties(int& iParameter, MatrixXd const& initProp
         {
             for (int j = 0; j != numCols; ++j)
             {
-                double scale = mParamScales[iStart + k];
-                double value = mParamValues[iStart + k];
-                if (scale != 0)
-                    value /= scale;
-                else
-                    value = std::pow(10, value);
-                properties(i, j) = value;
-                ++k;
+                bool isInsert = true;
+                if (isNonzero && std::abs(initProperties(i, j)) <= std::numeric_limits<double>::epsilon())
+                    isInsert = false;
+                if (isInsert)
+                {
+                    double scale = mParameterScales[iStart + k];
+                    double value = parameterValues[iStart + k];
+                    if (scale != 0)
+                        value /= scale;
+                    else
+                        value = std::pow(10, value);
+                    properties(i, j) = value;
+                    ++k;
+                }
             }
         }
     }
@@ -492,7 +565,7 @@ MatrixXd OptimSolver::unwrapProperties(int& iParameter, MatrixXd const& initProp
 }
 
 //! Retrieve surface elements
-QMap<int, ElementMap> OptimSolver::getSurfaceElements(KCL::Model& model)
+QMap<int, ElementMap> OptimSolver::getSurfaceElements(Model& model)
 {
     QMap<int, ElementMap> result;
     int numSelections = mSelections.size();
@@ -523,14 +596,14 @@ QMap<VariableType, QList<int>> OptimSolver::getVariableIndices()
 }
 
 //! Retrieve a group of variables associated with an element
-QMap<KCL::ElementType, QList<VariableType>> OptimSolver::getElementVariables()
+QMap<ElementType, QList<VariableType>> OptimSolver::getElementVariables()
 {
-    QMap<KCL::ElementType, QList<VariableType>> result;
-    result[KCL::BI] = {VariableType::kBeamStiffness};
-    result[KCL::DB] = {VariableType::kBeamStiffness};
-    result[KCL::BK] = {VariableType::kBeamStiffness};
-    result[KCL::PN] = {VariableType::kThickness, VariableType::kYoungsModulus1, VariableType::kPoissonRatio};
-    result[KCL::OP] = {VariableType::kThickness, VariableType::kYoungsModulus1, VariableType::kYoungsModulus2, VariableType::kShearModulus,
-                       VariableType::kPoissonRatio};
+    QMap<ElementType, QList<VariableType>> result;
+    result[BI] = {VariableType::kBeamStiffness};
+    result[DB] = {VariableType::kBeamStiffness};
+    result[BK] = {VariableType::kBeamStiffness};
+    result[PN] = {VariableType::kThickness, VariableType::kYoungsModulus1, VariableType::kPoissonRatio};
+    result[OP] = {VariableType::kThickness, VariableType::kYoungsModulus1, VariableType::kYoungsModulus2, VariableType::kShearModulus,
+                  VariableType::kPoissonRatio};
     return result;
 }

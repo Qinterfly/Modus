@@ -6,6 +6,8 @@
 #include <QDir>
 #include <QList>
 
+#include "aliasdata.h"
+
 namespace Backend::Core
 {
 
@@ -45,6 +47,20 @@ struct Geometry
     Eigen::MatrixXi quadrangles;
 };
 
+struct ModalComparison
+{
+    ModalComparison();
+    ~ModalComparison() = default;
+
+    bool isEmpty() const;
+    void resize(int numModes);
+
+    Eigen::VectorXd absoluteErrorFrequencies;
+    Eigen::VectorXd relativeErrorFrequencies;
+    Eigen::VectorXd errorMAC;
+    Eigen::MatrixXi pairingTable;
+};
+
 class ModalSolution
 {
 public:
@@ -53,11 +69,13 @@ public:
     ModalSolution(KCL::EigenSolution const& solution);
     ~ModalSolution() = default;
 
+    int numVertices() const;
     int numModes() const;
     bool isEmpty() const;
     Geometry const& geometry() const;
     Eigen::VectorXd const& frequencies() const;
     QList<Eigen::MatrixXd> const& modeShapes() const;
+    ModalComparison compare(ModalSolution const& another, Eigen::VectorXi const& indices, Matches const& matches, double minMAC) const;
 
     void read(QDir const& directory);
     void readGeometry(QString const& pathFile);

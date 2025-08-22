@@ -14,7 +14,7 @@ namespace Backend::Core
 struct Configuration
 {
     QString name;
-    OptimData data;
+    OptimProblem problem;
     OptimOptions options;
 };
 

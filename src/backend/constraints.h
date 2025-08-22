@@ -3,10 +3,10 @@
 
 #include <QMap>
 
+#include "aliasdata.h"
+
 namespace Backend::Core
 {
-
-using PairDouble = QPair<double, double>;
 
 //! Types of variables to be used for updating
 enum class VariableType
