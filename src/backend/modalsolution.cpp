@@ -10,6 +10,8 @@ using namespace Backend;
 using namespace Backend::Core;
 using namespace Eigen;
 
+double const skDummy = std::nan("");
+
 ModalSolution::ModalSolution()
 {
 }
@@ -100,9 +102,23 @@ ModalComparison ModalSolution::compare(ModalSolution const& another, VectorXi co
     }
 
     // Pair the modeshapes
-    PairingSet pairingSet = Utility::pairByMAC(tableMAC, minMAC);
+    result.resize(numBaseModes);
+    result.pairs = Utility::pairByMAC(tableMAC, minMAC);
 
-    // TODO
+    // Compute the errors
+    for (int i = 0; i != numBaseModes; ++i)
+    {
+        int iBaseMode = indices[i];
+        int iCompareMode = result.pairs[i].first;
+        if (iCompareMode >= 0)
+        {
+            double baseFrequency = mFrequencies[iBaseMode];
+            double compareFrequency = another.mFrequencies[iCompareMode];
+            result.errorFrequencies[i] = compareFrequency - baseFrequency;
+            result.relErrorFrequencies[i] = result.errorFrequencies[i] / baseFrequency;
+            result.errorsMAC[i] = 1.0 - result.pairs[i].second;
+        }
+    }
 
     return result;
 }
@@ -177,7 +193,6 @@ void ModalSolution::readGeometry(QString const& pathFile)
 //! Read the file which contains several modesets
 void ModalSolution::readModesets(QString const& pathFile)
 {
-    double const kDummy = std::nan("0");
     QMap<QString, Direction> const kMapDirections = {{"X", Direction::kX}, {"Y", Direction::kY}, {"Z", Direction::kZ}};
 
     QFile file(pathFile);
@@ -223,7 +238,7 @@ void ModalSolution::readModesets(QString const& pathFile)
         // Read the modeshape data
         MatrixXd& modeShape = mModeShapes[iMode];
         modeShape.resize(numVertices, Constants::skNumDirections);
-        modeShape.fill(kDummy);
+        modeShape.fill(skDummy);
         for (int iDOF = 0; iDOF != numDOFs; ++iDOF)
         {
             // Parse the vertex name
@@ -400,13 +415,31 @@ ModalComparison::ModalComparison()
 
 bool ModalComparison::isEmpty() const
 {
-    return absoluteErrorFrequencies.size() == 0;
+    return errorFrequencies.size() == 0;
 }
 
+bool ModalComparison::isValid() const
+{
+    int numModes = errorFrequencies.size();
+    for (int i = 0; i != numModes; ++i)
+    {
+        if (std::isnan(errorFrequencies[i]) || std::isnan(relErrorFrequencies[i]) || std::isnan(errorsMAC[i]))
+            return false;
+    }
+    return true;
+}
+
+//! Allocate the modal
 void ModalComparison::resize(int numModes)
 {
-    absoluteErrorFrequencies.resize(numModes);
-    relativeErrorFrequencies.resize(numModes);
-    errorMAC.resize(numModes);
-    pairingTable.resize(numModes, 2);
+    // Allocate
+    errorFrequencies.resize(numModes);
+    relErrorFrequencies.resize(numModes);
+    errorsMAC.resize(numModes);
+    pairs.resize(numModes);
+    // Initialize
+    errorFrequencies.fill(skDummy);
+    relErrorFrequencies.fill(skDummy);
+    errorsMAC.fill(skDummy);
+    pairs.fill({-1, skDummy});
 }

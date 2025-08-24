@@ -106,20 +106,21 @@ void TestBackend::testUpdateSimpleWing()
     problem.model = model;
     SelectionSet& set = problem.selector.add(model, "main");
     set.selectAll();
-    set.setSelected(KCL::BI, false);
-    set.setSelected(KCL::DB, false);
-    set.setSelected(KCL::BK, false);
-    set.setSelected(KCL::PR, true);
+    set.setSelected(KCL::BI, true);
+    set.setSelected(KCL::DB, true);
+    set.setSelected(KCL::BK, true);
+    set.setSelected(KCL::PR, false);
 
     // Set the objectives
     ModalSolution solution(eigenSolution);
     Eigen::VectorXd targetFrequencies = solution.frequencies();
     problem.resize(numModes);
-    problem.indices.setLinSpaced(0, numModes - 1);
-    problem.weights.setOnes();
+    problem.targetIndices.setLinSpaced(0, numModes - 1);
+    problem.targetWeights.setOnes();
     for (double& value : targetFrequencies)
         value *= 1.0 + generateDouble({-error, error});
     problem.targetSolution = ModalSolution(solution.geometry(), targetFrequencies, solution.modeShapes());
+    problem.fillMatches();
 
     // Start the solver
     OptimOptions& options = config.options;

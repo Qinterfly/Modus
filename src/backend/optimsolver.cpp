@@ -29,7 +29,16 @@ bool ObjectiveFunctor::operator()(double const* const* parameters, double* resid
     ModalSolution solution = mSolverFun(model);
     if (solution.isEmpty())
         return false;
+
+    // Compare the solution with the target one
     ModalComparison comparison = mProblem.targetSolution.compare(solution, mProblem.targetIndices, mProblem.targetMatches, mOptions.minMAC);
+    if (!comparison.isValid())
+        return false;
+
+    // Set the residuals
+    int numTargets = mProblem.targetIndices.size();
+    for (int i = 0; i != numTargets; ++i)
+        residuals[i] = comparison.relErrorFrequencies[i] + mOptions.penaltyMAC * comparison.errorsMAC[i];
 
     return true;
 }
@@ -50,6 +59,20 @@ void OptimProblem::resize(int numModes)
 {
     targetIndices.resize(numModes);
     targetWeights.resize(numModes);
+}
+
+//! Pair all the vertices automatically
+void OptimProblem::fillMatches()
+{
+    if (targetSolution.isEmpty())
+    {
+        qWarning() << QObject::tr("Could not fill the matches because the target solution has not been set");
+        return;
+    }
+    int numVertices = targetSolution.numVertices();
+    targetMatches.resize(numVertices);
+    for (int i = 0; i != numVertices; ++i)
+        targetMatches[i] = {i, i};
 }
 
 OptimOptions::OptimOptions()
@@ -121,7 +144,7 @@ void OptimSolver::solve(OptimProblem const& problem, OptimOptions const& options
     ceresOptions.linear_solver_type = ceres::DENSE_QR;
     ceresOptions.use_nonmonotonic_steps = true;
     // ceresOptions.logging_type = ceres::SILENT;
-    // ceresOptions.minimizer_progress_to_stdout = false;
+    ceresOptions.minimizer_progress_to_stdout = true;
 
     // Solve the problem
     ceres::Solver::Summary ceresSummary;

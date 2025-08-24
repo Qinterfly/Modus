@@ -28,6 +28,7 @@ struct OptimProblem
 
     bool isValid() const;
     void resize(int numModes);
+    void fillMatches();
 
     //! Model to be updated
     KCL::Model model;

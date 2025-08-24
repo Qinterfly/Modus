@@ -153,11 +153,11 @@ double computeMAC(MatrixXd const& first, MatrixXd const& second, Core::Matches c
 }
 
 //! Pair the modesets by indices of the modeshapes that maximize the MAC-criterion
-Core::PairingSet pairByMAC(MatrixXd const& MAC, double threshold)
+Core::ModalPairs pairByMAC(MatrixXd const& MAC, double threshold)
 {
     uint numRows = MAC.rows();
     uint numCols = MAC.cols();
-    Core::PairingSet result(numRows, {-1, 0});
+    Core::ModalPairs result(numRows, {-1, std::nan("")});
     QList<bool> mask(numCols, true);
     for (uint iRow = 0; iRow != numRows; ++iRow)
     {

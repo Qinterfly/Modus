@@ -53,12 +53,13 @@ struct ModalComparison
     ~ModalComparison() = default;
 
     bool isEmpty() const;
+    bool isValid() const;
     void resize(int numModes);
 
-    Eigen::VectorXd absoluteErrorFrequencies;
-    Eigen::VectorXd relativeErrorFrequencies;
-    Eigen::VectorXd errorMAC;
-    Eigen::MatrixXi pairingTable;
+    Eigen::VectorXd errorFrequencies;
+    Eigen::VectorXd relErrorFrequencies;
+    Eigen::VectorXd errorsMAC;
+    ModalPairs pairs;
 };
 
 class ModalSolution

@@ -9,7 +9,7 @@ namespace Backend::Core
 using PairInt = QPair<int, int>;
 using PairDouble = QPair<double, double>;
 using Matches = QList<PairInt>;
-using PairingSet = QList<QPair<int, double>>;
+using ModalPairs = QList<QPair<int, double>>;
 }
 
 #endif // ALIASDATA_H
