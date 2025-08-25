@@ -38,11 +38,17 @@ bool ObjectiveFunctor::operator()(double const* const* parameters, double* resid
 
     // Set the residuals
     int numTargets = mProblem.targetIndices.size();
+    int iResidual = 0;
     for (int i = 0; i != numTargets; ++i)
     {
         double errorFrequency = comparison.errorFrequencies[i];
         double errorMAC = comparison.errorsMAC[i];
-        residuals[i] = std::pow(errorFrequency, 2.0) + mOptions.penaltyMAC * std::pow(errorMAC, 2.0);
+        double weight = mProblem.targetWeights[i];
+        if (weight > std::numeric_limits<double>::epsilon())
+        {
+            residuals[iResidual] = weight * (std::pow(errorFrequency, 2.0) + mOptions.penaltyMAC * std::pow(errorMAC, 2.0));
+            ++iResidual;
+        }
     }
 
     return true;
@@ -67,12 +73,12 @@ ceres::CallbackReturnType OptimCallback::operator()(ceres::IterationSummary cons
 
     // Obtain the solution
     Model model = mUnwrapFun(mParameterValues.data());
-    ModalSolution solution = mSolverFun(model);
-    if (solution.isEmpty())
+    ModalSolution modalSolution = mSolverFun(model);
+    if (modalSolution.isEmpty())
         return ceres::SOLVER_CONTINUE;
 
     // Compare the solution with the target one
-    ModalComparison comparison = mProblem.targetSolution.compare(solution, mProblem.targetIndices, mProblem.targetMatches, mOptions.minMAC);
+    ModalComparison comparison = mProblem.targetSolution.compare(modalSolution, mProblem.targetIndices, mProblem.targetMatches, mOptions.minMAC);
     if (!comparison.isValid())
         return ceres::SOLVER_CONTINUE;
 
@@ -96,17 +102,35 @@ ceres::CallbackReturnType OptimCallback::operator()(ceres::IterationSummary cons
         int iCurrentMode = comparison.pairs[i].first;
         double MAC = comparison.pairs[i].second;
         double targetFrequency = mProblem.targetSolution.frequencies()[i];
-        double currentFrequency = solution.frequencies()[iCurrentMode];
+        double currentFrequency = modalSolution.frequencies()[iCurrentMode];
         double error = comparison.errorFrequencies[i] * 100;
+        double weight = mProblem.targetWeights[i];
         maxError = std::max(maxError, std::abs(error));
-        stream << std::format(dataFormat, 1 + iTargetMode, 1 + iCurrentMode, MAC, currentFrequency, targetFrequency, error).c_str() << Qt::endl;
+        stream << std::format(dataFormat, 1 + iTargetMode, 1 + iCurrentMode, MAC, currentFrequency, targetFrequency, error).c_str();
+        if (weight < std::numeric_limits<double>::epsilon())
+            stream << std::format("{:^10}", "skip").c_str();
+        stream << Qt::endl;
     }
 
-    std::cout << message.toStdString() << std::endl;
+    // Indicate that the iteration is finished
+    OptimSolution solution;
+    solution.iteration = summary.iteration;
+    solution.isSuccess = summary.step_is_successful;
+    solution.duration = summary.iteration_time_in_seconds;
+    solution.cost = summary.cost;
+    solution.model = model;
+    solution.modalSolution = modalSolution;
+    solution.comparison = comparison;
+    emit iterationFinished(solution);
+    emit log(message);
 
     if (maxError < mOptions.maxRelError)
         return ceres::SOLVER_TERMINATE_SUCCESSFULLY;
     return ceres::SOLVER_CONTINUE;
+}
+
+OptimSolution::OptimSolution()
+{
 }
 
 OptimProblem::OptimProblem()
@@ -145,9 +169,9 @@ OptimOptions::OptimOptions()
     : maxNumIterations(256)
     , timeoutIteration(10.0)
     , numThreads(1)
-    , diffStepSize(1.0e-6)
+    , diffStepSize(1.0e-5)
     , minMAC(0)
-    , penaltyMAC(10)
+    , penaltyMAC(0.1)
     , maxRelError(1e-3)
 {
 }
@@ -157,13 +181,17 @@ OptimSolver::OptimSolver()
 }
 
 //! Perform the updating
-void OptimSolver::solve(OptimProblem const& problem, OptimOptions const& options)
+QList<OptimSolution> OptimSolver::solve(OptimProblem const& problem, OptimOptions const& options)
 {
+    // Intialize the resulting set
+    QList<OptimSolution> solutions;
+    solutions.reserve(options.maxNumIterations);
+
     // Check if the optimization data is valid
     if (!problem.isValid())
     {
         qWarning() << QObject::tr("Optimization data is not valid");
-        return;
+        return solutions;
     }
 
     // Initialize the fields
@@ -175,8 +203,15 @@ void OptimSolver::solve(OptimProblem const& problem, OptimOptions const& options
     QList<double> parameterValues = wrapModel();
     int numParameters = parameterValues.size();
 
+    // Count the number of residuals
+    int numResiduals = 0;
+    for (auto weight : problem.targetWeights)
+    {
+        if (weight > std::numeric_limits<double>::epsilon())
+            ++numResiduals;
+    }
+
     // Create the auxiliary function
-    int numResiduals = problem.targetIndices.size();
     UnwrapFun unwrapFun = [this, &numParameters](const double* const x)
     {
         QList<double> params(x, x + numParameters);
@@ -217,10 +252,27 @@ void OptimSolver::solve(OptimProblem const& problem, OptimOptions const& options
     ceresOptions.update_state_every_iteration = true;
     OptimCallback callback(parameterValues, problem, options, unwrapFun, solverFun);
     ceresOptions.callbacks.push_back(&callback);
+    connect(&callback, &OptimCallback::iterationFinished, this,
+            [this, &solutions](OptimSolution solution)
+            {
+                solutions.push_back(solution);
+                emit iterationFinished(solution);
+            });
 
     // Solve the problem
     ceres::Solver::Summary ceresSummary;
     ceres::Solve(ceresOptions, &ceresProblem, &ceresSummary);
+    if (!solutions.empty())
+    {
+        auto lastSolution = solutions.back();
+        lastSolution.isSuccess = ceresSummary.IsSolutionUsable();
+        lastSolution.message = ceresSummary.message.c_str();
+    }
+
+    // Log the report
+    printReport(ceresSummary);
+
+    return solutions;
 }
 
 //! Wrap the model parameters according to the constraints
@@ -657,6 +709,20 @@ MatrixXd OptimSolver::unwrapProperties(int& iParameter, QList<double> const& par
     iParameter = iEnd;
 
     return properties;
+}
+
+//! Output the report to log
+void OptimSolver::printReport(ceres::Solver::Summary const& summary)
+{
+    QString message;
+    QTextStream stream(&message);
+    stream << tr("Ceres Solver Report") << Qt::endl;
+    stream << tr("* Iterations:   %1").arg(summary.iterations.size()) << Qt::endl;
+    stream << tr("* Initial cost: %1").arg(QString::number(summary.initial_cost, 'e', 3)) << Qt::endl;
+    stream << tr("* Final cost:   %1").arg(QString::number(summary.final_cost, 'e', 3)) << Qt::endl;
+    stream << tr("* Duration:     %1 s").arg(QString::number(summary.total_time_in_seconds, 'f', 3)) << Qt::endl;
+    stream << tr("* Termination:  %1").arg(ceres::TerminationTypeToString(summary.termination_type)) << Qt::endl;
+    emit log(message);
 }
 
 //! Retrieve surface elements

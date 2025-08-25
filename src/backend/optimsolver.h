@@ -21,6 +21,21 @@ using UnwrapFun = std::function<KCL::Model(const double* const)>;
 using SolverFun = std::function<KCL::EigenSolution(KCL::Model const&)>;
 using ElementMap = QMap<KCL::ElementType, QList<KCL::AbstractElement*>>;
 
+struct OptimSolution
+{
+    OptimSolution();
+    ~OptimSolution() = default;
+
+    int iteration;
+    bool isSuccess;
+    double duration;
+    double cost;
+    KCL::Model model;
+    ModalSolution modalSolution;
+    ModalComparison comparison;
+    QString message;
+};
+
 struct OptimProblem
 {
     OptimProblem();
@@ -79,13 +94,19 @@ struct OptimOptions
     double maxRelError;
 };
 
-class OptimSolver
+class OptimSolver : public QObject
 {
+    Q_OBJECT
+
 public:
     OptimSolver();
     ~OptimSolver() = default;
 
-    void solve(OptimProblem const& problem, OptimOptions const& options);
+    QList<OptimSolution> solve(OptimProblem const& problem, OptimOptions const& options);
+
+signals:
+    void iterationFinished(Backend::Core::OptimSolution solution);
+    void log(QString message);
 
 private:
     QList<double> wrapModel();
@@ -97,6 +118,7 @@ private:
     void wrapProperties(QList<double>& parameterValues, Eigen::MatrixXd const& properties, VariableType type);
     Eigen::MatrixXd unwrapProperties(int& iParameter, QList<double> const& parameterValues, Eigen::MatrixXd const& initProperties,
                                      VariableType type);
+    void printReport(ceres::Solver::Summary const& summary);
     QMap<int, ElementMap> getSurfaceElements(KCL::Model& model);
     QMap<VariableType, QList<int>> getVariableIndices();
     QMap<KCL::ElementType, QList<VariableType>> getElementVariables();
@@ -125,11 +147,17 @@ private:
 };
 
 //! Functor to be called after every optimization iteration
-class OptimCallback : public ceres::IterationCallback
+class OptimCallback : public QObject, public ceres::IterationCallback
 {
+    Q_OBJECT
+
 public:
     OptimCallback(QList<double>& parameters, OptimProblem const& problem, OptimOptions const& options, UnwrapFun unwrapFun, SolverFun solverFun);
     ceres::CallbackReturnType operator()(ceres::IterationSummary const& summary);
+
+signals:
+    void iterationFinished(Backend::Core::OptimSolution solution);
+    void log(QString message);
 
 private:
     QList<double>& mParameterValues;

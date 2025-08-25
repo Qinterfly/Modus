@@ -90,7 +90,7 @@ void TestBackend::testUpdateSimpleWing()
 {
     Example const example = Example::simpleWing;
     int numModes = 3;
-    double error = 0.05;
+    double error = 0.01;
 
     // Slice the subproject
     Subproject& subproject = mProject.subprojects()[example];
@@ -111,13 +111,10 @@ void TestBackend::testUpdateSimpleWing()
     set.setSelected(KCL::BK, true);
     set.setSelected(KCL::PR, true);
 
-    // Set the constraints
-    // constraints.setAllMultiplied(true);
-
     // Set the options
     config.options.diffStepSize = 1e-5;
     config.options.maxRelError = 1e-1;
-    config.options.penaltyMAC = 0.0;
+    config.options.penaltyMAC = 0;
 
     // Set the objectives
     ModalSolution solution(eigenSolution);
