@@ -113,9 +113,11 @@ ModalComparison ModalSolution::compare(ModalSolution const& another, VectorXi co
         if (iCompareMode >= 0)
         {
             double baseFrequency = mFrequencies[iBaseMode];
+            if (std::abs(baseFrequency) < std::numeric_limits<double>::epsilon())
+                continue;
             double compareFrequency = another.mFrequencies[iCompareMode];
-            result.errorFrequencies[i] = compareFrequency - baseFrequency;
-            result.relErrorFrequencies[i] = result.errorFrequencies[i] / baseFrequency;
+            result.diffFrequencies[i] = compareFrequency - baseFrequency;
+            result.errorFrequencies[i] = result.diffFrequencies[i] / baseFrequency;
             result.errorsMAC[i] = 1.0 - result.pairs[i].second;
         }
     }
@@ -423,7 +425,7 @@ bool ModalComparison::isValid() const
     int numModes = errorFrequencies.size();
     for (int i = 0; i != numModes; ++i)
     {
-        if (std::isnan(errorFrequencies[i]) || std::isnan(relErrorFrequencies[i]) || std::isnan(errorsMAC[i]))
+        if (std::isnan(diffFrequencies[i]) || std::isnan(errorFrequencies[i]) || std::isnan(errorsMAC[i]))
             return false;
     }
     return true;
@@ -433,13 +435,13 @@ bool ModalComparison::isValid() const
 void ModalComparison::resize(int numModes)
 {
     // Allocate
+    diffFrequencies.resize(numModes);
     errorFrequencies.resize(numModes);
-    relErrorFrequencies.resize(numModes);
     errorsMAC.resize(numModes);
     pairs.resize(numModes);
     // Initialize
+    diffFrequencies.fill(skDummy);
     errorFrequencies.fill(skDummy);
-    relErrorFrequencies.fill(skDummy);
     errorsMAC.fill(skDummy);
     pairs.fill({-1, skDummy});
 }

@@ -74,6 +74,9 @@ struct OptimOptions
 
     //! Residual MAC penalty
     double penaltyMAC;
+
+    //! Maximum relative errors in frequencies
+    double maxRelError;
 };
 
 class OptimSolver
@@ -115,6 +118,21 @@ public:
     bool operator()(double const* const* parameters, double* residuals) const;
 
 private:
+    OptimProblem const& mProblem;
+    OptimOptions const& mOptions;
+    UnwrapFun mUnwrapFun;
+    SolverFun mSolverFun;
+};
+
+//! Functor to be called after every optimization iteration
+class OptimCallback : public ceres::IterationCallback
+{
+public:
+    OptimCallback(QList<double>& parameters, OptimProblem const& problem, OptimOptions const& options, UnwrapFun unwrapFun, SolverFun solverFun);
+    ceres::CallbackReturnType operator()(ceres::IterationSummary const& summary);
+
+private:
+    QList<double>& mParameterValues;
     OptimProblem const& mProblem;
     OptimOptions const& mOptions;
     UnwrapFun mUnwrapFun;

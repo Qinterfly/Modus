@@ -56,8 +56,8 @@ struct ModalComparison
     bool isValid() const;
     void resize(int numModes);
 
+    Eigen::VectorXd diffFrequencies;
     Eigen::VectorXd errorFrequencies;
-    Eigen::VectorXd relErrorFrequencies;
     Eigen::VectorXd errorsMAC;
     ModalPairs pairs;
 };

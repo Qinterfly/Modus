@@ -43,6 +43,7 @@ public:
     void setAllUnited(bool flag);
     void setAllMultiplied(bool flag);
     void setAllNonzero(bool flag);
+    void setAllScale(double value);
 
     void setEnabled(VariableType type, bool flag);
     void setUnited(VariableType type, bool flag);

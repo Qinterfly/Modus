@@ -102,6 +102,14 @@ void Constraints::setAllNonzero(bool flag)
         setNonzero(key, flag);
 }
 
+//! Set scale of all the variables
+void Constraints::setAllScale(double value)
+{
+    QList<VariableType> const keys = types();
+    for (VariableType key : keys)
+        setScale(key, value);
+}
+
 //! Enable the variable for updating
 void Constraints::setEnabled(VariableType type, bool flag)
 {

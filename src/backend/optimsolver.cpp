@@ -1,6 +1,7 @@
 #include <kcl/model.h>
 #include <QDebug>
 #include <QObject>
+#include <QThread>
 
 #include "constants.h"
 #include "mathutility.h"
@@ -38,9 +39,74 @@ bool ObjectiveFunctor::operator()(double const* const* parameters, double* resid
     // Set the residuals
     int numTargets = mProblem.targetIndices.size();
     for (int i = 0; i != numTargets; ++i)
-        residuals[i] = comparison.relErrorFrequencies[i] + mOptions.penaltyMAC * comparison.errorsMAC[i];
+    {
+        double errorFrequency = comparison.errorFrequencies[i];
+        double errorMAC = comparison.errorsMAC[i];
+        residuals[i] = std::pow(errorFrequency, 2.0) + mOptions.penaltyMAC * std::pow(errorMAC, 2.0);
+    }
 
     return true;
+}
+
+OptimCallback::OptimCallback(QList<double>& parameterValues, OptimProblem const& problem, OptimOptions const& options, UnwrapFun unwrapFun,
+                             SolverFun solverFun)
+    : mParameterValues(parameterValues)
+    , mProblem(problem)
+    , mOptions(options)
+    , mUnwrapFun(unwrapFun)
+    , mSolverFun(solverFun)
+{
+}
+
+//! Display the iteration information
+ceres::CallbackReturnType OptimCallback::operator()(ceres::IterationSummary const& summary)
+{
+    // Check if the user requested to stop the solver
+    if (QThread::currentThread()->isInterruptionRequested())
+        return ceres::SOLVER_ABORT;
+
+    // Obtain the solution
+    Model model = mUnwrapFun(mParameterValues.data());
+    ModalSolution solution = mSolverFun(model);
+    if (solution.isEmpty())
+        return ceres::SOLVER_CONTINUE;
+
+    // Compare the solution with the target one
+    ModalComparison comparison = mProblem.targetSolution.compare(solution, mProblem.targetIndices, mProblem.targetMatches, mOptions.minMAC);
+    if (!comparison.isValid())
+        return ceres::SOLVER_CONTINUE;
+
+    // Print the header
+    QString message;
+    QTextStream stream(&message);
+    if (summary.iteration == 0)
+        stream << std::format("{:^8} {:>6} {:>11} {:>10} {:>10}", "Iter", "Fun", "Diff", "Grad", "Step").c_str() << Qt::endl;
+    auto constexpr headFormat = "{:^7d} {:10.3e} {:10.3e} {:10.3e} {:10.3e}";
+    stream << std::format(headFormat, summary.iteration, summary.cost, summary.cost_change, summary.gradient_max_norm, summary.step_norm).c_str();
+    stream << Qt::endl;
+    stream << QTime::currentTime().toString() << Qt::endl << Qt::endl;
+
+    // Print the data
+    int numTargets = mProblem.targetIndices.size();
+    auto constexpr dataFormat = "  {:^3d} {:^3d} {:^9.3f} {:^6.3g} {:^6.3g} {:10.2e}";
+    double maxError = 0;
+    for (int i = 0; i != numTargets; ++i)
+    {
+        int iTargetMode = mProblem.targetIndices[i];
+        int iCurrentMode = comparison.pairs[i].first;
+        double MAC = comparison.pairs[i].second;
+        double targetFrequency = mProblem.targetSolution.frequencies()[i];
+        double currentFrequency = solution.frequencies()[iCurrentMode];
+        double error = comparison.errorFrequencies[i] * 100;
+        maxError = std::max(maxError, std::abs(error));
+        stream << std::format(dataFormat, 1 + iTargetMode, 1 + iCurrentMode, MAC, currentFrequency, targetFrequency, error).c_str() << Qt::endl;
+    }
+
+    std::cout << message.toStdString() << std::endl;
+
+    if (maxError < mOptions.maxRelError)
+        return ceres::SOLVER_TERMINATE_SUCCESSFULLY;
+    return ceres::SOLVER_CONTINUE;
 }
 
 OptimProblem::OptimProblem()
@@ -81,7 +147,8 @@ OptimOptions::OptimOptions()
     , numThreads(1)
     , diffStepSize(1.0e-6)
     , minMAC(0)
-    , penaltyMAC(20)
+    , penaltyMAC(10)
+    , maxRelError(1e-3)
 {
 }
 
@@ -143,8 +210,13 @@ void OptimSolver::solve(OptimProblem const& problem, OptimOptions const& options
     ceresOptions.minimizer_type = ceres::TRUST_REGION;
     ceresOptions.linear_solver_type = ceres::DENSE_QR;
     ceresOptions.use_nonmonotonic_steps = true;
-    // ceresOptions.logging_type = ceres::SILENT;
-    ceresOptions.minimizer_progress_to_stdout = true;
+    ceresOptions.logging_type = ceres::SILENT;
+    ceresOptions.minimizer_progress_to_stdout = false;
+
+    // Set the callback functions
+    ceresOptions.update_state_every_iteration = true;
+    OptimCallback callback(parameterValues, problem, options, unwrapFun, solverFun);
+    ceresOptions.callbacks.push_back(&callback);
 
     // Solve the problem
     ceres::Solver::Summary ceresSummary;
