@@ -130,7 +130,8 @@ void TestBackend::testUpdateSimpleWing()
     // Start the solver
     OptimOptions& options = config.options;
     OptimSolver solver;
-    solver.solve(problem, options);
+    connect(&solver, &OptimSolver::log, [](QString message) { std::cout << message.toStdString() << std::endl; });
+    auto solutions = solver.solve(problem, options);
 }
 
 //! Generate a bounded double value

@@ -251,20 +251,21 @@ QList<OptimSolution> OptimSolver::solve(OptimProblem const& problem, OptimOption
     // Set the callback functions
     ceresOptions.update_state_every_iteration = true;
     OptimCallback callback(parameterValues, problem, options, unwrapFun, solverFun);
-    ceresOptions.callbacks.push_back(&callback);
     connect(&callback, &OptimCallback::iterationFinished, this,
             [this, &solutions](OptimSolution solution)
             {
                 solutions.push_back(solution);
                 emit iterationFinished(solution);
             });
+    connect(&callback, &OptimCallback::log, this, &OptimSolver::log);
+    ceresOptions.callbacks.push_back(&callback);
 
     // Solve the problem
     ceres::Solver::Summary ceresSummary;
     ceres::Solve(ceresOptions, &ceresProblem, &ceresSummary);
     if (!solutions.empty())
     {
-        auto lastSolution = solutions.back();
+        OptimSolution& lastSolution = solutions.back();
         lastSolution.isSuccess = ceresSummary.IsSolutionUsable();
         lastSolution.message = ceresSummary.message.c_str();
     }
