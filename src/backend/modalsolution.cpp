@@ -271,6 +271,27 @@ void ModalSolution::readModesets(QString const& pathFile)
     }
 }
 
+bool ModalSolution::operator==(ModalSolution const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+bool ModalSolution::operator!=(ModalSolution const& another) const
+{
+    return !(*this == another);
+}
+
+//! Output modal solution to a XML stream
+void ModalSolution::serialize(QXmlStreamWriter& stream) const
+{
+    // TODO
+}
+
+//! Read modal solution from a XML stream
+void ModalSolution::deserialize(QXmlStreamWriter& stream)
+{
+    // TODO
+}
+
 //! Reallocate the data fields
 void ModalSolution::resize(int numDOFs, int numModes)
 {
@@ -374,6 +395,64 @@ QList<Slave> ModalSolution::readSlaves(QTextStream& stream, QMap<QString, int> c
     return result;
 }
 
+Vertex::Vertex()
+{
+    position.fill(0.0);
+}
+
+bool Vertex::operator==(Vertex const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+
+bool Vertex::operator!=(Vertex const& another) const
+{
+    return !(*this == another);
+}
+
+//! Output vertex to a XML stream
+void Vertex::serialize(QXmlStreamWriter& stream) const
+{
+    stream.writeStartElement("vertex");
+    // TODO
+    stream.writeEndElement();
+}
+
+//! Read vertex from a XML stream
+void Vertex::deserialize(QXmlStreamWriter& stream)
+{
+    // TODO
+}
+
+Slave::Slave()
+    : slaveIndex(-1)
+{
+}
+
+bool Slave::operator==(Slave const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+
+bool Slave::operator!=(Slave const& another) const
+{
+    return !(*this == another);
+}
+
+//! Output slave to a XML stream
+void Slave::serialize(QXmlStreamWriter& stream) const
+{
+    stream.writeStartElement("slave");
+    // TODO
+    stream.writeEndElement();
+}
+
+//! Read slave from a XML stream
+void Slave::deserialize(QXmlStreamWriter& stream)
+{
+    // TODO
+}
+
 Geometry::Geometry()
 {
 }
@@ -411,6 +490,28 @@ void Geometry::rotate(double angle, Direction direction)
         vertex.position = transformation * vertex.position;
 }
 
+bool Geometry::operator==(Geometry const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+
+bool Geometry::operator!=(Geometry const& another) const
+{
+    return !(*this == another);
+}
+
+//! Output geometry to a XML stream
+void Geometry::serialize(QXmlStreamWriter& stream) const
+{
+    // TODO
+}
+
+//! Read geometry from a XML stream
+void Geometry::deserialize(QXmlStreamWriter& stream)
+{
+    // TODO
+}
+
 ModalComparison::ModalComparison()
 {
 }
@@ -444,4 +545,26 @@ void ModalComparison::resize(int numModes)
     errorFrequencies.fill(skDummy);
     errorsMAC.fill(skDummy);
     pairs.fill({-1, skDummy});
+}
+
+bool ModalComparison::operator==(ModalComparison const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+
+bool ModalComparison::operator!=(ModalComparison const& another) const
+{
+    return !(*this == another);
+}
+
+//! Output modal comparison to a XML stream
+void ModalComparison::serialize(QXmlStreamWriter& stream) const
+{
+    // TODO
+}
+
+//! Read modal comparison from a XML stream
+void ModalComparison::deserialize(QXmlStreamWriter& stream)
+{
+    // TODO
 }

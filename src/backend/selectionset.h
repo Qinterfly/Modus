@@ -4,7 +4,10 @@
 #include <kcl/element.h>
 #include <QList>
 #include <QMap>
+#include <QMetaObject>
 #include <QString>
+
+#include "iserializable.h"
 
 namespace KCL
 {
@@ -21,8 +24,12 @@ struct Selection;
  * 
  * By default none of entities are selected 
  */
-class SelectionSet
+class SelectionSet : public ISerializable
 {
+    Q_GADGET
+    Q_PROPERTY(QString name MEMBER mName)
+    Q_PROPERTY(QMap<Selection, bool> dataSet MEMBER mDataSet)
+
 public:
     SelectionSet();
     SelectionSet(KCL::Model const& model, QString const& name);
@@ -42,6 +49,12 @@ public:
     void setSelected(int iSurface, KCL::ElementType type, bool flag);
     void update(KCL::Model const& model);
 
+    bool operator==(SelectionSet const& another) const;
+    bool operator!=(SelectionSet const& another) const;
+
+    void serialize(QXmlStreamWriter& stream) const override;
+    void deserialize(QXmlStreamWriter& stream) override;
+
 private:
     void reset(KCL::Model const& model);
 
@@ -51,18 +64,28 @@ private:
 };
 
 //! Selection information associated with an element
-struct Selection
+struct Selection : public ISerializable
 {
+    Q_GADGET
+    Q_PROPERTY(int iSurface MEMBER iSurface)
+    Q_PROPERTY(KCL::ElementType type MEMBER type)
+    Q_PROPERTY(int iElement MEMBER iElement)
+
+public:
     Selection();
     ~Selection() = default;
 
     bool isValid() const;
 
     bool operator==(Selection const& another) const;
+    bool operator!=(Selection const& another) const;
     bool operator<(Selection const& another) const;
     bool operator>(Selection const& another) const;
     bool operator<=(Selection const& another) const;
     bool operator>=(Selection const& another) const;
+
+    void serialize(QXmlStreamWriter& stream) const override;
+    void deserialize(QXmlStreamWriter& stream) override;
 
     int iSurface;
     KCL::ElementType type;

@@ -30,6 +30,7 @@ private slots:
     void testLoadModalSolution();
     void testSelector();
     void testUpdateSimpleWing();
+    void testWriteProject();
 
 private:
     double generateDouble(QPair<double, double> const& limits);

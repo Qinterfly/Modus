@@ -1,8 +1,10 @@
 #include <magicenum/magic_enum.hpp>
 #include <QDebug>
 #include <QObject>
+#include <QXmlStreamWriter>
 
 #include "constraints.h"
+#include "fileutility.h"
 
 using namespace Backend::Core;
 
@@ -27,6 +29,26 @@ Constraints::Constraints()
     setDefaultNonzero();
     setDefaultScales();
     setDefaultLimits();
+}
+
+bool Constraints::operator==(Constraints const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+bool Constraints::operator!=(Constraints const& another) const
+{
+    return !(*this == another);
+}
+
+void Constraints::serialize(QXmlStreamWriter& stream) const
+{
+    stream.writeStartElement("constraints");
+    // TODO
+    stream.writeEndElement();
+}
+void Constraints::deserialize(QXmlStreamWriter& stream)
+{
+    // TODO
 }
 
 bool Constraints::isEnabled(VariableType type) const

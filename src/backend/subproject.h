@@ -5,21 +5,41 @@
 #include <QString>
 
 #include "identifier.h"
+#include "iserializable.h"
 #include "optimsolver.h"
 #include "selector.h"
 
 namespace Backend::Core
 {
 
-struct Configuration
+struct Configuration : public ISerializable
 {
+    Q_GADGET
+    Q_PROPERTY(QString name MEMBER name)
+    Q_PROPERTY(OptimProblem problem MEMBER problem)
+    Q_PROPERTY(OptimOptions options MEMBER options)
+
+public:
+    Configuration();
+    ~Configuration() = default;
+
+    bool operator==(Configuration const& another) const;
+    bool operator!=(Configuration const& another) const;
+
+    void serialize(QXmlStreamWriter& stream) const override;
+    void deserialize(QXmlStreamWriter& stream) override;
+
     QString name;
     OptimProblem problem;
     OptimOptions options;
 };
 
-class Subproject : public Identifier
+class Subproject : public Identifier, public ISerializable
 {
+    Q_GADGET
+    Q_PROPERTY(Configuration configuration MEMBER mConfiguration)
+    Q_PROPERTY(KCL::Model model MEMBER mModel)
+
 public:
     Subproject();
     Subproject(QString const& name);
@@ -31,6 +51,12 @@ public:
 
     Configuration& configuration();
     KCL::Model& model();
+
+    bool operator==(Subproject const& another) const;
+    bool operator!=(Subproject const& another) const;
+
+    void serialize(QXmlStreamWriter& stream) const override;
+    void deserialize(QXmlStreamWriter& stream) override;
 
 private:
     Configuration mConfiguration;

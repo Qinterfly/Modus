@@ -11,6 +11,12 @@ namespace Backend::Core
 
 class Project : public Identifier
 {
+    Q_GADGET
+    Q_PROPERTY(QUuid id MEMBER mID)
+    Q_PROPERTY(QString name MEMBER mName)
+    Q_PROPERTY(QString pathFile MEMBER mPathFile)
+    Q_PROPERTY(QList<Subproject> subprojects MEMBER mSubprojects)
+
 public:
     Project();
     ~Project() = default;
@@ -24,10 +30,14 @@ public:
     void addSubproject(Subproject const& subproject);
     void removeSubproject(QUuid const& id);
     void setSubprojects(QList<Subproject> const& subprojects);
+    void clear();
 
     int numSubprojects() const;
     bool isEmpty() const;
     static QString fileSuffix();
+
+    bool read(QString const& pathFile);
+    bool write(QString const& pathFile);
 
 private:
     QString mName;

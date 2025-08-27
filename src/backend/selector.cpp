@@ -1,7 +1,9 @@
 #include <kcl/model.h>
 #include <QDebug>
 #include <QObject>
+#include <QXmlStreamWriter>
 
+#include "fileutility.h"
 #include "selector.h"
 
 using namespace Backend::Core;
@@ -116,4 +118,28 @@ int Selector::numSets() const
 bool Selector::isEmpty() const
 {
     return numSets() == 0;
+}
+
+bool Selector::operator==(Selector const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+
+bool Selector::operator!=(Selector const& another) const
+{
+    return !(*this == another);
+}
+
+//! Output selector to a XML stream
+void Selector::serialize(QXmlStreamWriter& stream) const
+{
+    stream.writeStartElement("selector");
+    // TODO
+    stream.writeEndElement();
+}
+
+//! Read selector from a XML stream
+void Selector::deserialize(QXmlStreamWriter& stream)
+{
+    // TODO
 }

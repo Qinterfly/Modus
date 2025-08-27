@@ -1,6 +1,33 @@
 #include "subproject.h"
+#include "fileutility.h"
 
 using namespace Backend::Core;
+
+Configuration::Configuration()
+{
+}
+
+bool Configuration::operator==(Configuration const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+
+bool Configuration::operator!=(Configuration const& another) const
+{
+    return !(*this == another);
+}
+
+//! Output configuration to a XML stream
+void Configuration::serialize(QXmlStreamWriter& stream) const
+{
+    // TODO
+}
+
+//! Read configuration from a XML stream
+void Configuration::deserialize(QXmlStreamWriter& stream)
+{
+    // TODO
+}
 
 Subproject::Subproject()
 {
@@ -34,4 +61,29 @@ Configuration& Subproject::configuration()
 KCL::Model& Subproject::model()
 {
     return mModel;
+}
+
+bool Subproject::operator==(Subproject const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+
+bool Subproject::operator!=(Subproject const& another) const
+{
+    return !(*this == another);
+}
+
+//! Output subproject to a XML stream
+void Subproject::serialize(QXmlStreamWriter& stream) const
+{
+    stream.writeStartElement("subproject");
+    mConfiguration.serialize(stream);
+    Utility::serialize(stream, mModel);
+    stream.writeEndElement();
+}
+
+//! Read subproject from a XML stream
+void Subproject::deserialize(QXmlStreamWriter& stream)
+{
+    // TODO
 }

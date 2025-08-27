@@ -21,10 +21,27 @@ using UnwrapFun = std::function<KCL::Model(const double* const)>;
 using SolverFun = std::function<KCL::EigenSolution(KCL::Model const&)>;
 using ElementMap = QMap<KCL::ElementType, QList<KCL::AbstractElement*>>;
 
-struct OptimSolution
+struct OptimSolution : public ISerializable
 {
+    Q_GADGET
+    Q_PROPERTY(int iteration MEMBER iteration)
+    Q_PROPERTY(bool isSuccess MEMBER isSuccess)
+    Q_PROPERTY(double duration MEMBER duration)
+    Q_PROPERTY(double cost MEMBER cost)
+    Q_PROPERTY(KCL::Model model MEMBER model)
+    Q_PROPERTY(ModalSolution modalSolution MEMBER modalSolution)
+    Q_PROPERTY(ModalComparison comparison MEMBER comparison)
+    Q_PROPERTY(QString message MEMBER message)
+
+public:
     OptimSolution();
     ~OptimSolution() = default;
+
+    bool operator==(OptimSolution const& another) const;
+    bool operator!=(OptimSolution const& another) const;
+
+    void serialize(QXmlStreamWriter& stream) const override;
+    void deserialize(QXmlStreamWriter& stream) override;
 
     int iteration;
     bool isSuccess;
@@ -36,14 +53,30 @@ struct OptimSolution
     QString message;
 };
 
-struct OptimProblem
+struct OptimProblem : public ISerializable
 {
+    Q_GADGET
+    Q_PROPERTY(KCL::Model model MEMBER model)
+    Q_PROPERTY(Eigen::VectorXi targetIndices MEMBER targetIndices)
+    Q_PROPERTY(Eigen::VectorXd targetWeights MEMBER targetWeights)
+    Q_PROPERTY(ModalSolution targetSolution MEMBER targetSolution)
+    Q_PROPERTY(Matches targetMatches MEMBER targetMatches)
+    Q_PROPERTY(Selector selector MEMBER selector)
+    Q_PROPERTY(Constraints constraints MEMBER constraints)
+
+public:
     OptimProblem();
     ~OptimProblem() = default;
 
     bool isValid() const;
     void resize(int numModes);
     void fillMatches();
+
+    bool operator==(OptimProblem const& another) const;
+    bool operator!=(OptimProblem const& another) const;
+
+    void serialize(QXmlStreamWriter& stream) const override;
+    void deserialize(QXmlStreamWriter& stream) override;
 
     //! Model to be updated
     KCL::Model model;
@@ -67,10 +100,26 @@ struct OptimProblem
     Constraints constraints;
 };
 
-struct OptimOptions
+struct OptimOptions : public ISerializable
 {
+    Q_GADGET
+    Q_PROPERTY(int maxNumIterations MEMBER maxNumIterations)
+    Q_PROPERTY(double timeoutIteration MEMBER timeoutIteration)
+    Q_PROPERTY(int numThreads MEMBER numThreads)
+    Q_PROPERTY(double diffStepSize MEMBER diffStepSize)
+    Q_PROPERTY(double minMAC MEMBER minMAC)
+    Q_PROPERTY(double penaltyMAC MEMBER penaltyMAC)
+    Q_PROPERTY(double maxRelError MEMBER maxRelError)
+
+public:
     OptimOptions();
     ~OptimOptions() = default;
+
+    bool operator==(OptimOptions const& another) const;
+    bool operator!=(OptimOptions const& another) const;
+
+    void serialize(QXmlStreamWriter& stream) const override;
+    void deserialize(QXmlStreamWriter& stream) override;
 
     //! Maximum number of iterations of optimization process
     int maxNumIterations;

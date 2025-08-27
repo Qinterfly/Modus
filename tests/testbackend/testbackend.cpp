@@ -28,7 +28,7 @@ void TestBackend::testLoadModels()
     {
         QString exampleName = magic_enum::enum_name(key).data();
         QString inPathFile = Utility::combineFilePath(EXAMPLES_DIR, value + ".dat");
-        QString outPathFile = Utility::combineFilePath(TEMP_DIR, value + ".txt");
+        QString outPathFile = Utility::combineFilePath(TEMPORARY_DIR, value + ".txt");
         Model model(inPathFile.toStdString());
         model.write(outPathFile.toStdString());
         QVERIFY(!model.isEmpty());
@@ -132,6 +132,16 @@ void TestBackend::testUpdateSimpleWing()
     OptimSolver solver;
     connect(&solver, &OptimSolver::log, [](QString message) { std::cout << message.toStdString() << std::endl; });
     auto solutions = solver.solve(problem, options);
+    QVERIFY(!solution.isEmpty());
+    QVERIFY(solutions.last().isSuccess);
+}
+
+//! Write a project consisted of several subprojects to a file
+void TestBackend::testWriteProject()
+{
+    QString fileName = QString("test.%1").arg(Project::fileSuffix());
+    QString pathFile = Utility::combineFilePath(TEMPORARY_DIR, fileName);
+    mProject.write(pathFile);
 }
 
 //! Generate a bounded double value

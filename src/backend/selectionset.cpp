@@ -2,6 +2,7 @@
 #include <QMap>
 
 #include "constants.h"
+#include "fileutility.h"
 #include "selectionset.h"
 
 using namespace Backend;
@@ -172,6 +173,30 @@ void SelectionSet::update(KCL::Model const& model)
     }
 }
 
+bool SelectionSet::operator==(SelectionSet const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+
+bool SelectionSet::operator!=(SelectionSet const& another) const
+{
+    return !(*this == another);
+}
+
+//! Output selection set to a XML stream
+void SelectionSet::serialize(QXmlStreamWriter& stream) const
+{
+    stream.writeStartElement("selectionSet");
+    // TODO
+    stream.writeEndElement();
+}
+
+//! Readselection set from a XML stream
+void SelectionSet::deserialize(QXmlStreamWriter& stream)
+{
+    // TODO
+}
+
 Selection::Selection()
     : iSurface(-1)
     , type(KCL::ElementType::OD)
@@ -187,6 +212,11 @@ bool Selection::isValid() const
 bool Selection::operator==(Selection const& another) const
 {
     return std::tie(iSurface, type, iElement) == std::tie(another.iSurface, another.type, another.iElement);
+}
+
+bool Selection::operator!=(Selection const& another) const
+{
+    return !(*this == another);
 }
 
 bool Selection::operator<(Selection const& another) const
@@ -207,4 +237,18 @@ bool Selection::operator<=(Selection const& another) const
 bool Selection::operator>=(Selection const& another) const
 {
     return *this > another || *this == another;
+}
+
+//! Output selection to a XML stream
+void Selection::serialize(QXmlStreamWriter& stream) const
+{
+    stream.writeStartElement("selection");
+    // TODO
+    stream.writeEndElement();
+}
+
+//! Read selection from a XML stream
+void Selection::deserialize(QXmlStreamWriter& stream)
+{
+    // TODO
 }

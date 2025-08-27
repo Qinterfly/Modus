@@ -2,8 +2,10 @@
 #define CONSTRAINTS_H
 
 #include <QMap>
+#include <QMetaType>
 
 #include "aliasdata.h"
+#include "iserializable.h"
 
 namespace Backend::Core
 {
@@ -23,12 +25,30 @@ enum class VariableType
     kSpringStiffness
 };
 
+using VariableFlags = QMap<VariableType, bool>;
+using VariableValues = QMap<VariableType, double>;
+using VariableLimits = QMap<VariableType, PairDouble>;
+
 //! Updating constraints applied to variables
-class Constraints
+class Constraints : public ISerializable
 {
+    Q_GADGET
+    Q_PROPERTY(VariableFlags enabledState MEMBER mEnabledState)
+    Q_PROPERTY(VariableFlags unitedState MEMBER mUnitedState)
+    Q_PROPERTY(VariableFlags multipliedState MEMBER mMultipliedState)
+    Q_PROPERTY(VariableFlags nonzeroState MEMBER mNonzeroState)
+    Q_PROPERTY(VariableValues scales MEMBER mScales)
+    Q_PROPERTY(VariableLimits limits MEMBER mLimits)
+
 public:
     Constraints();
     ~Constraints() = default;
+
+    bool operator==(Constraints const& another) const;
+    bool operator!=(Constraints const& another) const;
+
+    void serialize(QXmlStreamWriter& stream) const override;
+    void deserialize(QXmlStreamWriter& stream) override;
 
     static QList<VariableType> types();
 
@@ -61,12 +81,12 @@ private:
     void setDefaultLimits();
 
 private:
-    QMap<VariableType, bool> mEnabledState;
-    QMap<VariableType, bool> mUnitedState;
-    QMap<VariableType, bool> mMultipliedState;
-    QMap<VariableType, bool> mNonzeroState;
-    QMap<VariableType, double> mScales;
-    QMap<VariableType, PairDouble> mLimits;
+    VariableFlags mEnabledState;
+    VariableFlags mUnitedState;
+    VariableFlags mMultipliedState;
+    VariableFlags mNonzeroState;
+    VariableValues mScales;
+    VariableLimits mLimits;
 };
 
 }

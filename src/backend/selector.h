@@ -14,8 +14,11 @@ namespace Backend::Core
 {
 
 //! Class to handle selection sets of a model
-class Selector
+class Selector : public ISerializable
 {
+    Q_GADGET
+    Q_PROPERTY(QList<Backend::Core::SelectionSet> sets MEMBER mSets)
+
 public:
     Selector();
     ~Selector() = default;
@@ -35,6 +38,12 @@ public:
     bool contains(QString const& name) const;
     int numSets() const;
     bool isEmpty() const;
+
+    bool operator==(Selector const& another) const;
+    bool operator!=(Selector const& another) const;
+
+    void serialize(QXmlStreamWriter& stream) const override;
+    void deserialize(QXmlStreamWriter& stream) override;
 
 private:
     QList<Backend::Core::SelectionSet> mSets;

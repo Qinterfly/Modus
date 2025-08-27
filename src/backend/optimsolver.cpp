@@ -2,8 +2,10 @@
 #include <QDebug>
 #include <QObject>
 #include <QThread>
+#include <QXmlStreamWriter>
 
 #include "constants.h"
+#include "fileutility.h"
 #include "mathutility.h"
 #include "optimsolver.h"
 
@@ -133,6 +135,29 @@ OptimSolution::OptimSolution()
 {
 }
 
+bool OptimSolution::operator==(OptimSolution const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+bool OptimSolution::operator!=(OptimSolution const& another) const
+{
+    return !(*this == another);
+}
+
+//! Output solution to a XML stream
+void OptimSolution::serialize(QXmlStreamWriter& stream) const
+{
+    stream.writeStartElement("optimSolution");
+    // TODO
+    stream.writeEndElement();
+}
+
+//! Read solution from a XML stream
+void OptimSolution::deserialize(QXmlStreamWriter& stream)
+{
+    // TODO
+}
+
 OptimProblem::OptimProblem()
 {
 }
@@ -165,6 +190,29 @@ void OptimProblem::fillMatches()
         targetMatches[i] = {i, i};
 }
 
+bool OptimProblem::operator==(OptimProblem const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+
+bool OptimProblem::operator!=(OptimProblem const& another) const
+{
+    return !(*this == another);
+}
+
+//! Output problem to a XML stream
+void OptimProblem::serialize(QXmlStreamWriter& stream) const
+{
+    stream.writeStartElement("problem");
+    // TODO
+    stream.writeEndElement();
+}
+
+//! Read problem from a XML stream
+void OptimProblem::deserialize(QXmlStreamWriter& stream)
+{
+}
+
 OptimOptions::OptimOptions()
     : maxNumIterations(256)
     , timeoutIteration(10.0)
@@ -173,6 +221,29 @@ OptimOptions::OptimOptions()
     , minMAC(0)
     , penaltyMAC(0.1)
     , maxRelError(1e-3)
+{
+}
+
+bool OptimOptions::operator==(OptimOptions const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+
+bool OptimOptions::operator!=(OptimOptions const& another) const
+{
+    return !(*this == another);
+}
+
+//! Output options to a XML stream
+void OptimOptions::serialize(QXmlStreamWriter& stream) const
+{
+    stream.writeStartElement("options");
+    // TODO
+    stream.writeEndElement();
+}
+
+//! Read options from a XML stream
+void OptimOptions::deserialize(QXmlStreamWriter& stream)
 {
 }
 
