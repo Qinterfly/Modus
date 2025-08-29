@@ -187,7 +187,7 @@ bool SelectionSet::operator!=(SelectionSet const& another) const
 void SelectionSet::serialize(QXmlStreamWriter& stream) const
 {
     stream.writeStartElement("selectionSet");
-    // TODO
+    Utility::serialize(stream, *this);
     stream.writeEndElement();
 }
 
@@ -243,7 +243,7 @@ bool Selection::operator>=(Selection const& another) const
 void Selection::serialize(QXmlStreamWriter& stream) const
 {
     stream.writeStartElement("selection");
-    // TODO
+    Utility::serialize(stream, *this);
     stream.writeEndElement();
 }
 

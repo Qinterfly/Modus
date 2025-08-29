@@ -43,7 +43,7 @@ bool Constraints::operator!=(Constraints const& another) const
 void Constraints::serialize(QXmlStreamWriter& stream) const
 {
     stream.writeStartElement("constraints");
-    // TODO
+    Utility::serialize(stream, *this);
     stream.writeEndElement();
 }
 void Constraints::deserialize(QXmlStreamWriter& stream)

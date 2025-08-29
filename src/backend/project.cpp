@@ -99,9 +99,6 @@ bool Project::write(const QString& pathFile)
 
     // Write the data
     Utility::serialize(stream, *this);
-    int numSubprojects = mSubprojects.size();
-    for (int i = 0; i != numSubprojects; ++i)
-        mSubprojects[i].serialize(stream);
 
     // Close the file
     stream.writeEndElement();

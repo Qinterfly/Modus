@@ -283,7 +283,9 @@ bool ModalSolution::operator!=(ModalSolution const& another) const
 //! Output modal solution to a XML stream
 void ModalSolution::serialize(QXmlStreamWriter& stream) const
 {
-    // TODO
+    stream.writeStartElement("modalSolution");
+    Utility::serialize(stream, *this);
+    stream.writeEndElement();
 }
 
 //! Read modal solution from a XML stream
@@ -414,7 +416,7 @@ bool Vertex::operator!=(Vertex const& another) const
 void Vertex::serialize(QXmlStreamWriter& stream) const
 {
     stream.writeStartElement("vertex");
-    // TODO
+    Utility::serialize(stream, *this);
     stream.writeEndElement();
 }
 
@@ -443,7 +445,7 @@ bool Slave::operator!=(Slave const& another) const
 void Slave::serialize(QXmlStreamWriter& stream) const
 {
     stream.writeStartElement("slave");
-    // TODO
+    Utility::serialize(stream, *this);
     stream.writeEndElement();
 }
 
@@ -503,7 +505,9 @@ bool Geometry::operator!=(Geometry const& another) const
 //! Output geometry to a XML stream
 void Geometry::serialize(QXmlStreamWriter& stream) const
 {
-    // TODO
+    stream.writeStartElement("geometry");
+    Utility::serialize(stream, *this);
+    stream.writeEndElement();
 }
 
 //! Read geometry from a XML stream
@@ -560,7 +564,9 @@ bool ModalComparison::operator!=(ModalComparison const& another) const
 //! Output modal comparison to a XML stream
 void ModalComparison::serialize(QXmlStreamWriter& stream) const
 {
-    // TODO
+    stream.writeStartElement("modalComparison");
+    Utility::serialize(stream, *this);
+    stream.writeEndElement();
 }
 
 //! Read modal comparison from a XML stream

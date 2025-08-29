@@ -20,7 +20,9 @@ bool Configuration::operator!=(Configuration const& another) const
 //! Output configuration to a XML stream
 void Configuration::serialize(QXmlStreamWriter& stream) const
 {
-    // TODO
+    stream.writeStartElement("configuration");
+    Utility::serialize(stream, *this);
+    stream.writeEndElement();
 }
 
 //! Read configuration from a XML stream
@@ -77,8 +79,7 @@ bool Subproject::operator!=(Subproject const& another) const
 void Subproject::serialize(QXmlStreamWriter& stream) const
 {
     stream.writeStartElement("subproject");
-    mConfiguration.serialize(stream);
-    Utility::serialize(stream, mModel);
+    Utility::serialize(stream, *this);
     stream.writeEndElement();
 }
 

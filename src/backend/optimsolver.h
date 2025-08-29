@@ -21,38 +21,6 @@ using UnwrapFun = std::function<KCL::Model(const double* const)>;
 using SolverFun = std::function<KCL::EigenSolution(KCL::Model const&)>;
 using ElementMap = QMap<KCL::ElementType, QList<KCL::AbstractElement*>>;
 
-struct OptimSolution : public ISerializable
-{
-    Q_GADGET
-    Q_PROPERTY(int iteration MEMBER iteration)
-    Q_PROPERTY(bool isSuccess MEMBER isSuccess)
-    Q_PROPERTY(double duration MEMBER duration)
-    Q_PROPERTY(double cost MEMBER cost)
-    Q_PROPERTY(KCL::Model model MEMBER model)
-    Q_PROPERTY(ModalSolution modalSolution MEMBER modalSolution)
-    Q_PROPERTY(ModalComparison comparison MEMBER comparison)
-    Q_PROPERTY(QString message MEMBER message)
-
-public:
-    OptimSolution();
-    ~OptimSolution() = default;
-
-    bool operator==(OptimSolution const& another) const;
-    bool operator!=(OptimSolution const& another) const;
-
-    void serialize(QXmlStreamWriter& stream) const override;
-    void deserialize(QXmlStreamWriter& stream) override;
-
-    int iteration;
-    bool isSuccess;
-    double duration;
-    double cost;
-    KCL::Model model;
-    ModalSolution modalSolution;
-    ModalComparison comparison;
-    QString message;
-};
-
 struct OptimProblem : public ISerializable
 {
     Q_GADGET
@@ -141,6 +109,38 @@ public:
 
     //! Maximum relative errors in frequencies
     double maxRelError;
+};
+
+struct OptimSolution : public ISerializable
+{
+    Q_GADGET
+    Q_PROPERTY(int iteration MEMBER iteration)
+    Q_PROPERTY(bool isSuccess MEMBER isSuccess)
+    Q_PROPERTY(double duration MEMBER duration)
+    Q_PROPERTY(double cost MEMBER cost)
+    Q_PROPERTY(KCL::Model model MEMBER model)
+    Q_PROPERTY(ModalSolution modalSolution MEMBER modalSolution)
+    Q_PROPERTY(ModalComparison modalComparison MEMBER modalComparison)
+    Q_PROPERTY(QString message MEMBER message)
+
+public:
+    OptimSolution();
+    ~OptimSolution() = default;
+
+    bool operator==(OptimSolution const& another) const;
+    bool operator!=(OptimSolution const& another) const;
+
+    void serialize(QXmlStreamWriter& stream) const override;
+    void deserialize(QXmlStreamWriter& stream) override;
+
+    int iteration;
+    bool isSuccess;
+    double duration;
+    double cost;
+    KCL::Model model;
+    ModalSolution modalSolution;
+    ModalComparison modalComparison;
+    QString message;
 };
 
 class OptimSolver : public QObject

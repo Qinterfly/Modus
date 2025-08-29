@@ -134,7 +134,7 @@ bool Selector::operator!=(Selector const& another) const
 void Selector::serialize(QXmlStreamWriter& stream) const
 {
     stream.writeStartElement("selector");
-    // TODO
+    Utility::serialize(stream, *this);
     stream.writeEndElement();
 }
 

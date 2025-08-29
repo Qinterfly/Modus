@@ -80,8 +80,9 @@ ceres::CallbackReturnType OptimCallback::operator()(ceres::IterationSummary cons
         return ceres::SOLVER_CONTINUE;
 
     // Compare the solution with the target one
-    ModalComparison comparison = mProblem.targetSolution.compare(modalSolution, mProblem.targetIndices, mProblem.targetMatches, mOptions.minMAC);
-    if (!comparison.isValid())
+    ModalComparison modalComparison = mProblem.targetSolution.compare(modalSolution, mProblem.targetIndices, mProblem.targetMatches,
+                                                                      mOptions.minMAC);
+    if (!modalComparison.isValid())
         return ceres::SOLVER_CONTINUE;
 
     // Print the header
@@ -101,11 +102,11 @@ ceres::CallbackReturnType OptimCallback::operator()(ceres::IterationSummary cons
     for (int i = 0; i != numTargets; ++i)
     {
         int iTargetMode = mProblem.targetIndices[i];
-        int iCurrentMode = comparison.pairs[i].first;
-        double MAC = comparison.pairs[i].second;
+        int iCurrentMode = modalComparison.pairs[i].first;
+        double MAC = modalComparison.pairs[i].second;
         double targetFrequency = mProblem.targetSolution.frequencies()[i];
         double currentFrequency = modalSolution.frequencies()[iCurrentMode];
-        double error = comparison.errorFrequencies[i] * 100;
+        double error = modalComparison.errorFrequencies[i] * 100;
         double weight = mProblem.targetWeights[i];
         maxError = std::max(maxError, std::abs(error));
         stream << std::format(dataFormat, 1 + iTargetMode, 1 + iCurrentMode, MAC, currentFrequency, targetFrequency, error).c_str();
@@ -122,129 +123,13 @@ ceres::CallbackReturnType OptimCallback::operator()(ceres::IterationSummary cons
     solution.cost = summary.cost;
     solution.model = model;
     solution.modalSolution = modalSolution;
-    solution.comparison = comparison;
+    solution.modalComparison = modalComparison;
     emit iterationFinished(solution);
     emit log(message);
 
     if (maxError < mOptions.maxRelError)
         return ceres::SOLVER_TERMINATE_SUCCESSFULLY;
     return ceres::SOLVER_CONTINUE;
-}
-
-OptimSolution::OptimSolution()
-{
-}
-
-bool OptimSolution::operator==(OptimSolution const& another) const
-{
-    return Utility::areEqual(*this, another);
-}
-bool OptimSolution::operator!=(OptimSolution const& another) const
-{
-    return !(*this == another);
-}
-
-//! Output solution to a XML stream
-void OptimSolution::serialize(QXmlStreamWriter& stream) const
-{
-    stream.writeStartElement("optimSolution");
-    // TODO
-    stream.writeEndElement();
-}
-
-//! Read solution from a XML stream
-void OptimSolution::deserialize(QXmlStreamWriter& stream)
-{
-    // TODO
-}
-
-OptimProblem::OptimProblem()
-{
-}
-
-bool OptimProblem::isValid() const
-{
-    int numModes = targetIndices.size();
-    bool isSlice = numModes == targetWeights.size() && numModes <= targetSolution.frequencies().size()
-                   && numModes <= targetSolution.modeShapes().size();
-    return !model.isEmpty() && numModes > 0 && isSlice;
-}
-
-void OptimProblem::resize(int numModes)
-{
-    targetIndices.resize(numModes);
-    targetWeights.resize(numModes);
-}
-
-//! Pair all the vertices automatically
-void OptimProblem::fillMatches()
-{
-    if (targetSolution.isEmpty())
-    {
-        qWarning() << QObject::tr("Could not fill the matches because the target solution has not been set");
-        return;
-    }
-    int numVertices = targetSolution.numVertices();
-    targetMatches.resize(numVertices);
-    for (int i = 0; i != numVertices; ++i)
-        targetMatches[i] = {i, i};
-}
-
-bool OptimProblem::operator==(OptimProblem const& another) const
-{
-    return Utility::areEqual(*this, another);
-}
-
-bool OptimProblem::operator!=(OptimProblem const& another) const
-{
-    return !(*this == another);
-}
-
-//! Output problem to a XML stream
-void OptimProblem::serialize(QXmlStreamWriter& stream) const
-{
-    stream.writeStartElement("problem");
-    // TODO
-    stream.writeEndElement();
-}
-
-//! Read problem from a XML stream
-void OptimProblem::deserialize(QXmlStreamWriter& stream)
-{
-}
-
-OptimOptions::OptimOptions()
-    : maxNumIterations(256)
-    , timeoutIteration(10.0)
-    , numThreads(1)
-    , diffStepSize(1.0e-5)
-    , minMAC(0)
-    , penaltyMAC(0.1)
-    , maxRelError(1e-3)
-{
-}
-
-bool OptimOptions::operator==(OptimOptions const& another) const
-{
-    return Utility::areEqual(*this, another);
-}
-
-bool OptimOptions::operator!=(OptimOptions const& another) const
-{
-    return !(*this == another);
-}
-
-//! Output options to a XML stream
-void OptimOptions::serialize(QXmlStreamWriter& stream) const
-{
-    stream.writeStartElement("options");
-    // TODO
-    stream.writeEndElement();
-}
-
-//! Read options from a XML stream
-void OptimOptions::deserialize(QXmlStreamWriter& stream)
-{
 }
 
 OptimSolver::OptimSolver()
@@ -839,4 +724,120 @@ QMap<ElementType, QList<VariableType>> OptimSolver::getElementVariables()
     result[OP] = {VariableType::kThickness, VariableType::kYoungsModulus1, VariableType::kYoungsModulus2, VariableType::kShearModulus,
                   VariableType::kPoissonRatio};
     return result;
+}
+
+OptimProblem::OptimProblem()
+{
+}
+
+bool OptimProblem::isValid() const
+{
+    int numModes = targetIndices.size();
+    bool isSlice = numModes == targetWeights.size() && numModes <= targetSolution.frequencies().size()
+                   && numModes <= targetSolution.modeShapes().size();
+    return !model.isEmpty() && numModes > 0 && isSlice;
+}
+
+void OptimProblem::resize(int numModes)
+{
+    targetIndices.resize(numModes);
+    targetWeights.resize(numModes);
+}
+
+//! Pair all the vertices automatically
+void OptimProblem::fillMatches()
+{
+    if (targetSolution.isEmpty())
+    {
+        qWarning() << QObject::tr("Could not fill the matches because the target solution has not been set");
+        return;
+    }
+    int numVertices = targetSolution.numVertices();
+    targetMatches.resize(numVertices);
+    for (int i = 0; i != numVertices; ++i)
+        targetMatches[i] = {i, i};
+}
+
+bool OptimProblem::operator==(OptimProblem const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+
+bool OptimProblem::operator!=(OptimProblem const& another) const
+{
+    return !(*this == another);
+}
+
+//! Output problem to a XML stream
+void OptimProblem::serialize(QXmlStreamWriter& stream) const
+{
+    stream.writeStartElement("optimProblem");
+    Utility::serialize(stream, *this);
+    stream.writeEndElement();
+}
+
+//! Read problem from a XML stream
+void OptimProblem::deserialize(QXmlStreamWriter& stream)
+{
+}
+
+OptimOptions::OptimOptions()
+    : maxNumIterations(256)
+    , timeoutIteration(10.0)
+    , numThreads(1)
+    , diffStepSize(1.0e-5)
+    , minMAC(0)
+    , penaltyMAC(0.1)
+    , maxRelError(1e-3)
+{
+}
+
+bool OptimOptions::operator==(OptimOptions const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+
+bool OptimOptions::operator!=(OptimOptions const& another) const
+{
+    return !(*this == another);
+}
+
+//! Output options to a XML stream
+void OptimOptions::serialize(QXmlStreamWriter& stream) const
+{
+    stream.writeStartElement("optimOptions");
+    Utility::serialize(stream, *this);
+    stream.writeEndElement();
+}
+
+//! Read options from a XML stream
+void OptimOptions::deserialize(QXmlStreamWriter& stream)
+{
+}
+
+OptimSolution::OptimSolution()
+{
+}
+
+bool OptimSolution::operator==(OptimSolution const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+bool OptimSolution::operator!=(OptimSolution const& another) const
+{
+    return !(*this == another);
+}
+
+//! Output solution to a XML stream
+void OptimSolution::serialize(QXmlStreamWriter& stream) const
+{
+    stream.writeStartElement("optimSolution");
+    Utility::serialize(stream, *this);
+    stream.writeEndElement();
+}
+
+//! Read solution from a XML stream
+void OptimSolution::deserialize(QXmlStreamWriter& stream)
+{
+    // TODO
 }
