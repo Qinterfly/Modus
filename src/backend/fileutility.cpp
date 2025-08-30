@@ -1,7 +1,7 @@
 #include <kcl/model.h>
 
 #include "fileutility.h"
-#include "project.h"
+#include "subproject.h"
 
 using namespace Backend::Core;
 
@@ -29,126 +29,136 @@ QSharedPointer<QFile> openFile(QString const& pathFile, QString const& expectedS
     return pFile;
 }
 
-//! Output a metaobject to a XML stream
-template<typename T>
-void serialize(QXmlStreamWriter& stream, T const& object)
+void serialize(QXmlStreamWriter& stream, QString const& name, QVariant const& variant)
 {
-    QMetaObject const& metaObject = object.staticMetaObject;
-    int numProperties = metaObject.propertyCount();
-    QString name;
-    QVariant variant;
-    QString typeName;
-    for (int i = 0; i != numProperties; ++i)
+    int type = variant.typeId();
+    int lastPos = stream.device()->pos();
+
+    // Process standard types
+    switch (type)
     {
-        name = metaObject.property(i).name();
-        variant = metaObject.property(i).readOnGadget(&object);
-        typeName = variant.typeName();
-        if (typeName == "QList<Backend::Core::Subproject>")
-        {
-            auto const& items = variant.value<QList<Subproject>>();
-            for (auto const& item : items)
-                item.serialize(stream);
-        }
-        else if (typeName == "Backend::Core::Configuration")
-        {
-            variant.value<Configuration>().serialize(stream);
-        }
-        else if (typeName == "Backend::Core::OptimProblem")
-        {
-            variant.value<OptimProblem>().serialize(stream);
-        }
-        else if (typeName == "Backend::Core::OptimOptions")
-        {
-            variant.value<OptimOptions>().serialize(stream);
-        }
-        else if (typeName == "Backend::Core::ModalSolution")
-        {
-            variant.value<ModalSolution>().serialize(stream);
-        }
-        else if (typeName == "Backend::Core::ModalComparison")
-        {
-            variant.value<ModalComparison>().serialize(stream);
-        }
-        else if (typeName == "Backend::Core::Geometry")
-        {
-            variant.value<Geometry>().serialize(stream);
-        }
-        else if (typeName == "Backend::Core::Selector")
-        {
-            variant.value<Selector>().serialize(stream);
-        }
-        else if (typeName == "Backend::Core::Constraints")
-        {
-            variant.value<Constraints>().serialize(stream);
-        }
-        else if (typeName == "KCL::Model")
-        {
-            serialize(stream, variant.value<KCL::Model>());
-        }
-        else if (typeName == "QList<Backend::Core::Vertex>")
-        {
-            auto const& items = variant.value<QList<Vertex>>();
-            for (auto const& item : items)
-                item.serialize(stream);
-        }
-        else if (typeName == "QList<Backend::Core::Slave>")
-        {
-            auto const& items = variant.value<QList<Slave>>();
-            for (auto const& item : items)
-                item.serialize(stream);
-        }
-        else if (typeName == "QList<Backend::Core::SelectionSet>")
-        {
-            auto const& items = variant.value<QList<SelectionSet>>();
-            for (auto const& item : items)
-                item.serialize(stream);
-        }
-        else if (typeName == "QList<std::pair<int,int>>")
-        {
-            serialize(stream, name, variant.value<QList<QPair<int, int>>>());
-        }
-        else if (typeName == "QMap<Backend::Core::Selection,bool>")
-        {
-            serialize(stream, name, variant.value<QMap<Selection, bool>>());
-        }
-        else if (typeName == "QStringList")
-        {
-            serialize(stream, name, variant.value<QList<QString>>());
-        }
-        else if (typeName == "Eigen::Matrix<int,-1,1>")
-        {
-            serialize(name, stream, variant.value<Eigen::VectorXi>());
-        }
-        else if (typeName == "Eigen::Matrix<double,-1,1>")
-        {
-            serialize(name, stream, variant.value<Eigen::VectorXd>());
-        }
-        else if (typeName == "Eigen::Matrix<double,3,1>")
-        {
-            serialize(name, stream, variant.value<Eigen::Vector3d>());
-        }
-        else if (typeName == "Eigen::Matrix<int,-1,-1>")
-        {
-            serialize(name, stream, variant.value<Eigen::MatrixXi>());
-        }
-        else if (typeName == "Eigen::Matrix<double,-1,-1>")
-        {
-            serialize(name, stream, variant.value<Eigen::MatrixXd>());
-        }
-        else if (typeName == "QList<Eigen::Matrix<double,-1,-1>>")
-        {
-            auto const& items = variant.value<QList<Eigen::MatrixXd>>();
-            for (auto const& item : items)
-                serialize(name, stream, item);
-        }
-        else
-        {
-            stream.writeTextElement(name, variant.toString());
-        }
+    case QMetaType::Bool:
+        stream.writeTextElement(name, variant.toBool() ? "true" : "false");
+        return;
+    case QMetaType::Int:
+        stream.writeTextElement(name, QString::number(variant.toInt()));
+        return;
+    case QMetaType::Double:
+        stream.writeTextElement(name, QString::number(variant.toDouble()));
+        return;
+    case QMetaType::QString:
+        stream.writeTextElement(name, variant.toString());
+        return;
+    case QMetaType::QStringList:
+        serialize(stream, name, variant.toStringList());
+        return;
+    case QMetaType::QUuid:
+        stream.writeTextElement(name, variant.value<QUuid>().toString());
+        return;
+    default:
+        break;
+    }
+
+    // Process custom types
+    if (type == qMetaTypeId<Subproject>())
+        serialize(stream, variant.value<Subproject>());
+    else if (type == qMetaTypeId<Configuration>())
+        serialize(stream, variant.value<Configuration>());
+    else if (type == qMetaTypeId<OptimProblem>())
+        serialize(stream, variant.value<OptimProblem>());
+    else if (type == qMetaTypeId<OptimOptions>())
+        serialize(stream, variant.value<OptimOptions>());
+    else if (type == qMetaTypeId<ModalSolution>())
+        serialize(stream, variant.value<ModalSolution>());
+    else if (type == qMetaTypeId<ModalComparison>())
+        serialize(stream, variant.value<ModalComparison>());
+    else if (type == qMetaTypeId<Geometry>())
+        serialize(stream, variant.value<Geometry>());
+    else if (type == qMetaTypeId<Selector>())
+        serialize(stream, variant.value<Selector>());
+    else if (type == qMetaTypeId<Constraints>())
+        serialize(stream, variant.value<Constraints>());
+    else if (type == qMetaTypeId<SelectionSet>())
+        serialize(stream, variant.value<SelectionSet>());
+    else if (type == qMetaTypeId<KCL::Model>())
+        serialize(stream, variant.value<KCL::Model>());
+    else if (type == qMetaTypeId<KCL::ElementType>())
+        serialize(stream, name, variant.toInt());
+    else if (type == qMetaTypeId<QList<Subproject>>())
+        serialize(stream, name, variant.value<QList<Subproject>>());
+    else if (type == qMetaTypeId<QList<Vertex>>())
+        serialize(stream, name, variant.value<QList<Vertex>>());
+    else if (type == qMetaTypeId<QList<Slave>>())
+        serialize(stream, name, variant.value<QList<Slave>>());
+    else if (type == qMetaTypeId<QList<SelectionSet>>())
+        serialize(stream, name, variant.value<QList<SelectionSet>>());
+    else if (type == qMetaTypeId<QList<PairInt>>())
+        serialize(stream, name, variant.value<QList<PairInt>>());
+    else if (type == qMetaTypeId<QMap<Selection, bool>>())
+        serialize(stream, name, variant.value<QMap<Selection, bool>>());
+    else if (type == qMetaTypeId<QMap<VariableType, bool>>())
+        serialize(stream, name, variant.value<QMap<VariableType, bool>>());
+    else if (type == qMetaTypeId<QMap<VariableType, double>>())
+        serialize(stream, name, variant.value<QMap<VariableType, double>>());
+    else if (type == qMetaTypeId<QMap<VariableType, PairDouble>>())
+        serialize(stream, name, variant.value<QMap<VariableType, PairDouble>>());
+    else if (type == qMetaTypeId<PairDouble>())
+        serialize(stream, name, variant.value<PairDouble>());
+    else if (type == qMetaTypeId<Eigen::Vector3d>())
+        serialize(stream, name, variant.value<Eigen::Vector3d>());
+    else if (type == qMetaTypeId<Eigen::VectorXi>())
+        serialize(stream, name, variant.value<Eigen::VectorXi>());
+    else if (type == qMetaTypeId<Eigen::VectorXd>())
+        serialize(stream, name, variant.value<Eigen::VectorXd>());
+    else if (type == qMetaTypeId<Eigen::MatrixXi>())
+        serialize(stream, name, variant.value<Eigen::MatrixXi>());
+    else if (type == qMetaTypeId<Eigen::MatrixXd>())
+        serialize(stream, name, variant.value<Eigen::MatrixXd>());
+    else if (type == qMetaTypeId<QList<Eigen::MatrixXd>>())
+        serialize(stream, name, variant.value<QList<Eigen::MatrixXd>>());
+    else if (type == qMetaTypeId<Direction>())
+        serialize(stream, name, (int) variant.value<Direction>());
+
+    // Process elements which cannot be serialized
+    if (stream.device()->pos() == lastPos)
+    {
+        stream.writeEmptyElement(name);
+        qWarning() << QObject::tr("Could not serialize %1").arg(name);
     }
 }
 
-//! Output model to a XML stream
+void serialize(QXmlStreamWriter& stream, QString const& name, QList<QString> const& items)
+{
+    stream.writeStartElement(name);
+    for (auto const& item : items)
+        stream.writeTextElement("value", item);
+    stream.writeEndElement();
+}
+
+void serialize(QXmlStreamWriter& stream, QString const& name, QMap<Backend::Core::Selection, bool> const& map)
+{
+    stream.writeStartElement(name);
+    for (auto const& [key, value] : map.asKeyValueRange())
+    {
+        stream.writeStartElement("item");
+        serialize(stream, key);
+        serialize(stream, "value", value);
+        stream.writeEndElement();
+    }
+    stream.writeEndElement();
+}
+
+void serialize(QXmlStreamWriter& stream, QString const& name, QList<Eigen::MatrixXd> const& matrices)
+{
+    stream.writeStartElement(name);
+    for (auto const& matrix : matrices)
+    {
+        QString text = toString(matrix);
+        stream.writeTextElement("value", text);
+    }
+    stream.writeEndElement();
+}
+
 template<>
 void serialize(QXmlStreamWriter& stream, KCL::Model const& model)
 {
@@ -159,48 +169,7 @@ void serialize(QXmlStreamWriter& stream, KCL::Model const& model)
         data = qCompress(text.toUtf8());
     }
     stream.writeStartElement("model");
-    stream.writeAttribute("type", "kcl");
     stream.writeAttribute("value", data);
     stream.writeEndElement();
 }
-
-//! Output a map of selections to a XML stream
-void serialize(QXmlStreamWriter& stream, QString const& name, QMap<Backend::Core::Selection, bool> const& map)
-{
-    stream.writeStartElement(name);
-    for (auto const& [key, value] : map.asKeyValueRange())
-    {
-        stream.writeStartElement("pair");
-        key.serialize(stream);
-        stream.writeTextElement("flag", QString::number(value));
-        stream.writeEndElement();
-    }
-    stream.writeEndElement();
-}
-
-//! Output a list of strings to a XML stream
-void serialize(QXmlStreamWriter& stream, QString const& name, QList<QString> const& values)
-{
-    stream.writeStartElement(name);
-    for (auto const& item : values)
-        stream.writeTextElement("value", item);
-    stream.writeEndElement();
-}
-
-// Explicit template instantiation
-template void serialize(QXmlStreamWriter&, Project const&);
-template void serialize(QXmlStreamWriter&, Subproject const&);
-template void serialize(QXmlStreamWriter&, Configuration const&);
-template void serialize(QXmlStreamWriter&, OptimProblem const&);
-template void serialize(QXmlStreamWriter&, OptimOptions const&);
-template void serialize(QXmlStreamWriter&, OptimSolution const&);
-template void serialize(QXmlStreamWriter&, ModalSolution const&);
-template void serialize(QXmlStreamWriter&, ModalComparison const&);
-template void serialize(QXmlStreamWriter&, Selector const&);
-template void serialize(QXmlStreamWriter&, SelectionSet const&);
-template void serialize(QXmlStreamWriter&, Selection const&);
-template void serialize(QXmlStreamWriter&, Constraints const&);
-template void serialize(QXmlStreamWriter&, Geometry const&);
-template void serialize(QXmlStreamWriter&, Vertex const&);
-template void serialize(QXmlStreamWriter&, Slave const&);
 }

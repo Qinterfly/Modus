@@ -34,6 +34,7 @@ public:
 
     void serialize(QXmlStreamWriter& stream) const override;
     void deserialize(QXmlStreamWriter& stream) override;
+    QString elementName() const override;
 
     QString name;
     Eigen::Vector3d position;
@@ -55,6 +56,7 @@ public:
 
     void serialize(QXmlStreamWriter& stream) const override;
     void deserialize(QXmlStreamWriter& stream) override;
+    QString elementName() const override;
 
     int slaveIndex;
     Eigen::VectorXi masterIndices;
@@ -83,6 +85,7 @@ public:
 
     void serialize(QXmlStreamWriter& stream) const override;
     void deserialize(QXmlStreamWriter& stream) override;
+    QString elementName() const override;
 
     QList<Vertex> vertices;
     QList<Slave> slaves;
@@ -112,6 +115,7 @@ public:
 
     void serialize(QXmlStreamWriter& stream) const override;
     void deserialize(QXmlStreamWriter& stream) override;
+    QString elementName() const override;
 
     Eigen::VectorXd diffFrequencies;
     Eigen::VectorXd errorFrequencies;
@@ -150,6 +154,7 @@ public:
 
     void serialize(QXmlStreamWriter& stream) const override;
     void deserialize(QXmlStreamWriter& stream) override;
+    QString elementName() const override;
 
 private:
     void resize(int numDOFs, int numModes);

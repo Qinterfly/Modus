@@ -95,13 +95,11 @@ bool Project::write(const QString& pathFile)
     // Write the header
     stream.setAutoFormatting(true);
     stream.writeStartDocument(skProjectIOVersion);
-    stream.writeStartElement("project");
 
     // Write the data
-    Utility::serialize(stream, *this);
+    serialize(stream);
 
     // Close the file
-    stream.writeEndElement();
     stream.writeEndDocument();
     pFile->close();
 
@@ -109,4 +107,21 @@ bool Project::write(const QString& pathFile)
     mPathFile = pathFile;
 
     return true;
+}
+
+//! Output project to a XML stream
+void Project::serialize(QXmlStreamWriter& stream) const
+{
+    Utility::serialize(stream, *this);
+}
+
+//! Output project to a XML stream
+void Project::deserialize(QXmlStreamWriter& stream)
+{
+    // TODO
+}
+
+QString Project::elementName() const
+{
+    return "project";
 }

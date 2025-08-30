@@ -42,13 +42,17 @@ bool Constraints::operator!=(Constraints const& another) const
 
 void Constraints::serialize(QXmlStreamWriter& stream) const
 {
-    stream.writeStartElement("constraints");
     Utility::serialize(stream, *this);
-    stream.writeEndElement();
 }
+
 void Constraints::deserialize(QXmlStreamWriter& stream)
 {
     // TODO
+}
+
+QString Constraints::elementName() const
+{
+    return "constraints";
 }
 
 bool Constraints::isEnabled(VariableType type) const

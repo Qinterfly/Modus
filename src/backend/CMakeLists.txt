@@ -7,6 +7,7 @@ set(BACKEND_HEADERS
     aliasdata.h
     constants.h
     identifier.h
+    iserializable.h
     fileutility.h
     mathutility.h
     project.h
@@ -16,11 +17,11 @@ set(BACKEND_HEADERS
     constraints.h
     optimsolver.h
     modalsolution.h
-    iserializable.h
 )
 
 set(BACKEND_SOURCES
     identifier.cpp
+
     fileutility.cpp
     mathutility.cpp
     project.cpp

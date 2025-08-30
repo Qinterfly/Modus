@@ -17,18 +17,19 @@ bool Configuration::operator!=(Configuration const& another) const
     return !(*this == another);
 }
 
-//! Output configuration to a XML stream
 void Configuration::serialize(QXmlStreamWriter& stream) const
 {
-    stream.writeStartElement("configuration");
     Utility::serialize(stream, *this);
-    stream.writeEndElement();
 }
 
-//! Read configuration from a XML stream
 void Configuration::deserialize(QXmlStreamWriter& stream)
 {
     // TODO
+}
+
+QString Configuration::elementName() const
+{
+    return "configuration";
 }
 
 Subproject::Subproject()
@@ -75,16 +76,17 @@ bool Subproject::operator!=(Subproject const& another) const
     return !(*this == another);
 }
 
-//! Output subproject to a XML stream
 void Subproject::serialize(QXmlStreamWriter& stream) const
 {
-    stream.writeStartElement("subproject");
     Utility::serialize(stream, *this);
-    stream.writeEndElement();
 }
 
-//! Read subproject from a XML stream
 void Subproject::deserialize(QXmlStreamWriter& stream)
 {
     // TODO
+}
+
+QString Subproject::elementName() const
+{
+    return "subproject";
 }

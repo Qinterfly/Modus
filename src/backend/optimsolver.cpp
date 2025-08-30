@@ -768,17 +768,18 @@ bool OptimProblem::operator!=(OptimProblem const& another) const
     return !(*this == another);
 }
 
-//! Output problem to a XML stream
 void OptimProblem::serialize(QXmlStreamWriter& stream) const
 {
-    stream.writeStartElement("optimProblem");
     Utility::serialize(stream, *this);
-    stream.writeEndElement();
 }
 
-//! Read problem from a XML stream
 void OptimProblem::deserialize(QXmlStreamWriter& stream)
 {
+}
+
+QString OptimProblem::elementName() const
+{
+    return "optimProblem";
 }
 
 OptimOptions::OptimOptions()
@@ -802,17 +803,18 @@ bool OptimOptions::operator!=(OptimOptions const& another) const
     return !(*this == another);
 }
 
-//! Output options to a XML stream
 void OptimOptions::serialize(QXmlStreamWriter& stream) const
 {
-    stream.writeStartElement("optimOptions");
     Utility::serialize(stream, *this);
-    stream.writeEndElement();
 }
 
-//! Read options from a XML stream
 void OptimOptions::deserialize(QXmlStreamWriter& stream)
 {
+}
+
+QString OptimOptions::elementName() const
+{
+    return "optimOptions";
 }
 
 OptimSolution::OptimSolution()
@@ -828,16 +830,17 @@ bool OptimSolution::operator!=(OptimSolution const& another) const
     return !(*this == another);
 }
 
-//! Output solution to a XML stream
 void OptimSolution::serialize(QXmlStreamWriter& stream) const
 {
-    stream.writeStartElement("optimSolution");
     Utility::serialize(stream, *this);
-    stream.writeEndElement();
 }
 
-//! Read solution from a XML stream
 void OptimSolution::deserialize(QXmlStreamWriter& stream)
 {
     // TODO
+}
+
+QString OptimSolution::elementName() const
+{
+    return "optimSolution";
 }

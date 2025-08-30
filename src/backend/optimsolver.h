@@ -45,6 +45,7 @@ public:
 
     void serialize(QXmlStreamWriter& stream) const override;
     void deserialize(QXmlStreamWriter& stream) override;
+    QString elementName() const override;
 
     //! Model to be updated
     KCL::Model model;
@@ -88,6 +89,7 @@ public:
 
     void serialize(QXmlStreamWriter& stream) const override;
     void deserialize(QXmlStreamWriter& stream) override;
+    QString elementName() const override;
 
     //! Maximum number of iterations of optimization process
     int maxNumIterations;
@@ -132,6 +134,7 @@ public:
 
     void serialize(QXmlStreamWriter& stream) const override;
     void deserialize(QXmlStreamWriter& stream) override;
+    QString elementName() const override;
 
     int iteration;
     bool isSuccess;

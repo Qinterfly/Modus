@@ -183,15 +183,16 @@ bool SelectionSet::operator!=(SelectionSet const& another) const
     return !(*this == another);
 }
 
-//! Output selection set to a XML stream
-void SelectionSet::serialize(QXmlStreamWriter& stream) const
+QString SelectionSet::elementName() const
 {
-    stream.writeStartElement("selectionSet");
-    Utility::serialize(stream, *this);
-    stream.writeEndElement();
+    return "selectionSet";
 }
 
-//! Readselection set from a XML stream
+void SelectionSet::serialize(QXmlStreamWriter& stream) const
+{
+    Utility::serialize(stream, *this);
+}
+
 void SelectionSet::deserialize(QXmlStreamWriter& stream)
 {
     // TODO
@@ -239,16 +240,17 @@ bool Selection::operator>=(Selection const& another) const
     return *this > another || *this == another;
 }
 
-//! Output selection to a XML stream
 void Selection::serialize(QXmlStreamWriter& stream) const
 {
-    stream.writeStartElement("selection");
     Utility::serialize(stream, *this);
-    stream.writeEndElement();
 }
 
-//! Read selection from a XML stream
 void Selection::deserialize(QXmlStreamWriter& stream)
 {
     // TODO
+}
+
+QString Selection::elementName() const
+{
+    return "selection";
 }

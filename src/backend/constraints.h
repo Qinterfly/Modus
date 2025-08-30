@@ -49,6 +49,7 @@ public:
 
     void serialize(QXmlStreamWriter& stream) const override;
     void deserialize(QXmlStreamWriter& stream) override;
+    QString elementName() const override;
 
     static QList<VariableType> types();
 

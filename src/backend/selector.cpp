@@ -130,16 +130,17 @@ bool Selector::operator!=(Selector const& another) const
     return !(*this == another);
 }
 
-//! Output selector to a XML stream
 void Selector::serialize(QXmlStreamWriter& stream) const
 {
-    stream.writeStartElement("selector");
     Utility::serialize(stream, *this);
-    stream.writeEndElement();
 }
 
-//! Read selector from a XML stream
 void Selector::deserialize(QXmlStreamWriter& stream)
 {
     // TODO
+}
+
+QString Selector::elementName() const
+{
+    return "selector";
 }

@@ -9,6 +9,9 @@
 #include <QString>
 #include <QXmlStreamWriter>
 
+#include "constraints.h"
+#include "iserializable.h"
+
 namespace KCL
 {
 struct Model;
@@ -66,35 +69,84 @@ QString toString(Eigen::MatrixBase<Derived> const& matrix)
     return QString(stream.str().data());
 }
 
-template<typename T>
-void serialize(QXmlStreamWriter& stream, T const& object);
-template<>
-void serialize(QXmlStreamWriter& stream, KCL::Model const& model);
+void serialize(QXmlStreamWriter& stream, QString const& name, QVariant const& variant);
+void serialize(QXmlStreamWriter& stream, QString const& name, QList<QString> const& items);
 void serialize(QXmlStreamWriter& stream, QString const& name, QMap<Backend::Core::Selection, bool> const& map);
-void serialize(QXmlStreamWriter& stream, QString const& name, QList<QString> const& values);
+void serialize(QXmlStreamWriter& stream, QString const& name, QList<Eigen::MatrixXd> const& matrices);
 
-//! Output pairs to a XML stream
+template<typename T>
+void serialize(QXmlStreamWriter& stream, T const& object)
+{
+    if (!std::is_base_of<Core::ISerializable, T>())
+        return;
+    QMetaObject const& metaObject = object.staticMetaObject;
+    int numProperties = metaObject.propertyCount();
+    stream.writeStartElement(object.elementName());
+    for (int i = 0; i != numProperties; ++i)
+    {
+        QString name = metaObject.property(i).name();
+        QVariant variant = metaObject.property(i).readOnGadget(&object);
+        serialize(stream, name, variant);
+    }
+    stream.writeEndElement();
+}
+
+template<typename T>
+void serialize(QXmlStreamWriter& stream, QString const& name, QList<T> const& objects)
+{
+    if (!std::is_base_of<Core::ISerializable, T>())
+        return;
+    stream.writeStartElement(name);
+    for (auto const& object : objects)
+        serialize(stream, object);
+    stream.writeEndElement();
+}
+
+template<typename T, typename M>
+void serialize(QXmlStreamWriter& stream, QString const& name, QPair<T, M> const& pair)
+{
+    if (!std::is_arithmetic<T>() || !std::is_arithmetic<M>())
+        return;
+    stream.writeStartElement(name);
+    stream.writeTextElement("first", QString::number(pair.first));
+    stream.writeTextElement("second", QString::number(pair.second));
+    stream.writeEndElement();
+}
+
 template<typename T, typename M>
 void serialize(QXmlStreamWriter& stream, QString const& name, QList<QPair<T, M>> const& pairs)
 {
     stream.writeStartElement(name);
     for (auto const& item : pairs)
+        serialize(stream, "item", item);
+    stream.writeEndElement();
+}
+
+template<typename T>
+void serialize(QXmlStreamWriter& stream, QString const& name, QMap<Backend::Core::VariableType, T> const& map)
+{
+    stream.writeStartElement(name);
+    for (auto const& [key, value] : map.asKeyValueRange())
     {
-        QString text = QString("%1; %2").arg(QString::number(item.first), QString::number(item.second));
-        stream.writeTextElement("pair", text);
+        stream.writeStartElement("item");
+        serialize(stream, "key", (int) key);
+        serialize(stream, "value", value);
+        stream.writeEndElement();
     }
     stream.writeEndElement();
 }
 
-//! Output an Eigen matrix to a string
 template<typename Derived>
-void serialize(QString const& name, QXmlStreamWriter& stream, Eigen::MatrixBase<Derived> const& matrix)
+void serialize(QXmlStreamWriter& stream, QString const& name, Eigen::MatrixBase<Derived> const& matrix)
 {
     QString text = toString(matrix);
     stream.writeStartElement(name);
-    stream.writeAttribute("value", text);
+    stream.writeCharacters(text);
     stream.writeEndElement();
 }
+
+template<>
+void serialize(QXmlStreamWriter& stream, KCL::Model const& model);
 }
 
 #endif // FILEUTILITY_H

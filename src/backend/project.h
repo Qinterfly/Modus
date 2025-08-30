@@ -9,7 +9,7 @@
 namespace Backend::Core
 {
 
-class Project : public Identifier
+class Project : public Identifier, public ISerializable
 {
     Q_GADGET
     Q_PROPERTY(QUuid id MEMBER mID)
@@ -38,6 +38,10 @@ public:
 
     bool read(QString const& pathFile);
     bool write(QString const& pathFile);
+
+    void serialize(QXmlStreamWriter& stream) const override;
+    void deserialize(QXmlStreamWriter& stream) override;
+    QString elementName() const override;
 
 private:
     QString mName;

@@ -17,7 +17,35 @@ struct Model;
 namespace Backend::Core
 {
 
-struct Selection;
+//! Selection information associated with an element
+struct Selection : public ISerializable
+{
+    Q_GADGET
+    Q_PROPERTY(int iSurface MEMBER iSurface)
+    Q_PROPERTY(KCL::ElementType type MEMBER type)
+    Q_PROPERTY(int iElement MEMBER iElement)
+
+public:
+    Selection();
+    ~Selection() = default;
+
+    bool isValid() const;
+
+    bool operator==(Selection const& another) const;
+    bool operator!=(Selection const& another) const;
+    bool operator<(Selection const& another) const;
+    bool operator>(Selection const& another) const;
+    bool operator<=(Selection const& another) const;
+    bool operator>=(Selection const& another) const;
+
+    void serialize(QXmlStreamWriter& stream) const override;
+    void deserialize(QXmlStreamWriter& stream) override;
+    QString elementName() const override;
+
+    int iSurface;
+    KCL::ElementType type;
+    int iElement;
+};
 
 /*!
  * Class to select model entities
@@ -54,6 +82,7 @@ public:
 
     void serialize(QXmlStreamWriter& stream) const override;
     void deserialize(QXmlStreamWriter& stream) override;
+    QString elementName() const override;
 
 private:
     void reset(KCL::Model const& model);
@@ -61,35 +90,6 @@ private:
 private:
     QString mName;
     QMap<Selection, bool> mDataSet;
-};
-
-//! Selection information associated with an element
-struct Selection : public ISerializable
-{
-    Q_GADGET
-    Q_PROPERTY(int iSurface MEMBER iSurface)
-    Q_PROPERTY(KCL::ElementType type MEMBER type)
-    Q_PROPERTY(int iElement MEMBER iElement)
-
-public:
-    Selection();
-    ~Selection() = default;
-
-    bool isValid() const;
-
-    bool operator==(Selection const& another) const;
-    bool operator!=(Selection const& another) const;
-    bool operator<(Selection const& another) const;
-    bool operator>(Selection const& another) const;
-    bool operator<=(Selection const& another) const;
-    bool operator>=(Selection const& another) const;
-
-    void serialize(QXmlStreamWriter& stream) const override;
-    void deserialize(QXmlStreamWriter& stream) override;
-
-    int iSurface;
-    KCL::ElementType type;
-    int iElement;
 };
 }
 
