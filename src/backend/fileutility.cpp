@@ -152,24 +152,32 @@ void serialize(QXmlStreamWriter& stream, QString const& name, QList<Eigen::Matri
 {
     stream.writeStartElement(name);
     for (auto const& matrix : matrices)
-    {
-        QString text = toString(matrix);
-        stream.writeTextElement("value", text);
-    }
+        serialize(stream, "value", matrix);
     stream.writeEndElement();
 }
 
 template<>
 void serialize(QXmlStreamWriter& stream, KCL::Model const& model)
 {
-    QByteArray data;
+    QString text;
     if (!model.isEmpty())
     {
-        QString text = model.toString().c_str();
-        data = qCompress(text.toUtf8());
+        text = model.toString().c_str();
+        QByteArray data(text.toUtf8());
+        data = qCompress(data).toBase64();
+        text = QString::fromLatin1(data);
     }
     stream.writeStartElement("model");
-    stream.writeAttribute("value", data);
+    stream.writeCharacters(text);
     stream.writeEndElement();
+}
+
+void deserialize(QXmlStreamReader& stream, KCL::Model& model)
+{
+    QString value = stream.readElementText();
+    QByteArray data = QByteArray::fromBase64(value.toLatin1());
+    QString text = QString::fromUtf8(qUncompress(data));
+    if (!text.isEmpty())
+        model.fromString(text.toStdString());
 }
 }

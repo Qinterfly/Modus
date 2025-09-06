@@ -27,7 +27,7 @@ public:
     bool operator!=(Configuration const& another) const;
 
     void serialize(QXmlStreamWriter& stream) const override;
-    void deserialize(QXmlStreamWriter& stream) override;
+    void deserialize(QXmlStreamReader& stream) override;
     QString elementName() const override;
 
     QString name;
@@ -57,7 +57,7 @@ public:
     bool operator!=(Subproject const& another) const;
 
     void serialize(QXmlStreamWriter& stream) const override;
-    void deserialize(QXmlStreamWriter& stream) override;
+    void deserialize(QXmlStreamReader& stream) override;
     QString elementName() const override;
 
 private:
@@ -65,6 +65,10 @@ private:
     KCL::Model mModel;
 };
 
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Configuration const& configuration);
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, Configuration& configuration);
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Subproject const& subproject);
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, Subproject& subproject);
 }
 
 #endif // SUBPROJECT_H

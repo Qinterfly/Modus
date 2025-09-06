@@ -45,7 +45,7 @@ void Constraints::serialize(QXmlStreamWriter& stream) const
     Utility::serialize(stream, *this);
 }
 
-void Constraints::deserialize(QXmlStreamWriter& stream)
+void Constraints::deserialize(QXmlStreamReader& stream)
 {
     // TODO
 }
@@ -251,4 +251,16 @@ void Constraints::setDefaultLimits()
     mLimits[VariableType::kShearModulus] = mLimits[VariableType::kYoungsModulus1];
     // Springs
     mLimits[VariableType::kSpringStiffness] = {1e-9, 1e9};
+}
+
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Constraints const& constraints)
+{
+    constraints.serialize(stream);
+    return stream;
+}
+
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, Constraints& constraints)
+{
+    constraints.deserialize(stream);
+    return stream;
 }

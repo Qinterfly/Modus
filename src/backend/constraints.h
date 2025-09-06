@@ -48,7 +48,7 @@ public:
     bool operator!=(Constraints const& another) const;
 
     void serialize(QXmlStreamWriter& stream) const override;
-    void deserialize(QXmlStreamWriter& stream) override;
+    void deserialize(QXmlStreamReader& stream) override;
     QString elementName() const override;
 
     static QList<VariableType> types();
@@ -90,6 +90,8 @@ private:
     VariableLimits mLimits;
 };
 
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Constraints const& constraints);
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, Constraints& constraints);
 }
 
 #endif // CONSTRAINTS_H

@@ -773,8 +773,19 @@ void OptimProblem::serialize(QXmlStreamWriter& stream) const
     Utility::serialize(stream, *this);
 }
 
-void OptimProblem::deserialize(QXmlStreamWriter& stream)
+void OptimProblem::deserialize(QXmlStreamReader& stream)
 {
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == "model")
+            Utility::deserialize(stream, model);
+        else if (stream.name() == "targetIndices")
+            Utility::deserialize(stream, targetIndices);
+        else if (stream.name() == "targetWeights")
+            Utility::deserialize(stream, targetWeights);
+        else
+            stream.skipCurrentElement();
+    }
 }
 
 QString OptimProblem::elementName() const
@@ -808,8 +819,18 @@ void OptimOptions::serialize(QXmlStreamWriter& stream) const
     Utility::serialize(stream, *this);
 }
 
-void OptimOptions::deserialize(QXmlStreamWriter& stream)
+void OptimOptions::deserialize(QXmlStreamReader& stream)
 {
+    QMetaObject const& metaObject = staticMetaObject;
+    while (stream.readNextStartElement())
+    {
+        auto name = stream.name().toString();
+        int iProperty = metaObject.indexOfProperty(name.toStdString().c_str());
+        if (iProperty > -1)
+            metaObject.property(iProperty).writeOnGadget(this, stream.readElementText());
+        else
+            stream.skipCurrentElement();
+    }
 }
 
 QString OptimOptions::elementName() const
@@ -835,7 +856,7 @@ void OptimSolution::serialize(QXmlStreamWriter& stream) const
     Utility::serialize(stream, *this);
 }
 
-void OptimSolution::deserialize(QXmlStreamWriter& stream)
+void OptimSolution::deserialize(QXmlStreamReader& stream)
 {
     // TODO
 }
@@ -843,4 +864,40 @@ void OptimSolution::deserialize(QXmlStreamWriter& stream)
 QString OptimSolution::elementName() const
 {
     return "optimSolution";
+}
+
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, OptimProblem const& problem)
+{
+    problem.serialize(stream);
+    return stream;
+}
+
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, OptimProblem& problem)
+{
+    problem.deserialize(stream);
+    return stream;
+}
+
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, OptimOptions const& options)
+{
+    options.serialize(stream);
+    return stream;
+}
+
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, OptimOptions& options)
+{
+    options.deserialize(stream);
+    return stream;
+}
+
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, OptimSolution const& solution)
+{
+    solution.serialize(stream);
+    return stream;
+}
+
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, OptimSolution& solution)
+{
+    solution.deserialize(stream);
+    return stream;
 }

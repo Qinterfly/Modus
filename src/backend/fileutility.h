@@ -59,16 +59,6 @@ bool areEqual(T const& first, T const& second)
     return true;
 }
 
-//! Output an Eigen matrix to a string
-template<typename Derived>
-QString toString(Eigen::MatrixBase<Derived> const& matrix)
-{
-    static Eigen::IOFormat const kFormatter(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "; ");
-    std::stringstream stream;
-    stream << matrix.format(kFormatter);
-    return QString(stream.str().data());
-}
-
 void serialize(QXmlStreamWriter& stream, QString const& name, QVariant const& variant);
 void serialize(QXmlStreamWriter& stream, QString const& name, QList<QString> const& items);
 void serialize(QXmlStreamWriter& stream, QString const& name, QMap<Backend::Core::Selection, bool> const& map);
@@ -139,14 +129,43 @@ void serialize(QXmlStreamWriter& stream, QString const& name, QMap<Backend::Core
 template<typename Derived>
 void serialize(QXmlStreamWriter& stream, QString const& name, Eigen::MatrixBase<Derived> const& matrix)
 {
-    QString text = toString(matrix);
+    QString text;
+    QTextStream textStream(&text);
     stream.writeStartElement(name);
+    int numRows = matrix.rows();
+    int numCols = matrix.cols();
+    stream.writeAttribute("numRows", QString::number(numRows));
+    stream.writeAttribute("numCols", QString::number(numCols));
+    for (int i = 0; i != numRows; ++i)
+    {
+        for (int j = 0; j != numCols; ++j)
+        {
+            if (i > 0 || j > 0)
+                textStream << " ";
+            textStream << matrix(i, j);
+        }
+    }
     stream.writeCharacters(text);
     stream.writeEndElement();
 }
 
+template<typename Scalar, int Rows, int Cols, int Options, int MaxRows, int MaxCols>
+void deserialize(QXmlStreamReader& stream, Eigen::Matrix<Scalar, Rows, Cols, Options, MaxRows, MaxCols>& matrix)
+{
+    int numRows = stream.attributes().value("numRows").toInt();
+    int numCols = stream.attributes().value("numCols").toInt();
+    QString text = stream.readElementText();
+    QTextStream textStream(&text);
+    matrix.resize(numRows, numCols);
+    for (int i = 0; i != numRows; ++i)
+        for (int j = 0; j != numCols; ++j)
+            textStream >> matrix(i, j);
+}
+
 template<>
 void serialize(QXmlStreamWriter& stream, KCL::Model const& model);
+void deserialize(QXmlStreamReader& stream, KCL::Model& model);
+
 }
 
 #endif // FILEUTILITY_H

@@ -112,9 +112,11 @@ void TestBackend::testUpdateSimpleWing()
     set.setSelected(KCL::PR, true);
 
     // Set the options
-    config.options.diffStepSize = 1e-5;
-    config.options.maxRelError = 1e-1;
-    config.options.penaltyMAC = 0;
+    OptimOptions& options = config.options;
+    options.maxNumIterations = 32;
+    options.diffStepSize = 1e-5;
+    options.maxRelError = 1e-1;
+    options.penaltyMAC = 0;
 
     // Set the objectives
     ModalSolution solution(eigenSolution);
@@ -128,7 +130,6 @@ void TestBackend::testUpdateSimpleWing()
     problem.fillMatches();
 
     // Start the solver
-    OptimOptions& options = config.options;
     OptimSolver solver;
     connect(&solver, &OptimSolver::log, [](QString message) { std::cout << message.toStdString() << std::endl; });
     auto solutions = solver.solve(problem, options);
@@ -141,7 +142,12 @@ void TestBackend::testWriteProject()
 {
     QString fileName = QString("test.%1").arg(Project::fileSuffix());
     QString pathFile = Utility::combineFilePath(TEMPORARY_DIR, fileName);
-    mProject.write(pathFile);
+    QVERIFY(mProject.write(pathFile));
+    Project tProject;
+    QVERIFY(tProject.read(pathFile));
+    fileName = QString("check.%1").arg(Project::fileSuffix());
+    pathFile = Utility::combineFilePath(TEMPORARY_DIR, fileName);
+    tProject.write(pathFile);
 }
 
 //! Generate a bounded double value

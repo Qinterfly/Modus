@@ -135,7 +135,7 @@ void Selector::serialize(QXmlStreamWriter& stream) const
     Utility::serialize(stream, *this);
 }
 
-void Selector::deserialize(QXmlStreamWriter& stream)
+void Selector::deserialize(QXmlStreamReader& stream)
 {
     // TODO
 }
@@ -143,4 +143,16 @@ void Selector::deserialize(QXmlStreamWriter& stream)
 QString Selector::elementName() const
 {
     return "selector";
+}
+
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Selector const& selector)
+{
+    selector.serialize(stream);
+    return stream;
+}
+
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, Selector& selector)
+{
+    selector.deserialize(stream);
+    return stream;
 }

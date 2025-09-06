@@ -285,7 +285,7 @@ void ModalSolution::serialize(QXmlStreamWriter& stream) const
     Utility::serialize(stream, *this);
 }
 
-void ModalSolution::deserialize(QXmlStreamWriter& stream)
+void ModalSolution::deserialize(QXmlStreamReader& stream)
 {
     // TODO
 }
@@ -418,7 +418,7 @@ void Vertex::serialize(QXmlStreamWriter& stream) const
     Utility::serialize(stream, *this);
 }
 
-void Vertex::deserialize(QXmlStreamWriter& stream)
+void Vertex::deserialize(QXmlStreamReader& stream)
 {
     // TODO
 }
@@ -448,7 +448,7 @@ void Slave::serialize(QXmlStreamWriter& stream) const
     Utility::serialize(stream, *this);
 }
 
-void Slave::deserialize(QXmlStreamWriter& stream)
+void Slave::deserialize(QXmlStreamReader& stream)
 {
     // TODO
 }
@@ -510,7 +510,7 @@ void Geometry::serialize(QXmlStreamWriter& stream) const
     Utility::serialize(stream, *this);
 }
 
-void Geometry::deserialize(QXmlStreamWriter& stream)
+void Geometry::deserialize(QXmlStreamReader& stream)
 {
     // TODO
 }
@@ -570,7 +570,7 @@ void ModalComparison::serialize(QXmlStreamWriter& stream) const
     Utility::serialize(stream, *this);
 }
 
-void ModalComparison::deserialize(QXmlStreamWriter& stream)
+void ModalComparison::deserialize(QXmlStreamReader& stream)
 {
     // TODO
 }
@@ -578,4 +578,64 @@ void ModalComparison::deserialize(QXmlStreamWriter& stream)
 QString ModalComparison::elementName() const
 {
     return "modalComparison";
+}
+
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Vertex const& vertex)
+{
+    vertex.serialize(stream);
+    return stream;
+}
+
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, Vertex& vertex)
+{
+    vertex.deserialize(stream);
+    return stream;
+}
+
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Slave const& slave)
+{
+    slave.serialize(stream);
+    return stream;
+}
+
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, Slave& slave)
+{
+    slave.deserialize(stream);
+    return stream;
+}
+
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Geometry const& geometry)
+{
+    geometry.serialize(stream);
+    return stream;
+}
+
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, Geometry& geometry)
+{
+    geometry.deserialize(stream);
+    return stream;
+}
+
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, ModalComparison const& comparison)
+{
+    comparison.serialize(stream);
+    return stream;
+}
+
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, ModalComparison& comparison)
+{
+    comparison.deserialize(stream);
+    return stream;
+}
+
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, ModalSolution const& solution)
+{
+    solution.serialize(stream);
+    return stream;
+}
+
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, ModalSolution& solution)
+{
+    solution.deserialize(stream);
+    return stream;
 }

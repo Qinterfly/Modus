@@ -40,7 +40,7 @@ public:
     bool write(QString const& pathFile);
 
     void serialize(QXmlStreamWriter& stream) const override;
-    void deserialize(QXmlStreamWriter& stream) override;
+    void deserialize(QXmlStreamReader& stream) override;
     QString elementName() const override;
 
 private:

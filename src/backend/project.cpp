@@ -77,14 +77,43 @@ QString Project::fileSuffix()
     return "mxl";
 }
 
-//! Read a project from a text file
+//! Read a project from a XML-formatted file
 bool Project::read(const QString& pathFile)
 {
-    // TODO
+    // Open the file for reading
+    auto pFile = Utility::openFile(pathFile, Project::fileSuffix(), QIODevice::ReadOnly);
+    if (!pFile)
+        return false;
+    QXmlStreamReader stream(pFile.data());
+
+    // Check the document version
+    if (stream.readNext())
+    {
+        if (stream.documentVersion() != skProjectIOVersion)
+        {
+            qWarning() << QObject::tr("The unsupported document version detected: %1").arg(stream.documentVersion());
+            return false;
+        }
+    }
+
+    // Check the root item
+    stream.readNextStartElement();
+    if (stream.name() != elementName())
+    {
+        qWarning() << QObject::tr("The unsupported project detected: %1").arg(stream.name());
+        return false;
+    }
+
+    // Clean up the project data
+    clear();
+
+    // Retrieve the project data
+    deserialize(stream);
+
     return true;
 }
 
-//! Write a project to a text file
+//! Write a project to a XML-formatted file
 bool Project::write(const QString& pathFile)
 {
     auto pFile = Utility::openFile(pathFile, Project::fileSuffix(), QIODevice::WriteOnly);
@@ -116,9 +145,39 @@ void Project::serialize(QXmlStreamWriter& stream) const
 }
 
 //! Output project to a XML stream
-void Project::deserialize(QXmlStreamWriter& stream)
+void Project::deserialize(QXmlStreamReader& stream)
 {
-    // TODO
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == "id")
+        {
+            mID = QUuid::fromString(stream.readElementText());
+        }
+        else if (stream.name() == "name")
+        {
+            mName = stream.readElementText();
+        }
+        else if (stream.name() == "pathFile")
+        {
+            mPathFile = stream.readElementText();
+        }
+        else if (stream.name() == "subprojects")
+        {
+            while (stream.readNextStartElement())
+            {
+                Subproject subproject;
+                if (stream.name() == subproject.elementName())
+                {
+                    subproject.deserialize(stream);
+                    mSubprojects.emplaceBack(std::move(subproject));
+                }
+            }
+        }
+        else
+        {
+            stream.skipCurrentElement();
+        }
+    }
 }
 
 QString Project::elementName() const

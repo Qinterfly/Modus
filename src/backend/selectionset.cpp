@@ -193,7 +193,7 @@ void SelectionSet::serialize(QXmlStreamWriter& stream) const
     Utility::serialize(stream, *this);
 }
 
-void SelectionSet::deserialize(QXmlStreamWriter& stream)
+void SelectionSet::deserialize(QXmlStreamReader& stream)
 {
     // TODO
 }
@@ -245,7 +245,7 @@ void Selection::serialize(QXmlStreamWriter& stream) const
     Utility::serialize(stream, *this);
 }
 
-void Selection::deserialize(QXmlStreamWriter& stream)
+void Selection::deserialize(QXmlStreamReader& stream)
 {
     // TODO
 }
@@ -253,4 +253,28 @@ void Selection::deserialize(QXmlStreamWriter& stream)
 QString Selection::elementName() const
 {
     return "selection";
+}
+
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Selection const& selection)
+{
+    selection.serialize(stream);
+    return stream;
+}
+
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, Selection& selection)
+{
+    selection.deserialize(stream);
+    return stream;
+}
+
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, SelectionSet const& selectionSet)
+{
+    selectionSet.serialize(stream);
+    return stream;
+}
+
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, SelectionSet& selectionSet)
+{
+    selectionSet.deserialize(stream);
+    return stream;
 }

@@ -43,13 +43,15 @@ public:
     bool operator!=(Selector const& another) const;
 
     void serialize(QXmlStreamWriter& stream) const override;
-    void deserialize(QXmlStreamWriter& stream) override;
+    void deserialize(QXmlStreamReader& stream) override;
     QString elementName() const override;
 
 private:
     QList<Backend::Core::SelectionSet> mSets;
 };
 
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Selector const& selector);
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, Selector& selector);
 }
 
 #endif // SELECTOR_H

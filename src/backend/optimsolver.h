@@ -44,7 +44,7 @@ public:
     bool operator!=(OptimProblem const& another) const;
 
     void serialize(QXmlStreamWriter& stream) const override;
-    void deserialize(QXmlStreamWriter& stream) override;
+    void deserialize(QXmlStreamReader& stream) override;
     QString elementName() const override;
 
     //! Model to be updated
@@ -88,7 +88,7 @@ public:
     bool operator!=(OptimOptions const& another) const;
 
     void serialize(QXmlStreamWriter& stream) const override;
-    void deserialize(QXmlStreamWriter& stream) override;
+    void deserialize(QXmlStreamReader& stream) override;
     QString elementName() const override;
 
     //! Maximum number of iterations of optimization process
@@ -133,7 +133,7 @@ public:
     bool operator!=(OptimSolution const& another) const;
 
     void serialize(QXmlStreamWriter& stream) const override;
-    void deserialize(QXmlStreamWriter& stream) override;
+    void deserialize(QXmlStreamReader& stream) override;
     QString elementName() const override;
 
     int iteration;
@@ -218,6 +218,13 @@ private:
     UnwrapFun mUnwrapFun;
     SolverFun mSolverFun;
 };
+
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, OptimProblem const& problem);
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, OptimProblem& problem);
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, OptimOptions const& options);
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, OptimOptions& options);
+QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, OptimSolution const& solution);
+QXmlStreamReader& operator>>(QXmlStreamReader& stream, OptimSolution& solution);
 }
 
 #endif // OPTIMSOLVER_H
