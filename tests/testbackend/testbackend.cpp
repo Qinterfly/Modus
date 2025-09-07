@@ -133,22 +133,30 @@ void TestBackend::testUpdateSimpleWing()
     OptimSolver solver;
     connect(&solver, &OptimSolver::log, [](QString message) { std::cout << message.toStdString() << std::endl; });
     auto solutions = solver.solve(problem, options);
-    QVERIFY(!solution.isEmpty());
+    QVERIFY(!solutions.isEmpty());
     QVERIFY(solutions.last().isSuccess);
+    subproject.optimSolutions() = solutions;
 }
 
 //! Write a project consisted of several subprojects to a file
 void TestBackend::testWriteProject()
 {
-    QString fileName = QString("test.%1").arg(Project::fileSuffix());
-    QString pathFile = Utility::combineFilePath(TEMPORARY_DIR, fileName);
+    // Write the project to the file
+    QString fileName = QString("tests.%1").arg(Project::fileSuffix());
+    QString pathFile = Utility::combineFilePath(EXAMPLES_DIR, fileName);
     QVERIFY(mProject.write(pathFile));
+
+    // Read the project from the file
     Project tProject;
     QVERIFY(tProject.read(pathFile));
+
+    // Compare the projects
+    QVERIFY(mProject == tProject);
+
+    // Write the file to check
     fileName = QString("check.%1").arg(Project::fileSuffix());
     pathFile = Utility::combineFilePath(TEMPORARY_DIR, fileName);
     tProject.write(pathFile);
-    QVERIFY(mProject == tProject);
 }
 
 //! Generate a bounded double value

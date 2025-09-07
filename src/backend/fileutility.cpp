@@ -32,8 +32,9 @@ QSharedPointer<QFile> openFile(QString const& pathFile, QString const& expectedS
 
 QString toString(QVariant const& variant)
 {
-    int type = variant.typeId();
+    int const kPrecision = 10;
 
+    int type = variant.typeId();
     switch (type)
     {
     case QMetaType::Bool:
@@ -41,7 +42,7 @@ QString toString(QVariant const& variant)
     case QMetaType::Int:
         return QString::number(variant.value<int>());
     case QMetaType::Double:
-        return QString::number(variant.value<double>());
+        return QString::number(variant.value<double>(), 'g', kPrecision);
     case QMetaType::QString:
         return variant.value<QString>();
     case QMetaType::QUuid:
@@ -158,9 +159,20 @@ void serialize(QXmlStreamWriter& stream, QString const& elementName, KCL::Model 
 void deserialize(QXmlStreamReader& stream, KCL::Model& model)
 {
     QString text = stream.readElementText();
-    QByteArray data = QByteArray::fromBase64(text.toLatin1());
-    text = QString::fromUtf8(qUncompress(data));
     if (!text.isEmpty())
+    {
+        QByteArray data = QByteArray::fromBase64(text.toLatin1());
+        text = QString::fromUtf8(qUncompress(data));
         model.fromString(text.toStdString());
+    }
+}
+
+bool areEqual(double first, double second, double tolerance)
+{
+    if (std::isnan(first) && std::isnan(second))
+        return true;
+    if (std::abs(first - second) <= tolerance)
+        return true;
+    return false;
 }
 }

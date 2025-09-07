@@ -41,24 +41,6 @@ QString combineFilePath(T const& first, Args... args)
     return QDir(first).filePath(combineFilePath(args...));
 }
 
-//! Check if metaobjects are equal
-template<typename T>
-bool areEqual(T const& first, T const& second)
-{
-    QMetaObject const& metaObject = first.staticMetaObject;
-    int numProperties = metaObject.propertyCount();
-    QVariant firstValue, secondValue;
-    while (numProperties > 0)
-    {
-        firstValue = metaObject.property(numProperties - 1).readOnGadget(&first);
-        secondValue = metaObject.property(numProperties - 1).readOnGadget(&second);
-        if (firstValue != secondValue)
-            return false;
-        --numProperties;
-    }
-    return true;
-}
-
 QString toString(QVariant const& variant);
 
 template<typename T, typename M>
@@ -230,6 +212,100 @@ void deserialize(QXmlStreamReader& stream, QMap<Backend::Core::Selection, bool>&
 void serialize(QXmlStreamWriter& stream, QString const& elementName, KCL::Model const& model);
 void deserialize(QXmlStreamReader& stream, KCL::Model& model);
 
+bool areEqual(double first, double second, double tolerance);
+
+//! Check if two matrices are equal
+template<typename Derived>
+bool areEqual(Eigen::MatrixBase<Derived> const& first, Eigen::MatrixBase<Derived> const& second, double tolerance)
+{
+    if (first.size() != second.size())
+        return false;
+    int numRows = first.rows();
+    int numCols = second.cols();
+    for (int i = 0; i != numRows; ++i)
+    {
+        for (int j = 0; j != numCols; ++j)
+        {
+            if (!areEqual(first(i, j), second(i, j), tolerance))
+                return false;
+        }
+    }
+    return true;
+}
+
+//! Check if metaobjects are equal
+template<typename T>
+bool areEqual(T const& first, T const& second)
+{
+    double const kTolerance = 1e-6;
+    QMetaObject const& metaObject = first.staticMetaObject;
+    int numProperties = metaObject.propertyCount();
+    while (numProperties > 0)
+    {
+        QVariant firstVariant = metaObject.property(numProperties - 1).readOnGadget(&first);
+        QVariant secondVariant = metaObject.property(numProperties - 1).readOnGadget(&second);
+        if (firstVariant != secondVariant)
+        {
+            QString type = firstVariant.typeName();
+            if (type == "double")
+            {
+                double firstValue = firstVariant.value<double>();
+                double secondValue = secondVariant.value<double>();
+                if (!areEqual(firstValue, secondValue, kTolerance))
+                    return false;
+            }
+            else if (type == "QList<std::pair<int,double>>")
+            {
+                auto firstValue = firstVariant.value<Core::ModalPairs>();
+                auto secondValue = secondVariant.value<Core::ModalPairs>();
+                if (firstValue.size() != secondValue.size())
+                    return false;
+                int numValues = firstValue.size();
+                for (int k = 0; k != numValues; ++k)
+                {
+                    if (firstValue[k].first - secondValue[k].first != 0)
+                        return false;
+                    if (!areEqual(firstValue[k].second, secondValue[k].second, kTolerance))
+                        return false;
+                }
+            }
+            else if (type == "QList<Eigen::Matrix<double,-1,-1>>")
+            {
+                auto firstValue = firstVariant.value<QList<Eigen::MatrixXd>>();
+                auto secondValue = secondVariant.value<QList<Eigen::MatrixXd>>();
+                if (firstValue.size() != secondValue.size())
+                    return false;
+                int numValues = firstValue.size();
+                for (int k = 0; k != numValues; ++k)
+                {
+                    if (!areEqual(firstValue[k], secondValue[k], kTolerance))
+                        return false;
+                }
+            }
+            else if (type == "Eigen::Matrix<double,-1,-1>")
+            {
+                if (!areEqual(firstVariant.value<Eigen::MatrixXd>(), secondVariant.value<Eigen::MatrixXd>(), kTolerance))
+                    return false;
+            }
+            else if (type == "Eigen::Matrix<double,-1,1>")
+            {
+                if (!areEqual(firstVariant.value<Eigen::VectorXd>(), secondVariant.value<Eigen::VectorXd>(), kTolerance))
+                    return false;
+            }
+            else if (type == "Eigen::Matrix<double,3,1>")
+            {
+                if (!areEqual(firstVariant.value<Eigen::Vector3d>(), secondVariant.value<Eigen::Vector3d>(), kTolerance))
+                    return false;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        --numProperties;
+    }
+    return true;
+}
 }
 
 #endif // FILEUTILITY_H

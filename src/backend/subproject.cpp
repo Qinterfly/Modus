@@ -65,6 +65,11 @@ KCL::Model const& Subproject::model() const
     return mModel;
 }
 
+QList<OptimSolution> const& Subproject::optimSolutions() const
+{
+    return mOptimSolutions;
+}
+
 Configuration& Subproject::configuration()
 {
     return mConfiguration;
@@ -73,6 +78,18 @@ Configuration& Subproject::configuration()
 KCL::Model& Subproject::model()
 {
     return mModel;
+}
+
+QList<OptimSolution>& Subproject::optimSolutions()
+{
+    return mOptimSolutions;
+}
+
+void Subproject::clear()
+{
+    mConfiguration = Configuration();
+    mModel = KCL::Model();
+    mOptimSolutions.clear();
 }
 
 bool Subproject::operator==(Subproject const& another) const
@@ -90,6 +107,7 @@ void Subproject::serialize(QXmlStreamWriter& stream, QString const& elementName)
     stream.writeStartElement(elementName);
     mConfiguration.serialize(stream, "configuration");
     Utility::serialize(stream, "model", mModel);
+    Utility::serialize(stream, "optimSolutions", "optimSolution", mOptimSolutions);
     stream.writeEndElement();
 }
 
@@ -101,6 +119,8 @@ void Subproject::deserialize(QXmlStreamReader& stream)
             mConfiguration.deserialize(stream);
         else if (stream.name() == "model")
             Utility::deserialize(stream, mModel);
+        else if (stream.name() == "optimSolutions")
+            Utility::deserialize(stream, "optimSolution", mOptimSolutions);
         else
             stream.skipCurrentElement();
     }

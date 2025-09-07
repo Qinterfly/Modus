@@ -39,6 +39,7 @@ class Subproject : public Identifier, public ISerializable
     Q_GADGET
     Q_PROPERTY(Configuration configuration MEMBER mConfiguration)
     Q_PROPERTY(KCL::Model model MEMBER mModel)
+    Q_PROPERTY(QList<OptimSolution> optimSolutions MEMBER mOptimSolutions)
 
 public:
     Subproject();
@@ -48,9 +49,13 @@ public:
     QString const& name() const;
     Configuration const& configuration() const;
     KCL::Model const& model() const;
+    QList<OptimSolution> const& optimSolutions() const;
 
     Configuration& configuration();
     KCL::Model& model();
+    QList<OptimSolution>& optimSolutions();
+
+    void clear();
 
     bool operator==(Subproject const& another) const;
     bool operator!=(Subproject const& another) const;
@@ -61,6 +66,7 @@ public:
 private:
     Configuration mConfiguration;
     KCL::Model mModel;
+    QList<OptimSolution> mOptimSolutions;
 };
 
 QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Configuration const& configuration);

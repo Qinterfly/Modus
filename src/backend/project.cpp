@@ -120,6 +120,9 @@ bool Project::read(const QString& pathFile)
     // Retrieve the project data
     deserialize(stream);
 
+    // Remember the filepath
+    mPathFile = pathFile;
+
     return true;
 }
 
