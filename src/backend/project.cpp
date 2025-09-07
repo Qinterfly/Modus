@@ -13,6 +13,16 @@ Project::Project()
 {
 }
 
+bool Project::operator==(Project const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+
+bool Project::operator!=(Project const& another) const
+{
+    return !(*this == another);
+}
+
 QString const& Project::name() const
 {
     return mName;
@@ -98,7 +108,7 @@ bool Project::read(const QString& pathFile)
 
     // Check the root item
     stream.readNextStartElement();
-    if (stream.name() != elementName())
+    if (stream.name() != "project")
     {
         qWarning() << QObject::tr("The unsupported project detected: %1").arg(stream.name());
         return false;
@@ -126,7 +136,7 @@ bool Project::write(const QString& pathFile)
     stream.writeStartDocument(skProjectIOVersion);
 
     // Write the data
-    serialize(stream);
+    serialize(stream, "project");
 
     // Close the file
     stream.writeEndDocument();
@@ -139,9 +149,14 @@ bool Project::write(const QString& pathFile)
 }
 
 //! Output project to a XML stream
-void Project::serialize(QXmlStreamWriter& stream) const
+void Project::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    Utility::serialize(stream, *this);
+    stream.writeStartElement(elementName);
+    stream.writeTextElement("id", mID.toString());
+    stream.writeTextElement("name", mName);
+    stream.writeTextElement("pathFile", mPathFile);
+    Utility::serialize(stream, "subprojects", "subproject", mSubprojects);
+    stream.writeEndElement();
 }
 
 //! Output project to a XML stream
@@ -163,24 +178,11 @@ void Project::deserialize(QXmlStreamReader& stream)
         }
         else if (stream.name() == "subprojects")
         {
-            while (stream.readNextStartElement())
-            {
-                Subproject subproject;
-                if (stream.name() == subproject.elementName())
-                {
-                    subproject.deserialize(stream);
-                    mSubprojects.emplaceBack(std::move(subproject));
-                }
-            }
+            Utility::deserialize(stream, "subproject", mSubprojects);
         }
         else
         {
             stream.skipCurrentElement();
         }
     }
-}
-
-QString Project::elementName() const
-{
-    return "project";
 }

@@ -18,14 +18,14 @@ SelectionSet& Selector::add(KCL::Model const& model, QString const& name)
     if (contains(name))
         qWarning() << QObject::tr("The selection set named %1 has been created already. Choose a different name").arg(name);
     else
-        mSets.emplaceBack(SelectionSet(model, name));
-    return mSets[find(name)];
+        mSelectionSets.emplaceBack(SelectionSet(model, name));
+    return mSelectionSets[find(name)];
 }
 
 //! Update the selection sets according to a new model
 void Selector::update(KCL::Model const& model)
 {
-    for (auto& set : mSets)
+    for (auto& set : mSelectionSets)
         set.update(model);
 }
 
@@ -34,7 +34,7 @@ bool Selector::remove(QString const& name)
 {
     if (contains(name))
     {
-        mSets.remove(find(name));
+        mSelectionSets.remove(find(name));
         return true;
     }
     return false;
@@ -43,38 +43,38 @@ bool Selector::remove(QString const& name)
 //! Remove all the sets
 void Selector::clear()
 {
-    mSets.clear();
+    mSelectionSets.clear();
 }
 
 //! Get all the selection sets
 QList<Backend::Core::SelectionSet> const& Selector::get() const
 {
-    return mSets;
+    return mSelectionSets;
 }
 
 //! Get the selection set located at the specified index
 SelectionSet const& Selector::get(int index) const
 {
-    return mSets[index];
+    return mSelectionSets[index];
 }
 
 //! Get all the selection sets
 QList<SelectionSet>& Selector::get()
 {
-    return mSets;
+    return mSelectionSets;
 }
 
 //! Get the selection set located at the specified index
 SelectionSet& Selector::get(int index)
 {
-    return mSets[index];
+    return mSelectionSets[index];
 }
 
 //! Merge all the selection sets into one
 QList<Selection> Selector::allSelections() const
 {
     QMap<Selection, bool> mapSelections;
-    for (SelectionSet const& set : mSets)
+    for (SelectionSet const& set : mSelectionSets)
     {
         auto setSelections = set.selections();
         for (auto const [selection, flag] : setSelections.asKeyValueRange())
@@ -90,10 +90,10 @@ QList<Selection> Selector::allSelections() const
 int Selector::find(QString const& name) const
 {
     int iFound = -1;
-    int numSets = mSets.size();
+    int numSets = mSelectionSets.size();
     for (int i = 0; i != numSets; ++i)
     {
-        if (mSets[i].name() == name)
+        if (mSelectionSets[i].name() == name)
         {
             iFound = i;
             break;
@@ -111,7 +111,7 @@ bool Selector::contains(QString const& name) const
 //! Acquire the number of sets
 int Selector::numSets() const
 {
-    return mSets.size();
+    return mSelectionSets.size();
 }
 
 //! Check if there are any selection sets
@@ -130,29 +130,20 @@ bool Selector::operator!=(Selector const& another) const
     return !(*this == another);
 }
 
-void Selector::serialize(QXmlStreamWriter& stream) const
+void Selector::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    Utility::serialize(stream, *this);
+    stream.writeStartElement(elementName);
+    Utility::serialize(stream, "selectionSets", "selectionSet", mSelectionSets);
+    stream.writeEndElement();
 }
 
 void Selector::deserialize(QXmlStreamReader& stream)
 {
-    // TODO
-}
-
-QString Selector::elementName() const
-{
-    return "selector";
-}
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Selector const& selector)
-{
-    selector.serialize(stream);
-    return stream;
-}
-
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, Selector& selector)
-{
-    selector.deserialize(stream);
-    return stream;
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == "selectionSets")
+            Utility::deserialize(stream, "selectionSet", mSelectionSets);
+        else
+            stream.skipCurrentElement();
+    }
 }

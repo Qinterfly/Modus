@@ -280,19 +280,31 @@ bool ModalSolution::operator!=(ModalSolution const& another) const
     return !(*this == another);
 }
 
-void ModalSolution::serialize(QXmlStreamWriter& stream) const
+void ModalSolution::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    Utility::serialize(stream, *this);
+    stream.writeStartElement(elementName);
+    mGeometry.serialize(stream, "geometry");
+    Utility::serialize(stream, "frequencies", mFrequencies);
+    Utility::serialize(stream, "modeShapes", "modeShape", mModeShapes);
+    Utility::serialize(stream, "names", "name", mNames);
+    stream.writeEndElement();
 }
 
 void ModalSolution::deserialize(QXmlStreamReader& stream)
 {
-    // TODO
-}
-
-QString ModalSolution::elementName() const
-{
-    return "modalSolution";
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == "geometry")
+            mGeometry.deserialize(stream);
+        else if (stream.name() == "frequencies")
+            Utility::deserialize(stream, mFrequencies);
+        else if (stream.name() == "modeShapes")
+            Utility::deserialize(stream, "modeShape", mModeShapes);
+        else if (stream.name() == "names")
+            Utility::deserialize(stream, "name", mNames);
+        else
+            stream.skipCurrentElement();
+    }
 }
 
 //! Reallocate the data fields
@@ -413,19 +425,24 @@ bool Vertex::operator!=(Vertex const& another) const
     return !(*this == another);
 }
 
-void Vertex::serialize(QXmlStreamWriter& stream) const
+void Vertex::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    Utility::serialize(stream, *this);
+    stream.writeStartElement(elementName);
+    stream.writeAttribute("name", name);
+    Utility::serialize(stream, "position", position);
+    stream.writeEndElement();
 }
 
 void Vertex::deserialize(QXmlStreamReader& stream)
 {
-    // TODO
-}
-
-QString Vertex::elementName() const
-{
-    return "vertex";
+    name = stream.attributes().value("name").toString();
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == "position")
+            Utility::deserialize(stream, position);
+        else
+            stream.skipCurrentElement();
+    }
 }
 
 Slave::Slave()
@@ -443,19 +460,26 @@ bool Slave::operator!=(Slave const& another) const
     return !(*this == another);
 }
 
-void Slave::serialize(QXmlStreamWriter& stream) const
+void Slave::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    Utility::serialize(stream, *this);
+    stream.writeStartElement(elementName);
+    stream.writeAttribute("slaveIndex", Utility::toString(slaveIndex));
+    stream.writeAttribute("direction", Utility::toString((int) direction));
+    Utility::serialize(stream, "masterIndices", masterIndices);
+    stream.writeEndElement();
 }
 
 void Slave::deserialize(QXmlStreamReader& stream)
 {
-    // TODO
-}
-
-QString Slave::elementName() const
-{
-    return "slave";
+    slaveIndex = stream.attributes().value("slaveIndex").toInt();
+    direction = (Direction) stream.attributes().value("direction").toInt();
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == "masterIndices")
+            Utility::deserialize(stream, masterIndices);
+        else
+            stream.skipCurrentElement();
+    }
 }
 
 Geometry::Geometry()
@@ -505,19 +529,34 @@ bool Geometry::operator!=(Geometry const& another) const
     return !(*this == another);
 }
 
-void Geometry::serialize(QXmlStreamWriter& stream) const
+void Geometry::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    Utility::serialize(stream, *this);
+    stream.writeStartElement(elementName);
+    Utility::serialize(stream, "vertices", "vertex", vertices);
+    Utility::serialize(stream, "slaves", "slave", slaves);
+    Utility::serialize(stream, "lines", lines);
+    Utility::serialize(stream, "triangles", triangles);
+    Utility::serialize(stream, "quadrangles", quadrangles);
+    stream.writeEndElement();
 }
 
 void Geometry::deserialize(QXmlStreamReader& stream)
 {
-    // TODO
-}
-
-QString Geometry::elementName() const
-{
-    return "geometry";
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == "vertices")
+            Utility::deserialize(stream, "vertex", vertices);
+        else if (stream.name() == "slaves")
+            Utility::deserialize(stream, "slave", slaves);
+        else if (stream.name() == "lines")
+            Utility::deserialize(stream, lines);
+        else if (stream.name() == "triangles")
+            Utility::deserialize(stream, triangles);
+        else if (stream.name() == "quadrangles")
+            Utility::deserialize(stream, quadrangles);
+        else
+            stream.skipCurrentElement();
+    }
 }
 
 ModalComparison::ModalComparison()
@@ -565,77 +604,29 @@ bool ModalComparison::operator!=(ModalComparison const& another) const
     return !(*this == another);
 }
 
-void ModalComparison::serialize(QXmlStreamWriter& stream) const
+void ModalComparison::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    Utility::serialize(stream, *this);
+    stream.writeStartElement(elementName);
+    Utility::serialize(stream, "diffFrequencies", diffFrequencies);
+    Utility::serialize(stream, "errorFrequencies", errorFrequencies);
+    Utility::serialize(stream, "errorsMAC", errorsMAC);
+    Utility::serialize(stream, "pairs", pairs);
+    stream.writeEndElement();
 }
 
 void ModalComparison::deserialize(QXmlStreamReader& stream)
 {
-    // TODO
-}
-
-QString ModalComparison::elementName() const
-{
-    return "modalComparison";
-}
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Vertex const& vertex)
-{
-    vertex.serialize(stream);
-    return stream;
-}
-
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, Vertex& vertex)
-{
-    vertex.deserialize(stream);
-    return stream;
-}
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Slave const& slave)
-{
-    slave.serialize(stream);
-    return stream;
-}
-
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, Slave& slave)
-{
-    slave.deserialize(stream);
-    return stream;
-}
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Geometry const& geometry)
-{
-    geometry.serialize(stream);
-    return stream;
-}
-
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, Geometry& geometry)
-{
-    geometry.deserialize(stream);
-    return stream;
-}
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, ModalComparison const& comparison)
-{
-    comparison.serialize(stream);
-    return stream;
-}
-
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, ModalComparison& comparison)
-{
-    comparison.deserialize(stream);
-    return stream;
-}
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, ModalSolution const& solution)
-{
-    solution.serialize(stream);
-    return stream;
-}
-
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, ModalSolution& solution)
-{
-    solution.deserialize(stream);
-    return stream;
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == "diffFrequencies")
+            Utility::deserialize(stream, diffFrequencies);
+        else if (stream.name() == "errorFrequencies")
+            Utility::deserialize(stream, errorFrequencies);
+        else if (stream.name() == "errorsMAC")
+            Utility::deserialize(stream, errorsMAC);
+        else if (stream.name() == "pairs")
+            Utility::deserialize(stream, pairs);
+        else
+            stream.skipCurrentElement();
+    }
 }

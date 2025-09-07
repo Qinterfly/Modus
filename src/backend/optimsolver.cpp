@@ -768,9 +768,17 @@ bool OptimProblem::operator!=(OptimProblem const& another) const
     return !(*this == another);
 }
 
-void OptimProblem::serialize(QXmlStreamWriter& stream) const
+void OptimProblem::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    Utility::serialize(stream, *this);
+    stream.writeStartElement(elementName);
+    Utility::serialize(stream, "model", model);
+    Utility::serialize(stream, "targetIndices", targetIndices);
+    Utility::serialize(stream, "targetWeights", targetWeights);
+    targetSolution.serialize(stream, "targetSolution");
+    Utility::serialize(stream, "targetMatches", targetMatches);
+    selector.serialize(stream, "selector");
+    constraints.serialize(stream, "constraints");
+    stream.writeEndElement();
 }
 
 void OptimProblem::deserialize(QXmlStreamReader& stream)
@@ -783,14 +791,17 @@ void OptimProblem::deserialize(QXmlStreamReader& stream)
             Utility::deserialize(stream, targetIndices);
         else if (stream.name() == "targetWeights")
             Utility::deserialize(stream, targetWeights);
+        else if (stream.name() == "targetSolution")
+            targetSolution.deserialize(stream);
+        else if (stream.name() == "targetMatches")
+            Utility::deserialize(stream, targetMatches);
+        else if (stream.name() == "selector")
+            selector.deserialize(stream);
+        else if (stream.name() == "constraints")
+            constraints.deserialize(stream);
         else
             stream.skipCurrentElement();
     }
-}
-
-QString OptimProblem::elementName() const
-{
-    return "optimProblem";
 }
 
 OptimOptions::OptimOptions()
@@ -814,9 +825,18 @@ bool OptimOptions::operator!=(OptimOptions const& another) const
     return !(*this == another);
 }
 
-void OptimOptions::serialize(QXmlStreamWriter& stream) const
+void OptimOptions::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    Utility::serialize(stream, *this);
+    QMetaObject const& metaObject = staticMetaObject;
+    int numProperties = metaObject.propertyCount();
+    stream.writeStartElement(elementName);
+    for (int i = 0; i != numProperties; ++i)
+    {
+        QString name = metaObject.property(i).name();
+        QVariant variant = metaObject.property(i).readOnGadget(this);
+        stream.writeTextElement(name, Utility::toString(variant));
+    }
+    stream.writeEndElement();
 }
 
 void OptimOptions::deserialize(QXmlStreamReader& stream)
@@ -833,11 +853,6 @@ void OptimOptions::deserialize(QXmlStreamReader& stream)
     }
 }
 
-QString OptimOptions::elementName() const
-{
-    return "optimOptions";
-}
-
 OptimSolution::OptimSolution()
 {
 }
@@ -851,53 +866,37 @@ bool OptimSolution::operator!=(OptimSolution const& another) const
     return !(*this == another);
 }
 
-void OptimSolution::serialize(QXmlStreamWriter& stream) const
+void OptimSolution::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    Utility::serialize(stream, *this);
+    stream.writeStartElement(elementName);
+    stream.writeAttribute("iteration", Utility::toString(iteration));
+    stream.writeAttribute("isSuccess", Utility::toString(isSuccess));
+    stream.writeAttribute("duration", Utility::toString(duration));
+    stream.writeAttribute("cost", Utility::toString(cost));
+    Utility::serialize(stream, "model", model);
+    modalSolution.serialize(stream, "modalSolution");
+    modalComparison.serialize(stream, "modalComparison");
+    stream.writeTextElement("message", message);
+    stream.writeEndElement();
 }
 
 void OptimSolution::deserialize(QXmlStreamReader& stream)
 {
-    // TODO
-}
-
-QString OptimSolution::elementName() const
-{
-    return "optimSolution";
-}
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, OptimProblem const& problem)
-{
-    problem.serialize(stream);
-    return stream;
-}
-
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, OptimProblem& problem)
-{
-    problem.deserialize(stream);
-    return stream;
-}
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, OptimOptions const& options)
-{
-    options.serialize(stream);
-    return stream;
-}
-
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, OptimOptions& options)
-{
-    options.deserialize(stream);
-    return stream;
-}
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, OptimSolution const& solution)
-{
-    solution.serialize(stream);
-    return stream;
-}
-
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, OptimSolution& solution)
-{
-    solution.deserialize(stream);
-    return stream;
+    iteration = stream.attributes().value("iteration").toInt();
+    isSuccess = stream.attributes().value("isSuccess").toInt();
+    duration = stream.attributes().value("duration").toDouble();
+    cost = stream.attributes().value("cost").toDouble();
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == "model")
+            Utility::deserialize(stream, model);
+        else if (stream.name() == "modalSolution")
+            modalSolution.deserialize(stream);
+        else if (stream.name() == "modalComparison")
+            modalComparison.deserialize(stream);
+        else if (stream.name() == "message")
+            message = stream.readElementText();
+        else
+            stream.skipCurrentElement();
+    }
 }

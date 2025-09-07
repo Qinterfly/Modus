@@ -59,79 +59,135 @@ bool areEqual(T const& first, T const& second)
     return true;
 }
 
-void serialize(QXmlStreamWriter& stream, QString const& name, QVariant const& variant);
-void serialize(QXmlStreamWriter& stream, QString const& name, QList<QString> const& items);
-void serialize(QXmlStreamWriter& stream, QString const& name, QMap<Backend::Core::Selection, bool> const& map);
-void serialize(QXmlStreamWriter& stream, QString const& name, QList<Eigen::MatrixXd> const& matrices);
+QString toString(QVariant const& variant);
 
-template<typename T>
-void serialize(QXmlStreamWriter& stream, T const& object)
+template<typename T, typename M>
+QString toString(QPair<T, M> const& pair)
 {
-    if (!std::is_base_of<Core::ISerializable, T>())
-        return;
-    QMetaObject const& metaObject = object.staticMetaObject;
-    int numProperties = metaObject.propertyCount();
-    stream.writeStartElement(object.elementName());
-    for (int i = 0; i != numProperties; ++i)
-    {
-        QString name = metaObject.property(i).name();
-        QVariant variant = metaObject.property(i).readOnGadget(&object);
-        serialize(stream, name, variant);
-    }
-    stream.writeEndElement();
+    return QString("%1 %2").arg(toString(pair.first), toString(pair.second));
+}
+template<typename T>
+void fromString(QString const& text, T& value)
+{
+    QVariant variant(text);
+    value = variant.value<T>();
+}
+
+template<typename T, typename M>
+void fromString(QString text, QPair<T, M>& value)
+{
+    QTextStream stream(&text);
+    QString first, second;
+    stream >> first >> second;
+    fromString(first, value.first);
+    fromString(second, value.second);
 }
 
 template<typename T>
-void serialize(QXmlStreamWriter& stream, QString const& name, QList<T> const& objects)
+void serialize(QXmlStreamWriter& stream, QString const& elementName, QString const& objectName, QList<T> const& objects)
 {
     if (!std::is_base_of<Core::ISerializable, T>())
         return;
-    stream.writeStartElement(name);
+    stream.writeStartElement(elementName);
     for (auto const& object : objects)
-        serialize(stream, object);
-    stream.writeEndElement();
-}
-
-template<typename T, typename M>
-void serialize(QXmlStreamWriter& stream, QString const& name, QPair<T, M> const& pair)
-{
-    if (!std::is_arithmetic<T>() || !std::is_arithmetic<M>())
-        return;
-    stream.writeStartElement(name);
-    stream.writeTextElement("first", QString::number(pair.first));
-    stream.writeTextElement("second", QString::number(pair.second));
-    stream.writeEndElement();
-}
-
-template<typename T, typename M>
-void serialize(QXmlStreamWriter& stream, QString const& name, QList<QPair<T, M>> const& pairs)
-{
-    stream.writeStartElement(name);
-    for (auto const& item : pairs)
-        serialize(stream, "item", item);
+        object.serialize(stream, objectName);
     stream.writeEndElement();
 }
 
 template<typename T>
-void serialize(QXmlStreamWriter& stream, QString const& name, QMap<Backend::Core::VariableType, T> const& map)
+void deserialize(QXmlStreamReader& stream, QString const& objectName, QList<T>& objects)
 {
-    stream.writeStartElement(name);
-    for (auto const& [key, value] : map.asKeyValueRange())
+    objects.clear();
+    if (!std::is_base_of<Core::ISerializable, T>())
+        return;
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == objectName)
+        {
+            T object;
+            object.deserialize(stream);
+            objects.emplaceBack(std::move(object));
+        }
+        else
+        {
+            stream.skipCurrentElement();
+        }
+    }
+}
+
+template<typename T, typename M>
+void serialize(QXmlStreamWriter& stream, QString const& elementName, QList<QPair<T, M>> const& items)
+{
+    stream.writeStartElement(elementName);
+    for (auto const& item : items)
     {
         stream.writeStartElement("item");
-        serialize(stream, "key", (int) key);
-        serialize(stream, "value", value);
+        stream.writeAttribute("first", toString(item.first));
+        stream.writeAttribute("second", toString(item.second));
         stream.writeEndElement();
     }
     stream.writeEndElement();
 }
 
+template<typename T, typename M>
+void deserialize(QXmlStreamReader& stream, QList<QPair<T, M>>& items)
+{
+    items.clear();
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == "item")
+        {
+            T first;
+            M second;
+            fromString(stream.attributes().value("first").toString(), first);
+            fromString(stream.attributes().value("second").toString(), second);
+            items.push_back({first, second});
+            stream.readNextStartElement();
+        }
+        else
+        {
+            stream.skipCurrentElement();
+        }
+    }
+}
+
+template<typename T>
+void serialize(QXmlStreamWriter& stream, QString const& elementName, QMap<Backend::Core::VariableType, T> const& map)
+{
+    stream.writeStartElement(elementName);
+    for (auto const& [key, value] : map.asKeyValueRange())
+    {
+        stream.writeStartElement("item");
+        stream.writeAttribute("key", toString((int) key));
+        stream.writeAttribute("value", toString(value));
+        stream.writeEndElement();
+    }
+    stream.writeEndElement();
+}
+
+template<typename T>
+void deserialize(QXmlStreamReader& stream, QMap<Backend::Core::VariableType, T>& map)
+{
+    map.clear();
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == "item")
+        {
+            auto variable = (Backend::Core::VariableType) stream.attributes().value("key").toInt();
+            T value;
+            fromString(stream.attributes().value("value").toString(), value);
+            map[variable] = value;
+            stream.readNextStartElement();
+        }
+    }
+}
+
 template<typename Derived>
-void serialize(QXmlStreamWriter& stream, QString const& name, Eigen::MatrixBase<Derived> const& matrix)
+void serialize(QXmlStreamWriter& stream, QString const& elementName, Eigen::MatrixBase<Derived> const& matrix)
 {
     QString text;
     QTextStream textStream(&text);
-    stream.writeStartElement(name);
+    stream.writeStartElement(elementName);
     int numRows = matrix.rows();
     int numCols = matrix.cols();
     stream.writeAttribute("numRows", QString::number(numRows));
@@ -142,7 +198,7 @@ void serialize(QXmlStreamWriter& stream, QString const& name, Eigen::MatrixBase<
         {
             if (i > 0 || j > 0)
                 textStream << " ";
-            textStream << matrix(i, j);
+            textStream << toString(matrix(i, j));
         }
     }
     stream.writeCharacters(text);
@@ -162,8 +218,16 @@ void deserialize(QXmlStreamReader& stream, Eigen::Matrix<Scalar, Rows, Cols, Opt
             textStream >> matrix(i, j);
 }
 
-template<>
-void serialize(QXmlStreamWriter& stream, KCL::Model const& model);
+void serialize(QXmlStreamWriter& stream, QString const& elementName, QString const& objectName, QList<Eigen::MatrixXd> const& matrices);
+void deserialize(QXmlStreamReader& stream, QString const& objectName, QList<Eigen::MatrixXd>& matrices);
+
+void serialize(QXmlStreamWriter& stream, QString const& elementName, QString const& objectName, QList<QString> const& items);
+void deserialize(QXmlStreamReader& stream, QString const& objectName, QList<QString>& items);
+
+void serialize(QXmlStreamWriter& stream, QString const& elementName, QMap<Backend::Core::Selection, bool> const& map);
+void deserialize(QXmlStreamReader& stream, QMap<Backend::Core::Selection, bool>& map);
+
+void serialize(QXmlStreamWriter& stream, QString const& elementName, KCL::Model const& model);
 void deserialize(QXmlStreamReader& stream, KCL::Model& model);
 
 }

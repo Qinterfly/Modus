@@ -40,19 +40,37 @@ bool Constraints::operator!=(Constraints const& another) const
     return !(*this == another);
 }
 
-void Constraints::serialize(QXmlStreamWriter& stream) const
+void Constraints::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    Utility::serialize(stream, *this);
+    stream.writeStartElement(elementName);
+    Utility::serialize(stream, "enabledState", mEnabledState);
+    Utility::serialize(stream, "unitedState", mUnitedState);
+    Utility::serialize(stream, "multipliedState", mMultipliedState);
+    Utility::serialize(stream, "nonzeroState", mNonzeroState);
+    Utility::serialize(stream, "scales", mScales);
+    Utility::serialize(stream, "limits", mLimits);
+    stream.writeEndElement();
 }
 
 void Constraints::deserialize(QXmlStreamReader& stream)
 {
-    // TODO
-}
-
-QString Constraints::elementName() const
-{
-    return "constraints";
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == "enabledState")
+            Utility::deserialize(stream, mEnabledState);
+        else if (stream.name() == "unitedState")
+            Utility::deserialize(stream, mUnitedState);
+        else if (stream.name() == "multipliedState")
+            Utility::deserialize(stream, mMultipliedState);
+        else if (stream.name() == "nonzeroState")
+            Utility::deserialize(stream, mNonzeroState);
+        else if (stream.name() == "scales")
+            Utility::deserialize(stream, mScales);
+        else if (stream.name() == "limits")
+            Utility::deserialize(stream, mLimits);
+        else
+            stream.skipCurrentElement();
+    }
 }
 
 bool Constraints::isEnabled(VariableType type) const
@@ -251,16 +269,4 @@ void Constraints::setDefaultLimits()
     mLimits[VariableType::kShearModulus] = mLimits[VariableType::kYoungsModulus1];
     // Springs
     mLimits[VariableType::kSpringStiffness] = {1e-9, 1e9};
-}
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Constraints const& constraints)
-{
-    constraints.serialize(stream);
-    return stream;
-}
-
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, Constraints& constraints)
-{
-    constraints.deserialize(stream);
-    return stream;
 }

@@ -26,9 +26,8 @@ public:
     bool operator==(Configuration const& another) const;
     bool operator!=(Configuration const& another) const;
 
-    void serialize(QXmlStreamWriter& stream) const override;
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
-    QString elementName() const override;
 
     QString name;
     OptimProblem problem;
@@ -56,9 +55,8 @@ public:
     bool operator==(Subproject const& another) const;
     bool operator!=(Subproject const& another) const;
 
-    void serialize(QXmlStreamWriter& stream) const override;
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
-    QString elementName() const override;
 
 private:
     Configuration mConfiguration;

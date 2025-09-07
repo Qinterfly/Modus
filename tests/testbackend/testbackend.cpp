@@ -148,6 +148,7 @@ void TestBackend::testWriteProject()
     fileName = QString("check.%1").arg(Project::fileSuffix());
     pathFile = Utility::combineFilePath(TEMPORARY_DIR, fileName);
     tProject.write(pathFile);
+    QVERIFY(mProject == tProject);
 }
 
 //! Generate a bounded double value

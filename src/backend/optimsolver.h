@@ -43,9 +43,8 @@ public:
     bool operator==(OptimProblem const& another) const;
     bool operator!=(OptimProblem const& another) const;
 
-    void serialize(QXmlStreamWriter& stream) const override;
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
-    QString elementName() const override;
 
     //! Model to be updated
     KCL::Model model;
@@ -87,9 +86,8 @@ public:
     bool operator==(OptimOptions const& another) const;
     bool operator!=(OptimOptions const& another) const;
 
-    void serialize(QXmlStreamWriter& stream) const override;
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
-    QString elementName() const override;
 
     //! Maximum number of iterations of optimization process
     int maxNumIterations;
@@ -132,9 +130,8 @@ public:
     bool operator==(OptimSolution const& another) const;
     bool operator!=(OptimSolution const& another) const;
 
-    void serialize(QXmlStreamWriter& stream) const override;
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
-    QString elementName() const override;
 
     int iteration;
     bool isSuccess;

@@ -17,7 +17,7 @@ namespace Backend::Core
 class Selector : public ISerializable
 {
     Q_GADGET
-    Q_PROPERTY(QList<Backend::Core::SelectionSet> sets MEMBER mSets)
+    Q_PROPERTY(QList<Backend::Core::SelectionSet> selectionSets MEMBER mSelectionSets)
 
 public:
     Selector();
@@ -42,12 +42,11 @@ public:
     bool operator==(Selector const& another) const;
     bool operator!=(Selector const& another) const;
 
-    void serialize(QXmlStreamWriter& stream) const override;
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
-    QString elementName() const override;
 
 private:
-    QList<Backend::Core::SelectionSet> mSets;
+    QList<Backend::Core::SelectionSet> mSelectionSets;
 };
 
 QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Selector const& selector);

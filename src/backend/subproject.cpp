@@ -17,9 +17,13 @@ bool Configuration::operator!=(Configuration const& another) const
     return !(*this == another);
 }
 
-void Configuration::serialize(QXmlStreamWriter& stream) const
+void Configuration::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    Utility::serialize(stream, *this);
+    stream.writeStartElement(elementName);
+    stream.writeTextElement("name", name);
+    problem.serialize(stream, "problem");
+    options.serialize(stream, "options");
+    stream.writeEndElement();
 }
 
 void Configuration::deserialize(QXmlStreamReader& stream)
@@ -28,18 +32,13 @@ void Configuration::deserialize(QXmlStreamReader& stream)
     {
         if (stream.name() == "name")
             name = stream.readElementText();
-        else if (stream.name() == problem.elementName())
+        else if (stream.name() == "problem")
             problem.deserialize(stream);
-        else if (stream.name() == options.elementName())
+        else if (stream.name() == "options")
             options.deserialize(stream);
         else
             stream.skipCurrentElement();
     }
-}
-
-QString Configuration::elementName() const
-{
-    return "configuration";
 }
 
 Subproject::Subproject()
@@ -86,49 +85,23 @@ bool Subproject::operator!=(Subproject const& another) const
     return !(*this == another);
 }
 
-void Subproject::serialize(QXmlStreamWriter& stream) const
+void Subproject::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    Utility::serialize(stream, *this);
+    stream.writeStartElement(elementName);
+    mConfiguration.serialize(stream, "configuration");
+    Utility::serialize(stream, "model", mModel);
+    stream.writeEndElement();
 }
 
 void Subproject::deserialize(QXmlStreamReader& stream)
 {
     while (stream.readNextStartElement())
     {
-        if (stream.name() == mConfiguration.elementName())
+        if (stream.name() == "configuration")
             mConfiguration.deserialize(stream);
         else if (stream.name() == "model")
             Utility::deserialize(stream, mModel);
         else
             stream.skipCurrentElement();
     }
-}
-
-QString Subproject::elementName() const
-{
-    return "subproject";
-}
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Configuration const& configuration)
-{
-    configuration.serialize(stream);
-    return stream;
-}
-
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, Configuration& configuration)
-{
-    configuration.deserialize(stream);
-    return stream;
-}
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Subproject const& subproject)
-{
-    subproject.serialize(stream);
-    return stream;
-}
-
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, Subproject& subproject)
-{
-    subproject.deserialize(stream);
-    return stream;
 }

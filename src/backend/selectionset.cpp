@@ -183,19 +183,24 @@ bool SelectionSet::operator!=(SelectionSet const& another) const
     return !(*this == another);
 }
 
-QString SelectionSet::elementName() const
+void SelectionSet::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    return "selectionSet";
-}
-
-void SelectionSet::serialize(QXmlStreamWriter& stream) const
-{
-    Utility::serialize(stream, *this);
+    stream.writeStartElement(elementName);
+    stream.writeAttribute("name", mName);
+    Utility::serialize(stream, "dataSet", mDataSet);
+    stream.writeEndElement();
 }
 
 void SelectionSet::deserialize(QXmlStreamReader& stream)
 {
-    // TODO
+    mName = stream.attributes().value("name").toString();
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == "dataSet")
+            Utility::deserialize(stream, mDataSet);
+        else
+            stream.skipCurrentElement();
+    }
 }
 
 Selection::Selection()
@@ -240,41 +245,19 @@ bool Selection::operator>=(Selection const& another) const
     return *this > another || *this == another;
 }
 
-void Selection::serialize(QXmlStreamWriter& stream) const
+void Selection::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    Utility::serialize(stream, *this);
+    stream.writeStartElement(elementName);
+    stream.writeAttribute("iSurface", Utility::toString(iSurface));
+    stream.writeAttribute("type", Utility::toString((int) type));
+    stream.writeAttribute("iElement", Utility::toString(iElement));
+    stream.writeEndElement();
 }
 
 void Selection::deserialize(QXmlStreamReader& stream)
 {
-    // TODO
-}
-
-QString Selection::elementName() const
-{
-    return "selection";
-}
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Selection const& selection)
-{
-    selection.serialize(stream);
-    return stream;
-}
-
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, Selection& selection)
-{
-    selection.deserialize(stream);
-    return stream;
-}
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, SelectionSet const& selectionSet)
-{
-    selectionSet.serialize(stream);
-    return stream;
-}
-
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, SelectionSet& selectionSet)
-{
-    selectionSet.deserialize(stream);
-    return stream;
+    iSurface = stream.attributes().value("iSurface").toInt();
+    type = (KCL::ElementType) stream.attributes().value("type").toInt();
+    iElement = stream.attributes().value("iElement").toInt();
+    stream.readNextStartElement();
 }

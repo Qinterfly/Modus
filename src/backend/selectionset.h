@@ -38,9 +38,8 @@ public:
     bool operator<=(Selection const& another) const;
     bool operator>=(Selection const& another) const;
 
-    void serialize(QXmlStreamWriter& stream) const override;
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
-    QString elementName() const override;
 
     int iSurface;
     KCL::ElementType type;
@@ -80,9 +79,8 @@ public:
     bool operator==(SelectionSet const& another) const;
     bool operator!=(SelectionSet const& another) const;
 
-    void serialize(QXmlStreamWriter& stream) const override;
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
-    QString elementName() const override;
 
 private:
     void reset(KCL::Model const& model);
@@ -91,11 +89,6 @@ private:
     QString mName;
     QMap<Selection, bool> mDataSet;
 };
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Selection const& selection);
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, Selection& selection);
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, SelectionSet const& selectionSet);
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, SelectionSet& selectionSet);
 }
 
 #endif // SELECTIONSET_H

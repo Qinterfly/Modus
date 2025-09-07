@@ -47,9 +47,8 @@ public:
     bool operator==(Constraints const& another) const;
     bool operator!=(Constraints const& another) const;
 
-    void serialize(QXmlStreamWriter& stream) const override;
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
-    QString elementName() const override;
 
     static QList<VariableType> types();
 

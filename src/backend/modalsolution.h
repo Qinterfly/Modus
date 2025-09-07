@@ -32,9 +32,8 @@ public:
     bool operator==(Vertex const& another) const;
     bool operator!=(Vertex const& another) const;
 
-    void serialize(QXmlStreamWriter& stream) const override;
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
-    QString elementName() const override;
 
     QString name;
     Eigen::Vector3d position;
@@ -54,9 +53,8 @@ public:
     bool operator==(Slave const& another) const;
     bool operator!=(Slave const& another) const;
 
-    void serialize(QXmlStreamWriter& stream) const override;
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
-    QString elementName() const override;
 
     int slaveIndex;
     Eigen::VectorXi masterIndices;
@@ -83,9 +81,8 @@ public:
     bool operator==(Geometry const& another) const;
     bool operator!=(Geometry const& another) const;
 
-    void serialize(QXmlStreamWriter& stream) const override;
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
-    QString elementName() const override;
 
     QList<Vertex> vertices;
     QList<Slave> slaves;
@@ -113,9 +110,8 @@ public:
     bool operator==(ModalComparison const& another) const;
     bool operator!=(ModalComparison const& another) const;
 
-    void serialize(QXmlStreamWriter& stream) const override;
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
-    QString elementName() const override;
 
     Eigen::VectorXd diffFrequencies;
     Eigen::VectorXd errorFrequencies;
@@ -152,9 +148,8 @@ public:
     bool operator==(ModalSolution const& another) const;
     bool operator!=(ModalSolution const& another) const;
 
-    void serialize(QXmlStreamWriter& stream) const override;
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
-    QString elementName() const override;
 
 private:
     void resize(int numDOFs, int numModes);
@@ -167,17 +162,6 @@ private:
     QList<Eigen::MatrixXd> mModeShapes;
     QList<QString> mNames;
 };
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Vertex const& vertex);
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, Vertex& vertex);
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Slave const& slave);
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, Slave& slave);
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Geometry const& geometry);
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, Geometry& geometry);
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, ModalComparison const& comparison);
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, ModalComparison& comparison);
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, ModalSolution const& solution);
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, ModalSolution& solution);
 }
 
 #endif // MODALSOLUTION_H
