@@ -37,7 +37,7 @@ private:
 
 private:
     Backend::Core::Project mProject;
-    QMap<Example, QString> mExampleFileNames;
+    QMap<Example, QString> mFileNames;
 };
 
 }

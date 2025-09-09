@@ -14,17 +14,16 @@ using namespace KCL;
 
 TestBackend::TestBackend()
 {
-    mProject.setName("Examples");
-    mExampleFileNames[simpleWing] = "DATWEXA";
-    mExampleFileNames[hunterWing] = "DATW70";
-    mExampleFileNames[fullHunterSym] = "DATH70s";
-    mExampleFileNames[fullHunterASym] = "DATH70a";
+    mFileNames[simpleWing] = "DATWEXA";
+    mFileNames[hunterWing] = "DATW70";
+    mFileNames[fullHunterSym] = "DATH70s";
+    mFileNames[fullHunterASym] = "DATH70a";
 }
 
 //! Load all the models and write them to temporary text files
 void TestBackend::testLoadModels()
 {
-    for (auto [key, value] : mExampleFileNames.asKeyValueRange())
+    for (auto [key, value] : mFileNames.asKeyValueRange())
     {
         QString exampleName = magic_enum::enum_name(key).data();
         QString inPathFile = Utility::combineFilePath(EXAMPLES_DIR, value + ".dat");
@@ -36,7 +35,7 @@ void TestBackend::testLoadModels()
         subproject.model() = model;
         mProject.addSubproject(subproject);
     }
-    QVERIFY(mProject.numSubprojects() == mExampleFileNames.size());
+    QVERIFY(mProject.numSubprojects() == mFileNames.size());
 };
 
 //! Load the experimental obtained modal solutions
@@ -49,7 +48,7 @@ void TestBackend::testLoadModalSolution()
     ModalSolution& solution = subproject.configuration().problem.targetSolution;
 
     // Read the geometry and modal data
-    solution.read(Utility::combineFilePath(EXAMPLES_DIR, mExampleFileNames[example]));
+    solution.read(Utility::combineFilePath(EXAMPLES_DIR, mFileNames[example]));
     QVERIFY(solution.numModes() == 8);
 }
 
@@ -99,11 +98,15 @@ void TestBackend::testUpdateSimpleWing()
     KCL::Model const& model = subproject.model();
     auto eigenSolution = model.solveEigen();
 
-    // Select elements
+    // Get the configuration
     Configuration& config = subproject.configuration();
     OptimProblem& problem = config.problem;
-    Constraints& constraints = problem.constraints;
+    Constraints& constraints = config.problem.constraints;
+
+    // Set the model
     problem.model = model;
+
+    // Select elements
     SelectionSet& set = problem.selector.add(model, "main");
     set.selectAll();
     set.setSelected(KCL::BI, true);

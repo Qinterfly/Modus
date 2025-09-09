@@ -27,7 +27,7 @@ enum class VariableType
 
 using VariableFlags = QMap<VariableType, bool>;
 using VariableValues = QMap<VariableType, double>;
-using VariableLimits = QMap<VariableType, PairDouble>;
+using VariableBounds = QMap<VariableType, PairDouble>;
 
 //! Updating constraints applied to variables
 class Constraints : public ISerializable
@@ -38,7 +38,7 @@ class Constraints : public ISerializable
     Q_PROPERTY(VariableFlags multipliedState MEMBER mMultipliedState)
     Q_PROPERTY(VariableFlags nonzeroState MEMBER mNonzeroState)
     Q_PROPERTY(VariableValues scales MEMBER mScales)
-    Q_PROPERTY(VariableLimits limits MEMBER mLimits)
+    Q_PROPERTY(VariableBounds bounds MEMBER mBounds)
 
 public:
     Constraints();
@@ -57,20 +57,22 @@ public:
     bool isMultiplied(VariableType type) const;
     bool isNonzero(VariableType type) const;
     double scale(VariableType type) const;
-    PairDouble limits(VariableType type) const;
+    PairDouble bounds(VariableType type) const;
 
     void setAllEnabled(bool flag);
     void setAllUnited(bool flag);
     void setAllMultiplied(bool flag);
     void setAllNonzero(bool flag);
     void setAllScale(double value);
+    void setAllInfiniteBounds();
 
     void setEnabled(VariableType type, bool flag);
     void setUnited(VariableType type, bool flag);
     void setMultiplied(VariableType type, bool flag);
     void setNonzero(VariableType type, bool flag);
     void setScale(VariableType type, double value);
-    void setLimits(VariableType type, PairDouble const& limits);
+    void setBounds(VariableType type, PairDouble const& bounds);
+    void setInfiniteBounds(VariableType type);
 
 private:
     void setDefaultEnabled();
@@ -78,7 +80,7 @@ private:
     void setDefaultMultiplied();
     void setDefaultNonzero();
     void setDefaultScales();
-    void setDefaultLimits();
+    void setDefaultBounds();
 
 private:
     VariableFlags mEnabledState;
@@ -86,11 +88,8 @@ private:
     VariableFlags mMultipliedState;
     VariableFlags mNonzeroState;
     VariableValues mScales;
-    VariableLimits mLimits;
+    VariableBounds mBounds;
 };
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Constraints const& constraints);
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, Constraints& constraints);
 }
 
 #endif // CONSTRAINTS_H

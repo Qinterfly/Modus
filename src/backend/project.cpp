@@ -23,11 +23,6 @@ bool Project::operator!=(Project const& another) const
     return !(*this == another);
 }
 
-QString const& Project::name() const
-{
-    return mName;
-}
-
 QString const& Project::pathFile() const
 {
     return mPathFile;
@@ -36,11 +31,6 @@ QString const& Project::pathFile() const
 QList<Subproject>& Project::subprojects()
 {
     return mSubprojects;
-}
-
-void Project::setName(QString const& name)
-{
-    mName = name;
 }
 
 void Project::setPathFile(QString const& pathFile)
@@ -67,7 +57,6 @@ void Project::setSubprojects(QList<Subproject> const& subprojects)
 
 void Project::clear()
 {
-    mName = QString();
     mPathFile = QString();
     mSubprojects.clear();
 }
@@ -84,7 +73,7 @@ bool Project::isEmpty() const
 
 QString Project::fileSuffix()
 {
-    return "mxl";
+    return "xmod";
 }
 
 //! Read a project from a XML-formatted file
@@ -156,7 +145,6 @@ void Project::serialize(QXmlStreamWriter& stream, QString const& elementName) co
 {
     stream.writeStartElement(elementName);
     stream.writeTextElement("id", mID.toString());
-    stream.writeTextElement("name", mName);
     stream.writeTextElement("pathFile", mPathFile);
     Utility::serialize(stream, "subprojects", "subproject", mSubprojects);
     stream.writeEndElement();
@@ -170,10 +158,6 @@ void Project::deserialize(QXmlStreamReader& stream)
         if (stream.name() == "id")
         {
             mID = QUuid::fromString(stream.readElementText());
-        }
-        else if (stream.name() == "name")
-        {
-            mName = stream.readElementText();
         }
         else if (stream.name() == "pathFile")
         {

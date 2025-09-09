@@ -20,7 +20,7 @@ Constraints::Constraints()
         mMultipliedState[type] = false;
         mNonzeroState[type] = false;
         mScales[type] = 1.0;
-        mLimits[type] = {-inf, inf};
+        mBounds[type] = {-inf, inf};
     }
     // Set the default values of fields
     setDefaultEnabled();
@@ -28,7 +28,7 @@ Constraints::Constraints()
     setDefaultMultiplied();
     setDefaultNonzero();
     setDefaultScales();
-    setDefaultLimits();
+    setDefaultBounds();
 }
 
 bool Constraints::operator==(Constraints const& another) const
@@ -48,7 +48,7 @@ void Constraints::serialize(QXmlStreamWriter& stream, QString const& elementName
     Utility::serialize(stream, "multipliedState", mMultipliedState);
     Utility::serialize(stream, "nonzeroState", mNonzeroState);
     Utility::serialize(stream, "scales", mScales);
-    Utility::serialize(stream, "limits", mLimits);
+    Utility::serialize(stream, "bounds", mBounds);
     stream.writeEndElement();
 }
 
@@ -66,8 +66,8 @@ void Constraints::deserialize(QXmlStreamReader& stream)
             Utility::deserialize(stream, mNonzeroState);
         else if (stream.name() == "scales")
             Utility::deserialize(stream, mScales);
-        else if (stream.name() == "limits")
-            Utility::deserialize(stream, mLimits);
+        else if (stream.name() == "bounds")
+            Utility::deserialize(stream, mBounds);
         else
             stream.skipCurrentElement();
     }
@@ -98,9 +98,9 @@ double Constraints::scale(VariableType type) const
     return mScales[type];
 }
 
-PairDouble Constraints::limits(VariableType type) const
+PairDouble Constraints::bounds(VariableType type) const
 {
-    return mLimits[type];
+    return mBounds[type];
 }
 
 //! Retrieve all variable types
@@ -154,6 +154,14 @@ void Constraints::setAllScale(double value)
         setScale(key, value);
 }
 
+//! Set all boundaries to infinite values
+void Constraints::setAllInfiniteBounds()
+{
+    QList<VariableType> const keys = types();
+    for (VariableType key : keys)
+        setInfiniteBounds(key);
+}
+
 //! Enable the variable for updating
 void Constraints::setEnabled(VariableType type, bool flag)
 {
@@ -202,10 +210,17 @@ void Constraints::setScale(VariableType type, double value)
     mScales[type] = value;
 }
 
-//! Assign the variable limits
-void Constraints::setLimits(VariableType type, PairDouble const& limits)
+//! Assign the variable boundaries
+void Constraints::setBounds(VariableType type, PairDouble const& bounds)
 {
-    mLimits[type] = limits;
+    mBounds[type] = bounds;
+}
+
+//! Assign the variable infinite boundaries
+void Constraints::setInfiniteBounds(VariableType type)
+{
+    double inf = std::numeric_limits<double>::infinity();
+    mBounds[type] = {-inf, inf};
 }
 
 //! Enable default variables
@@ -257,16 +272,16 @@ void Constraints::setDefaultScales()
     mScales[VariableType::kSpringStiffness] = 0;
 }
 
-//! Set default limits
-void Constraints::setDefaultLimits()
+//! Set default boundaries
+void Constraints::setDefaultBounds()
 {
     // Beams
-    mLimits[VariableType::kBeamStiffness] = {0, 1e9};
+    mBounds[VariableType::kBeamStiffness] = {0, 1e9};
     // Panels
-    mLimits[VariableType::kThickness] = {1e-3, 0.2};
-    mLimits[VariableType::kYoungsModulus1] = {1e2, 1e13};
-    mLimits[VariableType::kYoungsModulus2] = mLimits[VariableType::kYoungsModulus1];
-    mLimits[VariableType::kShearModulus] = mLimits[VariableType::kYoungsModulus1];
+    mBounds[VariableType::kThickness] = {1e-3, 0.2};
+    mBounds[VariableType::kYoungsModulus1] = {1e2, 1e13};
+    mBounds[VariableType::kYoungsModulus2] = mBounds[VariableType::kYoungsModulus1];
+    mBounds[VariableType::kShearModulus] = mBounds[VariableType::kYoungsModulus1];
     // Springs
-    mLimits[VariableType::kSpringStiffness] = {1e-9, 1e9};
+    mBounds[VariableType::kSpringStiffness] = {1e-9, 1e9};
 }

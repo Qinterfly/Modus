@@ -191,8 +191,17 @@ QList<OptimSolution> OptimSolver::solve(OptimProblem const& problem, OptimOption
     costFunction->SetNumResiduals(numResiduals);
 
     // Set the problem
+    double* values = parameterValues.data();
     ceres::Problem ceresProblem;
-    ceresProblem.AddResidualBlock(costFunction, nullptr, parameterValues.data());
+    ceresProblem.AddResidualBlock(costFunction, nullptr, values);
+
+    // Set the boundaries
+    for (int i = 0; i != numParameters; ++i)
+    {
+        PairDouble const& bounds = mParameterBounds[i];
+        ceresProblem.SetParameterLowerBound(values, i, bounds.first);
+        ceresProblem.SetParameterUpperBound(values, i, bounds.second);
+    }
 
     // Assign the solver settings
     ceres::Solver::Options ceresOptions;
@@ -412,14 +421,14 @@ MatrixXd OptimSolver::getProperties(SpringDamper* pElement, QList<bool>& mask)
     }
 
     // Build up the mask of stiffness values
-    auto limits = mConstraints.limits(type);
+    PairDouble bounds = mConstraints.bounds(type);
     mask.resize(numValues);
     int numProperties = 0;
     for (int i = 0; i != numValues; ++i)
     {
         double value = values[i];
         bool flag = false;
-        if (value <= limits.second)
+        if (value <= bounds.second)
         {
             if (mConstraints.isNonzero(type))
             {
@@ -512,8 +521,8 @@ void OptimSolver::wrapProperties(QList<double>& parameterValues, Eigen::MatrixXd
     bool isUnite = mConstraints.isUnited(type);
     bool isMultiply = mConstraints.isMultiplied(type);
     bool isNonzero = mConstraints.isNonzero(type);
-    double scale = mConstraints.scale(type);
-    PairDouble limits = mConstraints.limits(type);
+    double propertyScale = mConstraints.scale(type);
+    PairDouble propertyBounds = mConstraints.bounds(type);
 
     // Find the indices of maximum valies
     auto indices = Utility::rowIndicesAbsMax(properties);
@@ -552,8 +561,8 @@ void OptimSolver::wrapProperties(QList<double>& parameterValues, Eigen::MatrixXd
     int numValues = values.size();
     QList<double> scales(numValues);
     QList<PairDouble> bounds(numValues);
-    scales.fill(scale);
-    bounds.fill(limits);
+    scales.fill(propertyScale);
+    bounds.fill(propertyBounds);
 
     // Check if the logarithmic scale could be applied
     for (int i = 0; i != numValues; ++i)
