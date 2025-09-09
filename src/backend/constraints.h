@@ -42,7 +42,7 @@ class Constraints : public ISerializable
 
 public:
     Constraints();
-    ~Constraints() = default;
+    ~Constraints();
 
     bool operator==(Constraints const& another) const;
     bool operator!=(Constraints const& another) const;

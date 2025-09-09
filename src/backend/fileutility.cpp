@@ -175,4 +175,59 @@ bool areEqual(double first, double second, double tolerance)
         return true;
     return false;
 }
+
+bool areEqual(QList<Core::ISolver*> const& first, QList<Core::ISolver*> const& second)
+{
+    if (first.size() != second.size())
+        return false;
+    int numValues = first.size();
+    for (int k = 0; k != numValues; ++k)
+    {
+        auto type = first[k]->type();
+        if (type != second[k]->type())
+            return false;
+        switch (type)
+        {
+        case Core::ISolver::kOptim:
+        {
+            auto pFirstSolver = (Core::OptimSolver*) first[k];
+            auto pSecondSolver = (Core::OptimSolver*) second[k];
+            if (!areEqual(*pFirstSolver, *pSecondSolver))
+                return false;
+            break;
+        }
+        default:
+            return false;
+        }
+    }
+    return true;
+}
+
+bool areEqual(QList<Eigen::MatrixXd> const& first, QList<Eigen::MatrixXd> const& second, double tolerance)
+{
+    if (first.size() != second.size())
+        return false;
+    int numValues = first.size();
+    for (int k = 0; k != numValues; ++k)
+    {
+        if (!areEqual(first[k], second[k], tolerance))
+            return false;
+    }
+    return true;
+}
+
+bool areEqual(Core::ModalPairs const& first, Core::ModalPairs const& second, double tolerance)
+{
+    if (first.size() != second.size())
+        return false;
+    int numValues = first.size();
+    for (int k = 0; k != numValues; ++k)
+    {
+        if (first[k].first - second[k].first != 0)
+            return false;
+        if (!areEqual(first[k].second, second[k].second, tolerance))
+            return false;
+    }
+    return true;
+}
 }

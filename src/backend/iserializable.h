@@ -13,6 +13,7 @@ class ISerializable
 public:
     virtual void serialize(QXmlStreamWriter& stream, QString const& elementName) const = 0;
     virtual void deserialize(QXmlStreamReader& stream) = 0;
+    virtual ~ISerializable() = default;
 };
 }
 

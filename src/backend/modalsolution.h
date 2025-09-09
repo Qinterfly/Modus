@@ -27,7 +27,7 @@ struct Vertex : public ISerializable
 
 public:
     Vertex();
-    ~Vertex() = default;
+    ~Vertex();
 
     bool operator==(Vertex const& another) const;
     bool operator!=(Vertex const& another) const;
@@ -48,7 +48,7 @@ struct Slave : public ISerializable
 
 public:
     Slave();
-    ~Slave() = default;
+    ~Slave();
 
     bool operator==(Slave const& another) const;
     bool operator!=(Slave const& another) const;
@@ -72,7 +72,7 @@ struct Geometry : public ISerializable
 
 public:
     Geometry();
-    ~Geometry() = default;
+    ~Geometry();
 
     bool isEmpty() const;
     void move(Eigen::Vector3d const& shift);
@@ -101,7 +101,7 @@ struct ModalComparison : public ISerializable
 
 public:
     ModalComparison();
-    ~ModalComparison() = default;
+    ~ModalComparison();
 
     bool isEmpty() const;
     bool isValid() const;
@@ -131,7 +131,7 @@ public:
     ModalSolution();
     ModalSolution(Geometry const& geometry, Eigen::VectorXd const& frequencies, QList<Eigen::MatrixXd> const& modeShapes);
     ModalSolution(KCL::EigenSolution const& solution);
-    ~ModalSolution() = default;
+    ~ModalSolution();
 
     int numVertices() const;
     int numModes() const;

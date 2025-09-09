@@ -50,6 +50,10 @@ ModalSolution::ModalSolution(KCL::EigenSolution const& solution)
     }
 }
 
+ModalSolution::~ModalSolution()
+{
+}
+
 int ModalSolution::numVertices() const
 {
     return mGeometry.vertices.size();
@@ -415,6 +419,10 @@ Vertex::Vertex()
     position.fill(0.0);
 }
 
+Vertex::~Vertex()
+{
+}
+
 bool Vertex::operator==(Vertex const& another) const
 {
     return Utility::areEqual(*this, another);
@@ -447,6 +455,10 @@ void Vertex::deserialize(QXmlStreamReader& stream)
 
 Slave::Slave()
     : slaveIndex(-1)
+{
+}
+
+Slave::~Slave()
 {
 }
 
@@ -483,6 +495,10 @@ void Slave::deserialize(QXmlStreamReader& stream)
 }
 
 Geometry::Geometry()
+{
+}
+
+Geometry::~Geometry()
 {
 }
 
@@ -560,6 +576,10 @@ void Geometry::deserialize(QXmlStreamReader& stream)
 }
 
 ModalComparison::ModalComparison()
+{
+}
+
+ModalComparison::~ModalComparison()
 {
 }
 

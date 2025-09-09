@@ -27,7 +27,7 @@ struct Selection : public ISerializable
 
 public:
     Selection();
-    ~Selection() = default;
+    ~Selection();
 
     bool isValid() const;
 
@@ -60,7 +60,7 @@ class SelectionSet : public ISerializable
 public:
     SelectionSet();
     SelectionSet(KCL::Model const& model, QString const& name);
-    ~SelectionSet() = default;
+    ~SelectionSet();
 
     QString const& name() const;
     bool isSelected(Selection const& selection) const;

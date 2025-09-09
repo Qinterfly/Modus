@@ -18,6 +18,10 @@ SelectionSet::SelectionSet(KCL::Model const& model, QString const& name)
     reset(model);
 }
 
+SelectionSet::~SelectionSet()
+{
+}
+
 QString const& SelectionSet::name() const
 {
     return mName;
@@ -207,6 +211,10 @@ Selection::Selection()
     : iSurface(-1)
     , type(KCL::ElementType::OD)
     , iElement(-1)
+{
+}
+
+Selection::~Selection()
 {
 }
 

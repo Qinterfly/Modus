@@ -31,6 +31,10 @@ Constraints::Constraints()
     setDefaultBounds();
 }
 
+Constraints::~Constraints()
+{
+}
+
 bool Constraints::operator==(Constraints const& another) const
 {
     return Utility::areEqual(*this, another);

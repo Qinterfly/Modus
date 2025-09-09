@@ -13,6 +13,30 @@ Project::Project()
 {
 }
 
+Project::~Project()
+{
+}
+
+Project::Project(Project const& another)
+    : mPathFile(another.mPathFile)
+    , mSubprojects(another.mSubprojects)
+{
+}
+
+Project::Project(Project&& another)
+{
+    mID = std::move(another.mID);
+    mPathFile = std::move(another.mPathFile);
+    mSubprojects = std::move(another.mSubprojects);
+}
+
+Project& Project::operator=(Project const& another)
+{
+    mPathFile = another.mPathFile;
+    mSubprojects = another.mSubprojects;
+    return *this;
+}
+
 bool Project::operator==(Project const& another) const
 {
     return Utility::areEqual(*this, another);

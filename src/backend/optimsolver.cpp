@@ -136,18 +136,53 @@ OptimSolver::OptimSolver()
 {
 }
 
-//! Perform the updating
-QList<OptimSolution> OptimSolver::solve(OptimProblem const& problem, OptimOptions const& options)
+OptimSolver::~OptimSolver()
 {
+}
+
+ISolver::Type OptimSolver::type() const
+{
+    return ISolver::kOptim;
+}
+
+ISolver* OptimSolver::clone() const
+{
+    OptimSolver* pSolver = new OptimSolver;
+    pSolver->problem = problem;
+    pSolver->options = options;
+    pSolver->solutions = solutions;
+    pSolver->mInitModel = mInitModel;
+    pSolver->mSelections = mSelections;
+    pSolver->mConstraints = mConstraints;
+    pSolver->mParameterScales = mParameterScales;
+    pSolver->mParameterBounds = mParameterBounds;
+    return pSolver;
+}
+
+void OptimSolver::clear()
+{
+    mInitModel = KCL::Model();
+    mSelections.clear();
+    mConstraints = Constraints();
+    mParameterScales.clear();
+    mParameterBounds.clear();
+}
+
+//! Perform the updating
+void OptimSolver::solve()
+{
+    // Clear the previous solution
+    clear();
+
     // Intialize the resulting set
-    QList<OptimSolution> solutions;
+    solutions.clear();
     solutions.reserve(options.maxNumIterations);
 
     // Check if the optimization data is valid
     if (!problem.isValid())
     {
         qWarning() << QObject::tr("Optimization data is not valid");
-        return solutions;
+        return;
     }
 
     // Initialize the fields
@@ -173,7 +208,7 @@ QList<OptimSolution> OptimSolver::solve(OptimProblem const& problem, OptimOption
         QList<double> params(x, x + numParameters);
         return unwrapModel(params);
     };
-    SolverFun solverFun = [&options](Model const& model)
+    SolverFun solverFun = [this](Model const& model)
     {
         std::function<EigenSolution()> fun = [&model]() { return model.solveEigen(); };
         return Utility::solve(fun, options.timeoutIteration);
@@ -217,7 +252,7 @@ QList<OptimSolution> OptimSolver::solve(OptimProblem const& problem, OptimOption
     ceresOptions.update_state_every_iteration = true;
     OptimCallback callback(parameterValues, problem, options, unwrapFun, solverFun);
     connect(&callback, &OptimCallback::iterationFinished, this,
-            [this, &solutions](OptimSolution solution)
+            [this](OptimSolution solution)
             {
                 solutions.push_back(solution);
                 emit iterationFinished(solution);
@@ -237,8 +272,6 @@ QList<OptimSolution> OptimSolver::solve(OptimProblem const& problem, OptimOption
 
     // Log the report
     printReport(ceresSummary);
-
-    return solutions;
 }
 
 //! Wrap the model parameters according to the constraints
@@ -735,7 +768,49 @@ QMap<ElementType, QList<VariableType>> OptimSolver::getElementVariables()
     return result;
 }
 
+void OptimSolver::serialize(QXmlStreamWriter& stream, QString const& elementName) const
+{
+    stream.writeStartElement(elementName);
+    stream.writeAttribute("type", Utility::toString((int) type()));
+    problem.serialize(stream, "problem");
+    options.serialize(stream, "options");
+    Utility::serialize(stream, "solutions", "solution", solutions);
+    stream.writeEndElement();
+}
+
+void OptimSolver::deserialize(QXmlStreamReader& stream)
+{
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == "problem")
+            problem.deserialize(stream);
+        else if (stream.name() == "options")
+            options.deserialize(stream);
+        else if (stream.name() == "solutions")
+            Utility::deserialize(stream, "solution", solutions);
+        else
+            stream.skipCurrentElement();
+    }
+}
+
+bool OptimSolver::operator==(ISolver const* pBaseSolver) const
+{
+    if (type() != pBaseSolver->type())
+        return false;
+    OptimSolver* pSolver = (OptimSolver*) pBaseSolver;
+    return problem == pSolver->problem && options == pSolver->options && solutions == pSolver->solutions;
+}
+
+bool OptimSolver::operator!=(ISolver const* pBaseSolver) const
+{
+    return !(*this == pBaseSolver);
+}
+
 OptimProblem::OptimProblem()
+{
+}
+
+OptimProblem::~OptimProblem()
 {
 }
 
@@ -824,6 +899,10 @@ OptimOptions::OptimOptions()
 {
 }
 
+OptimOptions::~OptimOptions()
+{
+}
+
 bool OptimOptions::operator==(OptimOptions const& another) const
 {
     return Utility::areEqual(*this, another);
@@ -863,6 +942,10 @@ void OptimOptions::deserialize(QXmlStreamReader& stream)
 }
 
 OptimSolution::OptimSolution()
+{
+}
+
+OptimSolution::~OptimSolution()
 {
 }
 

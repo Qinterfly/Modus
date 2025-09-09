@@ -45,7 +45,8 @@ void TestBackend::testLoadModalSolution()
 
     // Slice the subproject
     Subproject& subproject = mProject.subprojects()[example];
-    ModalSolution& solution = subproject.configuration().problem.targetSolution;
+    auto pSolver = (OptimSolver*) subproject.addSolver(ISolver::kOptim);
+    ModalSolution& solution = pSolver->problem.targetSolution;
 
     // Read the geometry and modal data
     solution.read(Utility::combineFilePath(EXAMPLES_DIR, mFileNames[example]));
@@ -98,10 +99,13 @@ void TestBackend::testUpdateSimpleWing()
     KCL::Model const& model = subproject.model();
     auto eigenSolution = model.solveEigen();
 
-    // Get the configuration
-    Configuration& config = subproject.configuration();
-    OptimProblem& problem = config.problem;
-    Constraints& constraints = config.problem.constraints;
+    // Initialize the solver
+    OptimSolver* pSolver = (OptimSolver*) subproject.addSolver(ISolver::kOptim);
+
+    // Alias the data
+    OptimProblem& problem = pSolver->problem;
+    OptimOptions& options = pSolver->options;
+    Constraints& constraints = problem.constraints;
 
     // Set the model
     problem.model = model;
@@ -115,7 +119,6 @@ void TestBackend::testUpdateSimpleWing()
     set.setSelected(KCL::PR, true);
 
     // Set the options
-    OptimOptions& options = config.options;
     options.maxNumIterations = 32;
     options.diffStepSize = 1e-5;
     options.maxRelError = 1e-1;
@@ -133,12 +136,10 @@ void TestBackend::testUpdateSimpleWing()
     problem.fillMatches();
 
     // Start the solver
-    OptimSolver solver;
-    connect(&solver, &OptimSolver::log, [](QString message) { std::cout << message.toStdString() << std::endl; });
-    auto solutions = solver.solve(problem, options);
-    QVERIFY(!solutions.isEmpty());
-    QVERIFY(solutions.last().isSuccess);
-    subproject.optimSolutions() = solutions;
+    connect(pSolver, &OptimSolver::log, [](QString message) { std::cout << message.toStdString() << std::endl; });
+    pSolver->solve();
+    QVERIFY(!pSolver->solutions.isEmpty());
+    QVERIFY(pSolver->solutions.last().isSuccess);
 }
 
 //! Write a project consisted of several subprojects to a file
@@ -153,13 +154,14 @@ void TestBackend::testWriteProject()
     Project tProject;
     QVERIFY(tProject.read(pathFile));
 
-    // Compare the projects
-    QVERIFY(mProject == tProject);
-
     // Write the file to check
     fileName = QString("check.%1").arg(Project::fileSuffix());
     pathFile = Utility::combineFilePath(TEMPORARY_DIR, fileName);
     tProject.write(pathFile);
+
+    // Compare the projects
+    tProject.setPathFile(mProject.pathFile());
+    QVERIFY(mProject == tProject);
 }
 
 //! Generate a bounded double value

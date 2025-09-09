@@ -6,6 +6,7 @@
 #include <kcl/model.h>
 
 #include "constraints.h"
+#include "isolver.h"
 #include "modalsolution.h"
 #include "selector.h"
 
@@ -34,7 +35,7 @@ struct OptimProblem : public ISerializable
 
 public:
     OptimProblem();
-    ~OptimProblem() = default;
+    ~OptimProblem();
 
     bool isValid() const;
     void resize(int numModes);
@@ -81,7 +82,7 @@ struct OptimOptions : public ISerializable
 
 public:
     OptimOptions();
-    ~OptimOptions() = default;
+    ~OptimOptions();
 
     bool operator==(OptimOptions const& another) const;
     bool operator!=(OptimOptions const& another) const;
@@ -125,7 +126,7 @@ struct OptimSolution : public ISerializable
 
 public:
     OptimSolution();
-    ~OptimSolution() = default;
+    ~OptimSolution();
 
     bool operator==(OptimSolution const& another) const;
     bool operator!=(OptimSolution const& another) const;
@@ -143,15 +144,28 @@ public:
     QString message;
 };
 
-class OptimSolver : public QObject
+class OptimSolver : public QObject, public ISolver
 {
     Q_OBJECT
+    Q_PROPERTY(OptimProblem problem MEMBER problem)
+    Q_PROPERTY(OptimOptions options MEMBER options)
+    Q_PROPERTY(QList<OptimSolution> solutions MEMBER solutions)
 
 public:
     OptimSolver();
-    ~OptimSolver() = default;
+    ~OptimSolver();
 
-    QList<OptimSolution> solve(OptimProblem const& problem, OptimOptions const& options);
+    ISolver::Type type() const override;
+    ISolver* clone() const override;
+
+    void clear() override;
+    void solve() override;
+
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
+    void deserialize(QXmlStreamReader& stream) override;
+
+    bool operator==(ISolver const* pBaseSolver) const override;
+    bool operator!=(ISolver const* pBaseSolver) const override;
 
 signals:
     void iterationFinished(Backend::Core::OptimSolution solution);
@@ -171,6 +185,11 @@ private:
     QMap<int, ElementMap> getSurfaceElements(KCL::Model& model);
     QMap<VariableType, QList<int>> getVariableIndices();
     QMap<KCL::ElementType, QList<VariableType>> getElementVariables();
+
+public:
+    OptimProblem problem;
+    OptimOptions options;
+    QList<OptimSolution> solutions;
 
 private:
     KCL::Model mInitModel;

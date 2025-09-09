@@ -8,6 +8,7 @@ set(BACKEND_HEADERS
     constants.h
     identifier.h
     iserializable.h
+    isolver.h
     fileutility.h
     mathutility.h
     project.h
@@ -21,7 +22,6 @@ set(BACKEND_HEADERS
 
 set(BACKEND_SOURCES
     identifier.cpp
-
     fileutility.cpp
     mathutility.cpp
     project.cpp

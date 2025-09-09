@@ -12,6 +12,10 @@ Selector::Selector()
 {
 }
 
+Selector::~Selector()
+{
+}
+
 //! Insert a new selection set
 SelectionSet& Selector::add(KCL::Model const& model, QString const& name)
 {

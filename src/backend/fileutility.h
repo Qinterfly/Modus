@@ -11,6 +11,8 @@
 
 #include "constraints.h"
 #include "iserializable.h"
+#include "isolver.h"
+#include "optimsolver.h"
 
 namespace KCL
 {
@@ -213,6 +215,9 @@ void serialize(QXmlStreamWriter& stream, QString const& elementName, KCL::Model 
 void deserialize(QXmlStreamReader& stream, KCL::Model& model);
 
 bool areEqual(double first, double second, double tolerance);
+bool areEqual(QList<Core::ISolver*> const& first, QList<Core::ISolver*> const& second);
+bool areEqual(QList<Eigen::MatrixXd> const& first, QList<Eigen::MatrixXd> const& second, double tolerance);
+bool areEqual(Core::ModalPairs const& first, Core::ModalPairs const& second, double tolerance);
 
 //! Check if two matrices are equal
 template<typename Derived>
@@ -242,45 +247,48 @@ bool areEqual(T const& first, T const& second)
     int numProperties = metaObject.propertyCount();
     while (numProperties > 0)
     {
-        QVariant firstVariant = metaObject.property(numProperties - 1).readOnGadget(&first);
-        QVariant secondVariant = metaObject.property(numProperties - 1).readOnGadget(&second);
+        QMetaProperty metaProperty = metaObject.property(numProperties - 1);
+        QVariant firstVariant, secondVariant;
+        if constexpr (std::is_base_of<QObject, T>())
+        {
+            firstVariant = metaProperty.read(&first);
+            secondVariant = metaProperty.read(&second);
+        }
+        else
+        {
+            firstVariant = metaProperty.readOnGadget(&first);
+            secondVariant = metaProperty.readOnGadget(&second);
+        }
         if (firstVariant != secondVariant)
         {
             QString type = firstVariant.typeName();
             if (type == "double")
             {
-                double firstValue = firstVariant.value<double>();
-                double secondValue = secondVariant.value<double>();
+                auto firstValue = firstVariant.value<double>();
+                auto secondValue = secondVariant.value<double>();
                 if (!areEqual(firstValue, secondValue, kTolerance))
+                    return false;
+            }
+            else if (type == "QList<Backend::Core::ISolver*>")
+            {
+                auto firstValue = firstVariant.value<QList<Core::ISolver*>>();
+                auto secondValue = secondVariant.value<QList<Core::ISolver*>>();
+                if (!areEqual(firstValue, secondValue))
                     return false;
             }
             else if (type == "QList<std::pair<int,double>>")
             {
                 auto firstValue = firstVariant.value<Core::ModalPairs>();
                 auto secondValue = secondVariant.value<Core::ModalPairs>();
-                if (firstValue.size() != secondValue.size())
+                if (!areEqual(firstValue, secondValue, kTolerance))
                     return false;
-                int numValues = firstValue.size();
-                for (int k = 0; k != numValues; ++k)
-                {
-                    if (firstValue[k].first - secondValue[k].first != 0)
-                        return false;
-                    if (!areEqual(firstValue[k].second, secondValue[k].second, kTolerance))
-                        return false;
-                }
             }
             else if (type == "QList<Eigen::Matrix<double,-1,-1>>")
             {
                 auto firstValue = firstVariant.value<QList<Eigen::MatrixXd>>();
                 auto secondValue = secondVariant.value<QList<Eigen::MatrixXd>>();
-                if (firstValue.size() != secondValue.size())
+                if (!areEqual(firstValue, secondValue, kTolerance))
                     return false;
-                int numValues = firstValue.size();
-                for (int k = 0; k != numValues; ++k)
-                {
-                    if (!areEqual(firstValue[k], secondValue[k], kTolerance))
-                        return false;
-                }
             }
             else if (type == "Eigen::Matrix<double,-1,-1>")
             {

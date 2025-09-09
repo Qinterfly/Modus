@@ -21,7 +21,7 @@ class Selector : public ISerializable
 
 public:
     Selector();
-    ~Selector() = default;
+    ~Selector();
 
     SelectionSet& add(KCL::Model const& model, QString const& name);
     bool remove(QString const& name);

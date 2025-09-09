@@ -3,61 +3,51 @@
 
 using namespace Backend::Core;
 
-Configuration::Configuration()
-{
-}
-
-bool Configuration::operator==(Configuration const& another) const
-{
-    return Utility::areEqual(*this, another);
-}
-
-bool Configuration::operator!=(Configuration const& another) const
-{
-    return !(*this == another);
-}
-
-void Configuration::serialize(QXmlStreamWriter& stream, QString const& elementName) const
-{
-    stream.writeStartElement(elementName);
-    stream.writeTextElement("name", name);
-    problem.serialize(stream, "problem");
-    options.serialize(stream, "options");
-    stream.writeEndElement();
-}
-
-void Configuration::deserialize(QXmlStreamReader& stream)
-{
-    while (stream.readNextStartElement())
-    {
-        if (stream.name() == "name")
-            name = stream.readElementText();
-        else if (stream.name() == "problem")
-            problem.deserialize(stream);
-        else if (stream.name() == "options")
-            options.deserialize(stream);
-        else
-            stream.skipCurrentElement();
-    }
-}
+ISolver* createSolver(ISolver::Type type);
 
 Subproject::Subproject()
 {
 }
 
 Subproject::Subproject(QString const& name)
+    : mName(name)
 {
-    mConfiguration.name = name;
+}
+
+Subproject::~Subproject()
+{
+    clear();
+}
+
+Subproject::Subproject(Subproject const& another)
+    : mName(another.mName)
+    , mModel(another.mModel)
+{
+    for (ISolver const* pSolver : another.mSolvers)
+        mSolvers.push_back(pSolver->clone());
+}
+
+Subproject::Subproject(Subproject&& another)
+{
+    mID = std::move(another.mID);
+    mName = std::move(another.mName);
+    mModel = std::move(another.mModel);
+    mSolvers = std::move(another.mSolvers);
+}
+
+Subproject& Subproject::operator=(Subproject const& another)
+{
+    clear();
+    mName = another.mName;
+    mModel = another.mModel;
+    for (ISolver const* pSolver : another.mSolvers)
+        mSolvers.push_back(pSolver->clone());
+    return *this;
 }
 
 QString const& Subproject::name() const
 {
-    return mConfiguration.name;
-}
-
-Configuration const& Subproject::configuration() const
-{
-    return mConfiguration;
+    return mName;
 }
 
 KCL::Model const& Subproject::model() const
@@ -65,14 +55,9 @@ KCL::Model const& Subproject::model() const
     return mModel;
 }
 
-QList<OptimSolution> const& Subproject::optimSolutions() const
+QString& Subproject::name()
 {
-    return mOptimSolutions;
-}
-
-Configuration& Subproject::configuration()
-{
-    return mConfiguration;
+    return mName;
 }
 
 KCL::Model& Subproject::model()
@@ -80,16 +65,44 @@ KCL::Model& Subproject::model()
     return mModel;
 }
 
-QList<OptimSolution>& Subproject::optimSolutions()
+ISolver* Subproject::solver(int index)
 {
-    return mOptimSolutions;
+    ISolver* pSolver = nullptr;
+    if (index >= 0 && index < mSolvers.size())
+        pSolver = mSolvers[index];
+    return pSolver;
+}
+
+ISolver* Subproject::addSolver(ISolver::Type type)
+{
+    ISolver* pSolver = createSolver(type);
+    if (pSolver)
+        mSolvers.push_back(pSolver);
+    return pSolver;
+}
+
+void Subproject::removeSolver(int index)
+{
+    if (index >= 0 && index < mSolvers.size())
+    {
+        delete mSolvers[index];
+        mSolvers.remove(index);
+    }
+}
+
+void Subproject::removeAllSolvers()
+{
+    int numSolvers = mSolvers.size();
+    for (int i = 0; i != numSolvers; ++i)
+        delete mSolvers[i];
+    mSolvers.clear();
 }
 
 void Subproject::clear()
 {
-    mConfiguration = Configuration();
+    mName = QString();
     mModel = KCL::Model();
-    mOptimSolutions.clear();
+    removeAllSolvers();
 }
 
 bool Subproject::operator==(Subproject const& another) const
@@ -105,9 +118,11 @@ bool Subproject::operator!=(Subproject const& another) const
 void Subproject::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
     stream.writeStartElement(elementName);
-    mConfiguration.serialize(stream, "configuration");
+    stream.writeTextElement("id", mID.toString());
+    stream.writeTextElement("name", mName);
     Utility::serialize(stream, "model", mModel);
-    Utility::serialize(stream, "optimSolutions", "optimSolution", mOptimSolutions);
+    for (ISolver* pSolver : mSolvers)
+        pSolver->serialize(stream, "solver");
     stream.writeEndElement();
 }
 
@@ -115,13 +130,44 @@ void Subproject::deserialize(QXmlStreamReader& stream)
 {
     while (stream.readNextStartElement())
     {
-        if (stream.name() == "configuration")
-            mConfiguration.deserialize(stream);
+        if (stream.name() == "id")
+        {
+            mID = QUuid::fromString(stream.readElementText());
+        }
+        else if (stream.name() == "name")
+        {
+            mName = stream.readElementText();
+        }
         else if (stream.name() == "model")
+        {
             Utility::deserialize(stream, mModel);
-        else if (stream.name() == "optimSolutions")
-            Utility::deserialize(stream, "optimSolution", mOptimSolutions);
+        }
+        else if (stream.name() == "solver")
+        {
+            ISolver::Type type = (ISolver::Type) stream.attributes().value("type").toInt();
+            ISolver* pSolver = createSolver(type);
+            if (pSolver)
+            {
+                pSolver->deserialize(stream);
+                mSolvers.push_back(pSolver);
+            }
+        }
         else
+        {
             stream.skipCurrentElement();
+        }
     }
+}
+
+//! Helper function to create solvers of specified type
+ISolver* createSolver(ISolver::Type type)
+{
+    ISolver* pSolver = nullptr;
+    switch (type)
+    {
+    case ISolver::kOptim:
+        pSolver = new OptimSolver;
+        break;
+    }
+    return pSolver;
 }

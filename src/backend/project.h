@@ -18,8 +18,11 @@ class Project : public Identifier, public ISerializable
 
 public:
     Project();
-    ~Project() = default;
+    ~Project();
 
+    Project(Project const& another);
+    Project(Project&& another);
+    Project& operator=(Project const& another);
     bool operator==(Project const& another) const;
     bool operator!=(Project const& another) const;
 
