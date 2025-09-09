@@ -140,6 +140,29 @@ OptimSolver::~OptimSolver()
 {
 }
 
+OptimSolver::OptimSolver(OptimSolver const& another)
+    : problem(another.problem)
+    , options(another.options)
+    , solutions(another.solutions)
+{
+}
+
+OptimSolver::OptimSolver(OptimSolver&& another)
+{
+    mID = std::move(another.mID);
+    problem = std::move(another.problem);
+    options = std::move(another.options);
+    solutions = std::move(another.solutions);
+}
+
+OptimSolver& OptimSolver::operator=(OptimSolver const& another)
+{
+    problem = another.problem;
+    options = another.options;
+    solutions = another.solutions;
+    return *this;
+}
+
 ISolver::Type OptimSolver::type() const
 {
     return ISolver::kOptim;
@@ -151,11 +174,6 @@ ISolver* OptimSolver::clone() const
     pSolver->problem = problem;
     pSolver->options = options;
     pSolver->solutions = solutions;
-    pSolver->mInitModel = mInitModel;
-    pSolver->mSelections = mSelections;
-    pSolver->mConstraints = mConstraints;
-    pSolver->mParameterScales = mParameterScales;
-    pSolver->mParameterBounds = mParameterBounds;
     return pSolver;
 }
 
@@ -189,6 +207,9 @@ void OptimSolver::solve()
     mInitModel = problem.model;
     mSelections = problem.selector.allSelections();
     mConstraints = problem.constraints;
+
+    // Set the model parameters
+    setModelParameters();
 
     // Wrap the model
     QList<double> parameterValues = wrapModel();
@@ -272,6 +293,13 @@ void OptimSolver::solve()
 
     // Log the report
     printReport(ceresSummary);
+}
+
+//! Set model parameters for further updating
+void OptimSolver::setModelParameters()
+{
+    auto pParameters = (AnalysisParameters*) mInitModel.specialSurface.element(KCL::WP);
+    pParameters->numLowModes = options.numModes;
 }
 
 //! Wrap the model parameters according to the constraints
@@ -772,6 +800,7 @@ void OptimSolver::serialize(QXmlStreamWriter& stream, QString const& elementName
 {
     stream.writeStartElement(elementName);
     stream.writeAttribute("type", Utility::toString((int) type()));
+    stream.writeTextElement("id", mID.toString());
     problem.serialize(stream, "problem");
     options.serialize(stream, "options");
     Utility::serialize(stream, "solutions", "solution", solutions);
@@ -782,7 +811,9 @@ void OptimSolver::deserialize(QXmlStreamReader& stream)
 {
     while (stream.readNextStartElement())
     {
-        if (stream.name() == "problem")
+        if (stream.name() == "id")
+            mID = QUuid::fromString(stream.readElementText());
+        else if (stream.name() == "problem")
             problem.deserialize(stream);
         else if (stream.name() == "options")
             options.deserialize(stream);
@@ -896,6 +927,7 @@ OptimOptions::OptimOptions()
     , minMAC(0)
     , penaltyMAC(0.1)
     , maxRelError(1e-3)
+    , numModes(20)
 {
 }
 

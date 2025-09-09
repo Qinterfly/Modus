@@ -1,12 +1,13 @@
 #ifndef ISOLVER_H
 #define ISOLVER_H
 
+#include "identifier.h"
 #include "iserializable.h"
 
 namespace Backend::Core
 {
 
-class ISolver : public ISerializable
+class ISolver : public Identifier, public ISerializable
 {
 public:
     enum Type

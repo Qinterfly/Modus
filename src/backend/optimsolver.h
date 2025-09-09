@@ -79,6 +79,7 @@ struct OptimOptions : public ISerializable
     Q_PROPERTY(double minMAC MEMBER minMAC)
     Q_PROPERTY(double penaltyMAC MEMBER penaltyMAC)
     Q_PROPERTY(double maxRelError MEMBER maxRelError)
+    Q_PROPERTY(int numModes MEMBER numModes)
 
 public:
     OptimOptions();
@@ -110,6 +111,9 @@ public:
 
     //! Maximum relative errors in frequencies
     double maxRelError;
+
+    //! Number of modes to compute
+    int numModes;
 };
 
 struct OptimSolution : public ISerializable
@@ -154,6 +158,9 @@ class OptimSolver : public QObject, public ISolver
 public:
     OptimSolver();
     ~OptimSolver();
+    OptimSolver(OptimSolver const& another);
+    OptimSolver(OptimSolver&& another);
+    OptimSolver& operator=(OptimSolver const& another);
 
     ISolver::Type type() const override;
     ISolver* clone() const override;
@@ -172,6 +179,7 @@ signals:
     void log(QString message);
 
 private:
+    void setModelParameters();
     QList<double> wrapModel();
     KCL::Model unwrapModel(QList<double> const& paramValues);
     Eigen::MatrixXd getProperties(QList<KCL::AbstractElement*> const& elements, VariableType type);

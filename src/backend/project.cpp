@@ -180,20 +180,12 @@ void Project::deserialize(QXmlStreamReader& stream)
     while (stream.readNextStartElement())
     {
         if (stream.name() == "id")
-        {
             mID = QUuid::fromString(stream.readElementText());
-        }
         else if (stream.name() == "pathFile")
-        {
             mPathFile = stream.readElementText();
-        }
         else if (stream.name() == "subprojects")
-        {
             Utility::deserialize(stream, "subproject", mSubprojects);
-        }
         else
-        {
             stream.skipCurrentElement();
-        }
     }
 }

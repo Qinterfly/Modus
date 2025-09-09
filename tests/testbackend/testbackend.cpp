@@ -123,6 +123,7 @@ void TestBackend::testUpdateSimpleWing()
     options.diffStepSize = 1e-5;
     options.maxRelError = 1e-1;
     options.penaltyMAC = 0;
+    options.numModes = 10;
 
     // Set the objectives
     ModalSolution solution(eigenSolution);
