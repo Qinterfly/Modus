@@ -165,6 +165,9 @@ ISolver* createSolver(ISolver::Type type)
     ISolver* pSolver = nullptr;
     switch (type)
     {
+    case ISolver::kModal:
+        pSolver = new ModalSolver;
+        break;
     case ISolver::kOptim:
         pSolver = new OptimSolver;
         break;

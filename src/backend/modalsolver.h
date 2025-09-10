@@ -1,0 +1,146 @@
+#ifndef MODALSOLVER_H
+#define MODALSOLVER_H
+
+#include <kcl/model.h>
+#include <kcl/solver.h>
+#include <QDir>
+#include <QList>
+
+#include "aliasdata.h"
+#include "geometry.h"
+#include "iserializable.h"
+#include "isolver.h"
+
+namespace Backend::Core
+{
+
+struct ModalComparison;
+
+class ModalSolution : public ISerializable
+{
+    Q_GADGET
+    Q_PROPERTY(Geometry geometry MEMBER mGeometry)
+    Q_PROPERTY(Eigen::VectorXd frequencies MEMBER mFrequencies)
+    Q_PROPERTY(QList<Eigen::MatrixXd> modeShapes MEMBER mModeShapes)
+    Q_PROPERTY(QList<QString> names MEMBER mNames)
+
+public:
+    ModalSolution();
+    ModalSolution(Geometry const& geometry, Eigen::VectorXd const& frequencies, QList<Eigen::MatrixXd> const& modeShapes);
+    ModalSolution(KCL::EigenSolution const& solution);
+    ~ModalSolution();
+
+    bool isEmpty() const;
+    int numModes() const;
+    Geometry const& geometry() const;
+    Eigen::VectorXd const& frequencies() const;
+    QList<Eigen::MatrixXd> const& modeShapes() const;
+    ModalComparison compare(ModalSolution const& another, Eigen::VectorXi const& indices, Matches const& matches, double minMAC) const;
+
+    void read(QDir const& directory);
+    void readModesets(QString const& pathFile);
+
+    bool operator==(ModalSolution const& another) const;
+    bool operator!=(ModalSolution const& another) const;
+
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
+    void deserialize(QXmlStreamReader& stream) override;
+
+private:
+    void resize(int numDOFs, int numModes);
+
+private:
+    Geometry mGeometry;
+    Eigen::VectorXd mFrequencies;
+    QList<Eigen::MatrixXd> mModeShapes;
+    QList<QString> mNames;
+};
+
+struct ModalComparison : public ISerializable
+{
+    Q_GADGET
+    Q_PROPERTY(Eigen::VectorXd diffFrequencies MEMBER diffFrequencies)
+    Q_PROPERTY(Eigen::VectorXd errorFrequencies MEMBER errorFrequencies)
+    Q_PROPERTY(Eigen::VectorXd errorsMAC MEMBER errorsMAC)
+    Q_PROPERTY(ModalPairs pairs MEMBER pairs)
+
+public:
+    ModalComparison();
+    ~ModalComparison();
+
+    bool isEmpty() const;
+    bool isValid() const;
+    void resize(int numModes);
+
+    bool operator==(ModalComparison const& another) const;
+    bool operator!=(ModalComparison const& another) const;
+
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
+    void deserialize(QXmlStreamReader& stream) override;
+
+    Eigen::VectorXd diffFrequencies;
+    Eigen::VectorXd errorFrequencies;
+    Eigen::VectorXd errorsMAC;
+    ModalPairs pairs;
+};
+
+struct ModalOptions : public ISerializable
+{
+    Q_GADGET
+    Q_PROPERTY(int numModes MEMBER numModes)
+    Q_PROPERTY(double timeout MEMBER timeout)
+
+public:
+    ModalOptions();
+    ~ModalOptions();
+
+    bool operator==(ModalOptions const& another) const;
+    bool operator!=(ModalOptions const& another) const;
+
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
+    void deserialize(QXmlStreamReader& stream) override;
+
+    //! Number of modes to compute
+    int numModes;
+
+    //! Maximum duration of solution
+    double timeout;
+};
+
+class ModalSolver : public QObject, public ISolver
+{
+    Q_OBJECT
+    Q_PROPERTY(KCL::Model model MEMBER model)
+    Q_PROPERTY(ModalOptions options MEMBER options)
+    Q_PROPERTY(ModalSolution solution MEMBER solution)
+
+public:
+    ModalSolver();
+    ~ModalSolver();
+    ModalSolver(ModalSolver const& another);
+    ModalSolver(ModalSolver&& another);
+    ModalSolver& operator=(ModalSolver const& another);
+
+    ISolver::Type type() const override;
+    ISolver* clone() const override;
+
+    void clear() override;
+    void solve() override;
+
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
+    void deserialize(QXmlStreamReader& stream) override;
+
+    bool operator==(ISolver const* pBaseSolver) const override;
+    bool operator!=(ISolver const* pBaseSolver) const override;
+
+signals:
+    void solverFinished();
+
+public:
+    KCL::Model model;
+    ModalOptions options;
+    ModalSolution solution;
+};
+}
+
+#endif // MODALSOLVER_H

@@ -68,6 +68,36 @@ void fromString(QString text, QPair<T, M>& value)
 }
 
 template<typename T>
+void serializeProperties(QXmlStreamWriter& stream, QString const& elementName, T const& object)
+{
+    QMetaObject const& metaObject = object.staticMetaObject;
+    int numProperties = metaObject.propertyCount();
+    stream.writeStartElement(elementName);
+    for (int i = 0; i != numProperties; ++i)
+    {
+        QString name = metaObject.property(i).name();
+        QVariant variant = metaObject.property(i).readOnGadget(&object);
+        stream.writeTextElement(name, Utility::toString(variant));
+    }
+    stream.writeEndElement();
+}
+
+template<typename T>
+void deserializeProperties(QXmlStreamReader& stream, T& object)
+{
+    QMetaObject const& metaObject = object.staticMetaObject;
+    while (stream.readNextStartElement())
+    {
+        auto name = stream.name().toString();
+        int iProperty = metaObject.indexOfProperty(name.toStdString().c_str());
+        if (iProperty > -1)
+            metaObject.property(iProperty).writeOnGadget(&object, stream.readElementText());
+        else
+            stream.skipCurrentElement();
+    }
+}
+
+template<typename T>
 void serialize(QXmlStreamWriter& stream, QString const& elementName, QString const& objectName, QList<T> const& objects)
 {
     if (!std::is_base_of<Core::ISerializable, T>())

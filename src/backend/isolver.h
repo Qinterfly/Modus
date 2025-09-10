@@ -12,6 +12,7 @@ class ISolver : public Identifier, public ISerializable
 public:
     enum Type
     {
+        kModal,
         kOptim
     };
     virtual Type type() const = 0;

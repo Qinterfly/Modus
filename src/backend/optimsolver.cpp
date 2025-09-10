@@ -171,9 +171,7 @@ ISolver::Type OptimSolver::type() const
 ISolver* OptimSolver::clone() const
 {
     OptimSolver* pSolver = new OptimSolver;
-    pSolver->problem = problem;
-    pSolver->options = options;
-    pSolver->solutions = solutions;
+    *pSolver = *this;
     return pSolver;
 }
 
@@ -293,6 +291,8 @@ void OptimSolver::solve()
 
     // Log the report
     printReport(ceresSummary);
+
+    emit solverFinished();
 }
 
 //! Set model parameters for further updating
@@ -829,7 +829,7 @@ bool OptimSolver::operator==(ISolver const* pBaseSolver) const
     if (type() != pBaseSolver->type())
         return false;
     OptimSolver* pSolver = (OptimSolver*) pBaseSolver;
-    return problem == pSolver->problem && options == pSolver->options && solutions == pSolver->solutions;
+    return Utility::areEqual(*this, *pSolver);
 }
 
 bool OptimSolver::operator!=(ISolver const* pBaseSolver) const
@@ -867,7 +867,7 @@ void OptimProblem::fillMatches()
         qWarning() << QObject::tr("Could not fill the matches because the target solution has not been set");
         return;
     }
-    int numVertices = targetSolution.numVertices();
+    int numVertices = targetSolution.geometry().numVertices();
     targetMatches.resize(numVertices);
     for (int i = 0; i != numVertices; ++i)
         targetMatches[i] = {i, i};
@@ -947,30 +947,12 @@ bool OptimOptions::operator!=(OptimOptions const& another) const
 
 void OptimOptions::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
-    QMetaObject const& metaObject = staticMetaObject;
-    int numProperties = metaObject.propertyCount();
-    stream.writeStartElement(elementName);
-    for (int i = 0; i != numProperties; ++i)
-    {
-        QString name = metaObject.property(i).name();
-        QVariant variant = metaObject.property(i).readOnGadget(this);
-        stream.writeTextElement(name, Utility::toString(variant));
-    }
-    stream.writeEndElement();
+    Utility::serializeProperties(stream, elementName, *this);
 }
 
 void OptimOptions::deserialize(QXmlStreamReader& stream)
 {
-    QMetaObject const& metaObject = staticMetaObject;
-    while (stream.readNextStartElement())
-    {
-        auto name = stream.name().toString();
-        int iProperty = metaObject.indexOfProperty(name.toStdString().c_str());
-        if (iProperty > -1)
-            metaObject.property(iProperty).writeOnGadget(this, stream.readElementText());
-        else
-            stream.skipCurrentElement();
-    }
+    Utility::deserializeProperties(stream, *this);
 }
 
 OptimSolution::OptimSolution()

@@ -7,7 +7,7 @@
 
 #include "constraints.h"
 #include "isolver.h"
-#include "modalsolution.h"
+#include "modalsolver.h"
 #include "selector.h"
 
 namespace KCL
@@ -176,6 +176,7 @@ public:
 
 signals:
     void iterationFinished(Backend::Core::OptimSolution solution);
+    void solverFinished();
     void log(QString message);
 
 private:

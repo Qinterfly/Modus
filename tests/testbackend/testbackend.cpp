@@ -85,12 +85,34 @@ void TestBackend::testSelector()
     QVERIFY(selector.isEmpty());
 }
 
-//! Update the model of the simple wing
-void TestBackend::testUpdateSimpleWing()
+//! Obtain the modal solution associated with the simple wing
+void TestBackend::testModalSolver()
 {
     Example const example = Example::simpleWing;
-    int numModes = 3;
-    double error = 0.01;
+    int const numModes = 15;
+
+    // Slice the subproject
+    Subproject& subproject = mProject.subprojects()[example];
+
+    // Initialize the solver
+    ModalSolver* pSolver = (ModalSolver*) subproject.addSolver(ISolver::kModal);
+
+    // Set the solver data
+    pSolver->options.numModes = numModes;
+    pSolver->model = subproject.model();
+
+    // Run the solver
+    pSolver->solve();
+    QVERIFY(!pSolver->solution.isEmpty());
+    QVERIFY(pSolver->solution.numModes() == numModes);
+}
+
+//! Update the model of the simple wing
+void TestBackend::testOptimSolver()
+{
+    Example const example = Example::simpleWing;
+    int const numModes = 3;
+    double const error = 0.01;
 
     // Slice the subproject
     Subproject& subproject = mProject.subprojects()[example];

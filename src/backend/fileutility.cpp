@@ -188,6 +188,14 @@ bool areEqual(QList<Core::ISolver*> const& first, QList<Core::ISolver*> const& s
             return false;
         switch (type)
         {
+        case Core::ISolver::kModal:
+        {
+            auto pFirstSolver = (Core::ModalSolver*) first[k];
+            auto pSecondSolver = (Core::ModalSolver*) second[k];
+            if (!areEqual(*pFirstSolver, *pSecondSolver))
+                return false;
+            break;
+        }
         case Core::ISolver::kOptim:
         {
             auto pFirstSolver = (Core::OptimSolver*) first[k];

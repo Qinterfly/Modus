@@ -29,7 +29,8 @@ private slots:
     void testLoadModels();
     void testLoadModalSolution();
     void testSelector();
-    void testUpdateSimpleWing();
+    void testModalSolver();
+    void testOptimSolver();
     void testWriteProject();
 
 private:
