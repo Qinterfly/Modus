@@ -48,9 +48,6 @@ public:
 private:
     QList<Backend::Core::SelectionSet> mSelectionSets;
 };
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, Selector const& selector);
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, Selector& selector);
 }
 
 #endif // SELECTOR_H

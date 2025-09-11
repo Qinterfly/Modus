@@ -26,11 +26,17 @@ public:
     virtual ~TestBackend() = default;
 
 private slots:
+    // Models
     void testLoadModels();
     void testLoadModalSolution();
     void testSelector();
+
+    // Solvers
     void testModalSolver();
     void testOptimSolver();
+    void testFlutterSolver();
+
+    // Project
     void testWriteProject();
 
 private:

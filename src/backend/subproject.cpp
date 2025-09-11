@@ -1,5 +1,6 @@
 #include "subproject.h"
 #include "fileutility.h"
+#include "fluttersolver.h"
 
 using namespace Backend::Core;
 
@@ -170,6 +171,9 @@ ISolver* createSolver(ISolver::Type type)
         break;
     case ISolver::kOptim:
         pSolver = new OptimSolver;
+        break;
+    case ISolver::kFlutter:
+        pSolver = new FlutterSolver;
         break;
     }
     return pSolver;

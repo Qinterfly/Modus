@@ -32,14 +32,7 @@ ModalSolution::ModalSolution(KCL::EigenSolution const& solution)
     resize(numDOFs, numModes);
 
     // Copy the geometry
-    for (int i = 0; i != numDOFs; ++i)
-    {
-        Vertex& vertex = mGeometry.vertices[i];
-        vertex.name = QString::number(i);
-        for (int j = 0; j != Constants::skNumDirections; ++j)
-            vertex.position[j] = solution.geometry.vertices(i, j);
-    }
-    mGeometry.quadrangles = solution.geometry.quadrangles;
+    mGeometry = solution.geometry;
 
     // Copy modal data
     for (int i = 0; i != numModes; ++i)
@@ -130,6 +123,53 @@ void ModalSolution::read(QDir const& directory)
     readModesets(Utility::combineFilePath(directory.path(), "modesets.txt"));
 }
 
+bool ModalSolution::operator==(ModalSolution const& another) const
+{
+    return Utility::areEqual(*this, another);
+}
+
+bool ModalSolution::operator!=(ModalSolution const& another) const
+{
+    return !(*this == another);
+}
+
+void ModalSolution::serialize(QXmlStreamWriter& stream, QString const& elementName) const
+{
+    stream.writeStartElement(elementName);
+    mGeometry.serialize(stream, "geometry");
+    Utility::serialize(stream, "frequencies", mFrequencies);
+    Utility::serialize(stream, "modeShapes", "modeShape", mModeShapes);
+    Utility::serialize(stream, "names", "name", mNames);
+    stream.writeEndElement();
+}
+
+void ModalSolution::deserialize(QXmlStreamReader& stream)
+{
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == "geometry")
+            mGeometry.deserialize(stream);
+        else if (stream.name() == "frequencies")
+            Utility::deserialize(stream, mFrequencies);
+        else if (stream.name() == "modeShapes")
+            Utility::deserialize(stream, "modeShape", mModeShapes);
+        else if (stream.name() == "names")
+            Utility::deserialize(stream, "name", mNames);
+        else
+            stream.skipCurrentElement();
+    }
+}
+
+//! Reallocate the data fields
+void ModalSolution::resize(int numDOFs, int numModes)
+{
+    mGeometry.vertices.resize(numDOFs);
+    mFrequencies.resize(numModes);
+    mModeShapes.resize(numModes);
+    for (MatrixXd& item : mModeShapes)
+        item.resize(numDOFs, Constants::skNumDirections);
+}
+
 //! Read the file which contains several modesets
 void ModalSolution::readModesets(QString const& pathFile)
 {
@@ -207,52 +247,6 @@ void ModalSolution::readModesets(QString const& pathFile)
             }
         }
     }
-}
-
-bool ModalSolution::operator==(ModalSolution const& another) const
-{
-    return Utility::areEqual(*this, another);
-}
-bool ModalSolution::operator!=(ModalSolution const& another) const
-{
-    return !(*this == another);
-}
-
-void ModalSolution::serialize(QXmlStreamWriter& stream, QString const& elementName) const
-{
-    stream.writeStartElement(elementName);
-    mGeometry.serialize(stream, "geometry");
-    Utility::serialize(stream, "frequencies", mFrequencies);
-    Utility::serialize(stream, "modeShapes", "modeShape", mModeShapes);
-    Utility::serialize(stream, "names", "name", mNames);
-    stream.writeEndElement();
-}
-
-void ModalSolution::deserialize(QXmlStreamReader& stream)
-{
-    while (stream.readNextStartElement())
-    {
-        if (stream.name() == "geometry")
-            mGeometry.deserialize(stream);
-        else if (stream.name() == "frequencies")
-            Utility::deserialize(stream, mFrequencies);
-        else if (stream.name() == "modeShapes")
-            Utility::deserialize(stream, "modeShape", mModeShapes);
-        else if (stream.name() == "names")
-            Utility::deserialize(stream, "name", mNames);
-        else
-            stream.skipCurrentElement();
-    }
-}
-
-//! Reallocate the data fields
-void ModalSolution::resize(int numDOFs, int numModes)
-{
-    mGeometry.vertices.resize(numDOFs);
-    mFrequencies.resize(numModes);
-    mModeShapes.resize(numModes);
-    for (MatrixXd& item : mModeShapes)
-        item.resize(numDOFs, Constants::skNumDirections);
 }
 
 ModalComparison::ModalComparison()
@@ -456,7 +450,7 @@ bool ModalSolver::operator==(ISolver const* pBaseSolver) const
 {
     if (type() != pBaseSolver->type())
         return false;
-    ModalSolver* pSolver = (ModalSolver*) pBaseSolver;
+    auto pSolver = (ModalSolver*) pBaseSolver;
     return Utility::areEqual(*this, *pSolver);
 }
 

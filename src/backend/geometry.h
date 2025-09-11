@@ -3,8 +3,8 @@
 
 #include <Eigen/Core>
 
-#include "aliasdata.h"
 #include "iserializable.h"
+#include "kcl/solver.h"
 
 namespace Backend::Core
 {
@@ -70,6 +70,7 @@ struct Geometry : public ISerializable
 public:
     Geometry();
     ~Geometry();
+    Geometry(KCL::Geometry const& geometry);
 
     bool isEmpty() const;
     int numVertices() const;

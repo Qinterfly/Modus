@@ -175,8 +175,8 @@ public:
     bool operator!=(ISolver const* pBaseSolver) const override;
 
 signals:
-    void iterationFinished(Backend::Core::OptimSolution solution);
     void solverFinished();
+    void iterationFinished(Backend::Core::OptimSolution solution);
     void log(QString message);
 
 private:
@@ -243,13 +243,6 @@ private:
     UnwrapFun mUnwrapFun;
     SolverFun mSolverFun;
 };
-
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, OptimProblem const& problem);
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, OptimProblem& problem);
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, OptimOptions const& options);
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, OptimOptions& options);
-QXmlStreamWriter& operator<<(QXmlStreamWriter& stream, OptimSolution const& solution);
-QXmlStreamReader& operator>>(QXmlStreamReader& stream, OptimSolution& solution);
 }
 
 #endif // OPTIMSOLVER_H

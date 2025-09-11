@@ -12,7 +12,6 @@
 #include "constraints.h"
 #include "iserializable.h"
 #include "isolver.h"
-#include "optimsolver.h"
 
 namespace KCL
 {
@@ -44,12 +43,18 @@ QString combineFilePath(T const& first, Args... args)
 }
 
 QString toString(QVariant const& variant);
+QString toString(bool value);
+QString toString(int value);
+QString toString(double value);
+QString toString(QUuid const& value);
+QString toString(std::complex<double> const& value);
 
 template<typename T, typename M>
 QString toString(QPair<T, M> const& pair)
 {
     return QString("%1 %2").arg(toString(pair.first), toString(pair.second));
 }
+
 template<typename T>
 void fromString(QString const& text, T& value)
 {
@@ -66,6 +71,9 @@ void fromString(QString text, QPair<T, M>& value)
     fromString(first, value.first);
     fromString(second, value.second);
 }
+
+template<>
+void fromString(QString const& text, std::complex<double>& value);
 
 template<typename T>
 void serializeProperties(QXmlStreamWriter& stream, QString const& elementName, T const& object)
@@ -196,8 +204,8 @@ void deserialize(QXmlStreamReader& stream, QMap<Backend::Core::VariableType, T>&
     }
 }
 
-template<typename Derived>
-void serialize(QXmlStreamWriter& stream, QString const& elementName, Eigen::MatrixBase<Derived> const& matrix)
+template<typename Scalar, int Rows, int Cols, int Options, int MaxRows, int MaxCols>
+void serialize(QXmlStreamWriter& stream, QString const& elementName, Eigen::Matrix<Scalar, Rows, Cols, Options, MaxRows, MaxCols> const& matrix)
 {
     QString text;
     QTextStream textStream(&text);
@@ -228,12 +236,45 @@ void deserialize(QXmlStreamReader& stream, Eigen::Matrix<Scalar, Rows, Cols, Opt
     QTextStream textStream(&text);
     matrix.resize(numRows, numCols);
     for (int i = 0; i != numRows; ++i)
+    {
         for (int j = 0; j != numCols; ++j)
-            textStream >> matrix(i, j);
+        {
+            QString token;
+            textStream >> token;
+            fromString(token, matrix(i, j));
+        }
+    }
 }
 
-void serialize(QXmlStreamWriter& stream, QString const& elementName, QString const& objectName, QList<Eigen::MatrixXd> const& matrices);
-void deserialize(QXmlStreamReader& stream, QString const& objectName, QList<Eigen::MatrixXd>& matrices);
+template<typename Scalar, int Rows, int Cols, int Options, int MaxRows, int MaxCols>
+void serialize(QXmlStreamWriter& stream, QString const& elementName, QString const& objectName,
+               QList<Eigen::Matrix<Scalar, Rows, Cols, Options, MaxRows, MaxCols>> const& matrices)
+{
+    stream.writeStartElement(elementName);
+    for (auto const& matrix : matrices)
+        serialize(stream, objectName, matrix);
+    stream.writeEndElement();
+}
+
+template<typename Scalar, int Rows, int Cols, int Options, int MaxRows, int MaxCols>
+void deserialize(QXmlStreamReader& stream, QString const& objectName,
+                 QList<Eigen::Matrix<Scalar, Rows, Cols, Options, MaxRows, MaxCols>>& matrices)
+{
+    matrices.clear();
+    while (stream.readNextStartElement())
+    {
+        if (stream.name() == objectName)
+        {
+            Eigen::Matrix<Scalar, Rows, Cols, Options, MaxRows, MaxCols> matrix;
+            deserialize(stream, matrix);
+            matrices.emplaceBack(std::move(matrix));
+        }
+        else
+        {
+            stream.skipCurrentElement();
+        }
+    }
+}
 
 void serialize(QXmlStreamWriter& stream, QString const& elementName, QString const& objectName, QList<QString> const& items);
 void deserialize(QXmlStreamReader& stream, QString const& objectName, QList<QString>& items);
@@ -244,35 +285,10 @@ void deserialize(QXmlStreamReader& stream, QMap<Backend::Core::Selection, bool>&
 void serialize(QXmlStreamWriter& stream, QString const& elementName, KCL::Model const& model);
 void deserialize(QXmlStreamReader& stream, KCL::Model& model);
 
-bool areEqual(double first, double second, double tolerance);
-bool areEqual(QList<Core::ISolver*> const& first, QList<Core::ISolver*> const& second);
-bool areEqual(QList<Eigen::MatrixXd> const& first, QList<Eigen::MatrixXd> const& second, double tolerance);
-bool areEqual(Core::ModalPairs const& first, Core::ModalPairs const& second, double tolerance);
-
-//! Check if two matrices are equal
-template<typename Derived>
-bool areEqual(Eigen::MatrixBase<Derived> const& first, Eigen::MatrixBase<Derived> const& second, double tolerance)
-{
-    if (first.size() != second.size())
-        return false;
-    int numRows = first.rows();
-    int numCols = second.cols();
-    for (int i = 0; i != numRows; ++i)
-    {
-        for (int j = 0; j != numCols; ++j)
-        {
-            if (!areEqual(first(i, j), second(i, j), tolerance))
-                return false;
-        }
-    }
-    return true;
-}
-
 //! Check if metaobjects are equal
 template<typename T>
 bool areEqual(T const& first, T const& second)
 {
-    double const kTolerance = 1e-6;
     QMetaObject const& metaObject = first.staticMetaObject;
     int numProperties = metaObject.propertyCount();
     while (numProperties > 0)
@@ -289,58 +305,66 @@ bool areEqual(T const& first, T const& second)
             firstVariant = metaProperty.readOnGadget(&first);
             secondVariant = metaProperty.readOnGadget(&second);
         }
-        if (firstVariant != secondVariant)
-        {
-            QString type = firstVariant.typeName();
-            if (type == "double")
-            {
-                auto firstValue = firstVariant.value<double>();
-                auto secondValue = secondVariant.value<double>();
-                if (!areEqual(firstValue, secondValue, kTolerance))
-                    return false;
-            }
-            else if (type == "QList<Backend::Core::ISolver*>")
-            {
-                auto firstValue = firstVariant.value<QList<Core::ISolver*>>();
-                auto secondValue = secondVariant.value<QList<Core::ISolver*>>();
-                if (!areEqual(firstValue, secondValue))
-                    return false;
-            }
-            else if (type == "QList<std::pair<int,double>>")
-            {
-                auto firstValue = firstVariant.value<Core::ModalPairs>();
-                auto secondValue = secondVariant.value<Core::ModalPairs>();
-                if (!areEqual(firstValue, secondValue, kTolerance))
-                    return false;
-            }
-            else if (type == "QList<Eigen::Matrix<double,-1,-1>>")
-            {
-                auto firstValue = firstVariant.value<QList<Eigen::MatrixXd>>();
-                auto secondValue = secondVariant.value<QList<Eigen::MatrixXd>>();
-                if (!areEqual(firstValue, secondValue, kTolerance))
-                    return false;
-            }
-            else if (type == "Eigen::Matrix<double,-1,-1>")
-            {
-                if (!areEqual(firstVariant.value<Eigen::MatrixXd>(), secondVariant.value<Eigen::MatrixXd>(), kTolerance))
-                    return false;
-            }
-            else if (type == "Eigen::Matrix<double,-1,1>")
-            {
-                if (!areEqual(firstVariant.value<Eigen::VectorXd>(), secondVariant.value<Eigen::VectorXd>(), kTolerance))
-                    return false;
-            }
-            else if (type == "Eigen::Matrix<double,3,1>")
-            {
-                if (!areEqual(firstVariant.value<Eigen::Vector3d>(), secondVariant.value<Eigen::Vector3d>(), kTolerance))
-                    return false;
-            }
-            else
-            {
-                return false;
-            }
-        }
+        if (!areEqual(firstVariant, secondVariant))
+            return false;
         --numProperties;
+    }
+    return true;
+}
+
+template<>
+bool areEqual(QVariant const& first, QVariant const& second);
+template<>
+bool areEqual(QList<Core::ISolver*> const& first, QList<Core::ISolver*> const& second);
+
+bool areEqual(double first, double second, double tolerance);
+bool areEqual(std::complex<double> first, std::complex<double> second, double tolerance);
+bool areEqual(Core::ModalPairs const& first, Core::ModalPairs const& second, double tolerance);
+
+template<typename Scalar, int Rows, int Cols, int Options, int MaxRows, int MaxCols>
+bool areEqual(Eigen::Matrix<Scalar, Rows, Cols, Options, MaxRows, MaxCols> const& first,
+              Eigen::Matrix<Scalar, Rows, Cols, Options, MaxRows, MaxCols> const& second, double tolerance)
+{
+    if (first.size() != second.size())
+        return false;
+    int numRows = first.rows();
+    int numCols = second.cols();
+    for (int i = 0; i != numRows; ++i)
+    {
+        for (int j = 0; j != numCols; ++j)
+        {
+            if (!areEqual(first(i, j), second(i, j), tolerance))
+                return false;
+        }
+    }
+    return true;
+}
+
+template<typename Scalar, int Rows, int Cols, int Options, int MaxRows, int MaxCols>
+bool areEqual(QList<Eigen::Matrix<Scalar, Rows, Cols, Options, MaxRows, MaxCols>> const& first,
+              QList<Eigen::Matrix<Scalar, Rows, Cols, Options, MaxRows, MaxCols>> const& second, double tolerance)
+{
+    if (first.size() != second.size())
+        return false;
+    int numValues = first.size();
+    for (int k = 0; k != numValues; ++k)
+    {
+        if (!areEqual(first[k], second[k], tolerance))
+            return false;
+    }
+    return true;
+}
+
+template<typename T, typename M>
+bool areEqual(QMap<T, M> const& first, QMap<T, M> const& second, double tolerance)
+{
+    auto const keys = first.keys();
+    if (keys != second.keys())
+        return false;
+    for (auto const& key : keys)
+    {
+        if (!areEqual(QVariant::fromValue(first[key]), QVariant::fromValue(second[key])))
+            return false;
     }
     return true;
 }

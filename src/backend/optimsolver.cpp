@@ -829,7 +829,7 @@ bool OptimSolver::operator==(ISolver const* pBaseSolver) const
     if (type() != pBaseSolver->type())
         return false;
     OptimSolver* pSolver = (OptimSolver*) pBaseSolver;
-    return Utility::areEqual(*this, *pSolver);
+    return problem == pSolver->problem && options == pSolver->options && solutions == pSolver->solutions;
 }
 
 bool OptimSolver::operator!=(ISolver const* pBaseSolver) const
@@ -967,6 +967,7 @@ bool OptimSolution::operator==(OptimSolution const& another) const
 {
     return Utility::areEqual(*this, another);
 }
+
 bool OptimSolution::operator!=(OptimSolution const& another) const
 {
     return !(*this == another);

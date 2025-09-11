@@ -99,6 +99,20 @@ Geometry::~Geometry()
 {
 }
 
+Geometry::Geometry(KCL::Geometry const& geometry)
+{
+    int numDOFs = geometry.vertices.rows();
+    vertices.resize(numDOFs);
+    for (int i = 0; i != numDOFs; ++i)
+    {
+        Vertex& vertex = vertices[i];
+        vertex.name = QString::number(i);
+        for (int j = 0; j != Constants::skNumDirections; ++j)
+            vertex.position[j] = geometry.vertices(i, j);
+    }
+    quadrangles = geometry.quadrangles;
+}
+
 bool Geometry::isEmpty() const
 {
     return numVertices() == 0;

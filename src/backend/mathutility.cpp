@@ -191,4 +191,5 @@ template int getIndexByName(QList<Core::Subproject> const&, QString const&, Qt::
 template QList<double> combine(QList<double> const& first, QList<double> const& second);
 template QList<QPair<double, double>> combine(QList<QPair<double, double>> const& first, QList<QPair<double, double>> const& second);
 template KCL::EigenSolution solve(std::function<KCL::EigenSolution()>, double);
+template KCL::FlutterSolution solve(std::function<KCL::FlutterSolution()>, double);
 }

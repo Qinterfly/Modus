@@ -1,8 +1,7 @@
 archive
 build
-lib
-examples
+info
 install
-releases
-manual
+examples
+lib
 CMakeLists.txt.user*

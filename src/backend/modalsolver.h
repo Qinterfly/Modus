@@ -38,7 +38,6 @@ public:
     ModalComparison compare(ModalSolution const& another, Eigen::VectorXi const& indices, Matches const& matches, double minMAC) const;
 
     void read(QDir const& directory);
-    void readModesets(QString const& pathFile);
 
     bool operator==(ModalSolution const& another) const;
     bool operator!=(ModalSolution const& another) const;
@@ -48,6 +47,7 @@ public:
 
 private:
     void resize(int numDOFs, int numModes);
+    void readModesets(QString const& pathFile);
 
 private:
     Geometry mGeometry;

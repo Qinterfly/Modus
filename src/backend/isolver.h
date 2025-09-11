@@ -13,7 +13,8 @@ public:
     enum Type
     {
         kModal,
-        kOptim
+        kOptim,
+        kFlutter
     };
     virtual Type type() const = 0;
     virtual ISolver* clone() const = 0;

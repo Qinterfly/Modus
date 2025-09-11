@@ -39,6 +39,7 @@ bool Constraints::operator==(Constraints const& another) const
 {
     return Utility::areEqual(*this, another);
 }
+
 bool Constraints::operator!=(Constraints const& another) const
 {
     return !(*this == another);

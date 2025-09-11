@@ -17,8 +17,9 @@ set(BACKEND_HEADERS
     selectionset.h
     constraints.h
     geometry.h
-    optimsolver.h
     modalsolver.h
+    optimsolver.h
+    fluttersolver.h
 )
 
 set(BACKEND_SOURCES
@@ -31,8 +32,9 @@ set(BACKEND_SOURCES
     selectionset.cpp
     constraints.cpp
     geometry.cpp
-    optimsolver.cpp
     modalsolver.cpp
+    optimsolver.cpp
+    fluttersolver.cpp
 )
 
 qt_add_library(backend STATIC
