@@ -343,9 +343,9 @@ bool areEqual(double first, double second, double tolerance)
 
 bool areEqual(std::complex<double> first, std::complex<double> second, double tolerance)
 {
-    if (std::abs(first - second) <= tolerance)
-        return true;
-    return false;
+    bool isReal = areEqual(first.real(), second.real(), tolerance);
+    bool isImag = areEqual(first.imag(), second.imag(), tolerance);
+    return isReal && isImag;
 }
 
 bool areEqual(PairDouble const& first, PairDouble const& second, double tolerance)
