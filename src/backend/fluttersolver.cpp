@@ -60,6 +60,76 @@ FlutterSolution::~FlutterSolution()
 {
 }
 
+bool FlutterSolution::isEmpty() const
+{
+    return mFlow.size() == 0;
+}
+
+int FlutterSolution::numCrit() const
+{
+    return mCritFlow.size();
+}
+
+Geometry const& FlutterSolution::geometry() const
+{
+    return mGeometry;
+}
+
+Eigen::VectorXd const& FlutterSolution::flow() const
+{
+    return mFlow;
+}
+
+Eigen::MatrixXcd const& FlutterSolution::roots() const
+{
+    return mRoots;
+}
+
+Eigen::VectorXd const& FlutterSolution::critFlow() const
+{
+    return mCritFlow;
+}
+
+Eigen::VectorXd const& FlutterSolution::critSpeed() const
+{
+    return mCritSpeed;
+}
+
+Eigen::VectorXd const& FlutterSolution::critFrequency() const
+{
+    return mCritFrequency;
+}
+
+Eigen::VectorXd const& FlutterSolution::critCircFrequency() const
+{
+    return mCritCircFrequency;
+}
+
+Eigen::VectorXd const& FlutterSolution::critStrouhal() const
+{
+    return mCritStrouhal;
+}
+
+Eigen::VectorXd const& FlutterSolution::critDamping() const
+{
+    return mCritDamping;
+}
+
+QList<Eigen::MatrixXcd> const& FlutterSolution::critModeShapes() const
+{
+    return mCritModeShapes;
+}
+
+Eigen::MatrixXd const& FlutterSolution::critPartFactor() const
+{
+    return mCritPartFactor;
+}
+
+Eigen::MatrixXd const& FlutterSolution::critPartPhase() const
+{
+    return mCritPartPhase;
+}
+
 bool FlutterSolution::operator==(FlutterSolution const& another) const
 {
     return Utility::areEqual(*this, another);

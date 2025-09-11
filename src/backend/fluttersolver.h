@@ -53,6 +53,22 @@ public:
     FlutterSolution(KCL::FlutterSolution const& solution);
     ~FlutterSolution();
 
+    bool isEmpty() const;
+    int numCrit() const;
+
+    Geometry const& geometry() const;
+    Eigen::VectorXd const& flow() const;
+    Eigen::MatrixXcd const& roots() const;
+    Eigen::VectorXd const& critFlow() const;
+    Eigen::VectorXd const& critSpeed() const;
+    Eigen::VectorXd const& critFrequency() const;
+    Eigen::VectorXd const& critCircFrequency() const;
+    Eigen::VectorXd const& critStrouhal() const;
+    Eigen::VectorXd const& critDamping() const;
+    QList<Eigen::MatrixXcd> const& critModeShapes() const;
+    Eigen::MatrixXd const& critPartFactor() const;
+    Eigen::MatrixXd const& critPartPhase() const;
+
     bool operator==(FlutterSolution const& another) const;
     bool operator!=(FlutterSolution const& another) const;
 

@@ -69,7 +69,7 @@ QString toString(int value)
 
 QString toString(double value)
 {
-    return QString::number(value, 'g', 10);
+    return QString::number(value, 'g', 12);
 }
 
 QString toString(QUuid const& value)
@@ -212,78 +212,79 @@ bool areEqual(QVariant const& first, QVariant const& second)
     }
 
     // Handle custom types
-    QString typeName = first.typeName();
     bool flag = true;
-    if (typeName == "std::pair<double,double>")
-        flag = first.value<PairDouble>() == second.value<PairDouble>();
-    else if (typeName == "QStringList")
+    if (type == qMetaTypeId<QPair<double, double>>())
+        flag = areEqual(first.value<PairDouble>(), second.value<PairDouble>(), kTolerance);
+    else if (type == qMetaTypeId<QStringList>())
         flag = first.value<QStringList>() == second.value<QStringList>();
-    else if (typeName == "KCL::Model")
+    else if (type == qMetaTypeId<KCL::Model>())
         flag = first.value<KCL::Model>() == second.value<KCL::Model>();
-    else if (typeName == "Backend::Core::Direction")
+    else if (type == qMetaTypeId<Direction>())
         flag = first.value<Direction>() == second.value<Direction>();
-    else if (typeName == "Backend::Core::Geometry")
+    else if (type == qMetaTypeId<Geometry>())
         flag = first.value<Geometry>() == second.value<Geometry>();
-    else if (typeName == "QList<Backend::Core::Vertex>")
+    else if (type == qMetaTypeId<QList<Vertex>>())
         flag = first.value<QList<Vertex>>() == second.value<QList<Vertex>>();
-    else if (typeName == "QList<Backend::Core::Slave>")
+    else if (type == qMetaTypeId<QList<Slave>>())
         flag = first.value<QList<Slave>>() == second.value<QList<Slave>>();
-    else if (typeName == "Backend::Core::ModalOptions")
+    else if (type == qMetaTypeId<ModalOptions>())
         flag = first.value<ModalOptions>() == second.value<ModalOptions>();
-    else if (typeName == "Backend::Core::ModalSolution")
+    else if (type == qMetaTypeId<ModalSolution>())
         flag = first.value<ModalSolution>() == second.value<ModalSolution>();
-    else if (typeName == "Backend::Core::ModalComparison")
+    else if (type == qMetaTypeId<ModalComparison>())
         flag = first.value<ModalComparison>() == second.value<ModalComparison>();
-    else if (typeName == "Backend::Core::Constraints")
+    else if (type == qMetaTypeId<Constraints>())
         flag = first.value<Constraints>() == second.value<Constraints>();
-    else if (typeName == "Backend::Core::Selector")
+    else if (type == qMetaTypeId<Selector>())
         flag = first.value<Selector>() == second.value<Selector>();
-    else if (typeName == "Backend::Core::OptimProblem")
+    else if (type == qMetaTypeId<OptimProblem>())
         flag = first.value<OptimProblem>() == second.value<OptimProblem>();
-    else if (typeName == "Backend::Core::OptimOptions")
+    else if (type == qMetaTypeId<OptimOptions>())
         flag = first.value<OptimOptions>() == second.value<OptimOptions>();
-    else if (typeName == "Backend::Core::FlutterOptions")
+    else if (type == qMetaTypeId<FlutterOptions>())
         flag = first.value<FlutterOptions>() == second.value<FlutterOptions>();
-    else if (typeName == "Backend::Core::FlutterSolution")
+    else if (type == qMetaTypeId<FlutterSolution>())
         flag = first.value<FlutterSolution>() == second.value<FlutterSolution>();
-    else if (typeName == "QList<Backend::Core::SelectionSet>")
+    else if (type == qMetaTypeId<QList<SelectionSet>>())
         flag = first.value<QList<SelectionSet>>() == second.value<QList<SelectionSet>>();
-    else if (typeName == "QList<Backend::Core::OptimSolution>")
+    else if (type == qMetaTypeId<QList<OptimSolution>>())
         flag = first.value<QList<OptimSolution>>() == second.value<QList<OptimSolution>>();
-    else if (typeName == "QList<Backend::Core::Subproject>")
+    else if (type == qMetaTypeId<QList<Subproject>>())
         flag = first.value<QList<Subproject>>() == second.value<QList<Subproject>>();
-    else if (typeName == "QList<Backend::Core::ISolver*>")
+    else if (type == qMetaTypeId<QList<ISolver*>>())
         flag = areEqual(first.value<QList<ISolver*>>(), second.value<QList<ISolver*>>());
-    else if (typeName == "QList<std::pair<int,int>>")
-        flag = first.value<PairInt>() == second.value<PairInt>();
-    else if (typeName == "QList<std::pair<int,double>>")
+    else if (type == qMetaTypeId<QList<PairInt>>())
+        flag = first.value<QList<PairInt>>() == second.value<QList<PairInt>>();
+    else if (type == qMetaTypeId<ModalPairs>())
         flag = areEqual(first.value<ModalPairs>(), second.value<ModalPairs>(), kTolerance);
-    else if (typeName == "QMap<Backend::Core::Selection,bool>")
+    else if (type == qMetaTypeId<QMap<Selection, bool>>())
         flag = areEqual(first.value<QMap<Selection, bool>>(), second.value<QMap<Selection, bool>>(), kTolerance);
-    else if (typeName == "QMap<Backend::Core::VariableType,bool>")
+    else if (type == qMetaTypeId<QMap<VariableType, bool>>())
         flag = areEqual(first.value<QMap<VariableType, bool>>(), second.value<QMap<VariableType, bool>>(), kTolerance);
-    else if (typeName == "QMap<Backend::Core::VariableType,double>")
+    else if (type == qMetaTypeId<QMap<VariableType, double>>())
         flag = areEqual(first.value<QMap<VariableType, double>>(), second.value<QMap<VariableType, double>>(), kTolerance);
-    else if (typeName == "QMap<Backend::Core::VariableType,std::pair<double,double>>")
+    else if (type == qMetaTypeId<QMap<VariableType, PairDouble>>())
         flag = areEqual(first.value<QMap<VariableType, PairDouble>>(), second.value<QMap<VariableType, PairDouble>>(), kTolerance);
-    else if (typeName == "QList<Eigen::Matrix<double,-1,-1>>")
+    else if (type == qMetaTypeId<QList<Eigen::MatrixXd>>())
         flag = areEqual(first.value<QList<Eigen::MatrixXd>>(), second.value<QList<Eigen::MatrixXd>>(), kTolerance);
-    else if (typeName == "QList<Eigen::Matrix<std::complex<double>,-1,-1>>")
+    else if (type == qMetaTypeId<QList<Eigen::MatrixXcd>>())
         flag = areEqual(first.value<QList<Eigen::MatrixXcd>>(), second.value<QList<Eigen::MatrixXcd>>(), kTolerance);
-    else if (typeName == "Eigen::Matrix<int,-1,-1>")
+    else if (type == qMetaTypeId<Eigen::MatrixXi>())
         flag = first.value<Eigen::MatrixXi>() == second.value<Eigen::MatrixXi>();
-    else if (typeName == "Eigen::Matrix<int,-1,1>")
+    else if (type == qMetaTypeId<Eigen::VectorXi>())
         flag = first.value<Eigen::VectorXi>() == second.value<Eigen::VectorXi>();
-    else if (typeName == "Eigen::Matrix<double,-1,-1>")
+    else if (type == qMetaTypeId<Eigen::MatrixXd>())
         flag = areEqual(first.value<Eigen::MatrixXd>(), second.value<Eigen::MatrixXd>(), kTolerance);
-    else if (typeName == "Eigen::Matrix<double,-1,1>")
+    else if (type == qMetaTypeId<Eigen::VectorXd>())
         flag = areEqual(first.value<Eigen::VectorXd>(), second.value<Eigen::VectorXd>(), kTolerance);
-    else if (typeName == "Eigen::Matrix<double,3,1>")
+    else if (type == qMetaTypeId<Eigen::Vector3d>())
         flag = areEqual(first.value<Eigen::Vector3d>(), second.value<Eigen::Vector3d>(), kTolerance);
-    else if (typeName == "Eigen::Matrix<std::complex<double>,-1,-1>")
+    else if (type == qMetaTypeId<Eigen::MatrixXcd>())
         flag = areEqual(first.value<Eigen::MatrixXcd>(), second.value<Eigen::MatrixXcd>(), kTolerance);
     else
         flag = false;
+    if (!flag)
+        qWarning() << QObject::tr("Values of the type %1 are not the same").arg(first.typeName());
     return flag;
 }
 
@@ -331,6 +332,8 @@ bool areEqual(QList<Core::ISolver*> const& first, QList<Core::ISolver*> const& s
 
 bool areEqual(double first, double second, double tolerance)
 {
+    if (std::isinf(first) && std::isinf(second) && std::signbit(first) == std::signbit(second))
+        return true;
     if (std::isnan(first) && std::isnan(second))
         return true;
     if (std::abs(first - second) <= tolerance)
@@ -343,6 +346,13 @@ bool areEqual(std::complex<double> first, std::complex<double> second, double to
     if (std::abs(first - second) <= tolerance)
         return true;
     return false;
+}
+
+bool areEqual(PairDouble const& first, PairDouble const& second, double tolerance)
+{
+    bool isFirst = areEqual(first.first, second.first, tolerance);
+    bool isSecond = areEqual(first.second, second.second, tolerance);
+    return isFirst && isSecond;
 }
 
 bool areEqual(Core::ModalPairs const& first, Core::ModalPairs const& second, double tolerance)

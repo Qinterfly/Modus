@@ -319,6 +319,7 @@ bool areEqual(QList<Core::ISolver*> const& first, QList<Core::ISolver*> const& s
 
 bool areEqual(double first, double second, double tolerance);
 bool areEqual(std::complex<double> first, std::complex<double> second, double tolerance);
+bool areEqual(Core::PairDouble const& first, Core::PairDouble const& second, double tolerance);
 bool areEqual(Core::ModalPairs const& first, Core::ModalPairs const& second, double tolerance);
 
 template<typename Scalar, int Rows, int Cols, int Options, int MaxRows, int MaxCols>
