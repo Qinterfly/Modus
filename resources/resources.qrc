@@ -1,0 +1,19 @@
+<RCC>
+	<qresource prefix="/">
+		<file>fonts/Roboto.ttf</file>
+	
+		<file>icons/application.svg</file>
+		<file>icons/close-button.svg</file>
+		<file>icons/close-button-disabled.svg</file>
+		<file>icons/close-button-focused.svg</file>
+		<file>icons/detach-button.svg</file>
+		<file>icons/detach-button-disabled.svg</file>
+		<file>icons/maximize-button.svg</file>
+		<file>icons/maximize-button-focused.svg</file>
+		<file>icons/restore-button.svg</file>
+		<file>icons/restore-button-focused.svg</file>
+		<file>icons/tabs-menu-button.svg</file>
+
+		<file>styles/modern.qss</file>
+	</qresource>
+</RCC>
