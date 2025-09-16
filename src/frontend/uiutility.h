@@ -14,6 +14,9 @@ namespace Frontend::Utility
 int showSaveDialog(QWidget* pWidget, QString const& title, QString const& message);
 void fullScreenResize(QWidget* pWidget);
 void setShortcutHints(QToolBar* pToolBar);
+
+// File
+void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix);
 }
 
 #endif // UIUTILITY_H

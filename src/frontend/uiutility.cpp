@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QScreen>
 #include <QToolBar>
@@ -49,4 +50,15 @@ void setShortcutHints(QToolBar* pToolBar)
     }
 }
 
-} // namespace Frontend::Utility
+//! Substitute a file suffix to the expected one, if necessary
+void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix)
+{
+    QFileInfo info(pathFile);
+    QString currentSuffix = info.suffix();
+    if (currentSuffix.isEmpty())
+        pathFile.append(QString(".%1").arg(expectedSuffix));
+    else if (currentSuffix != expectedSuffix)
+        pathFile.replace(currentSuffix, expectedSuffix);
+}
+
+}

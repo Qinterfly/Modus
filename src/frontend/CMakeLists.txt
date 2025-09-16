@@ -24,11 +24,13 @@ set(FRONTEND_HEADERS
     mainwindow.h
     uiconstants.h
     uiutility.h
+    logger.h
 )
 
 set(FRONTEND_SOURCES
     mainwindow.cpp
     uiutility.cpp
+    logger.cpp
 )
 
 qt_add_library(frontend STATIC

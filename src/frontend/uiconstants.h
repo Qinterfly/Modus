@@ -1,6 +1,7 @@
 #ifndef UICONSTANTS_H
 #define UICONSTANTS_H
 
+#include <QIcon>
 #include <QString>
 
 namespace Frontend::Constants
@@ -16,6 +17,13 @@ const QString skDockingState = "dockingState";
 const QString skRecent = "recent";
 const QString skFileName = "Settings.ini";
 const QString skMainWindow = "mainWindow";
+
+}
+
+namespace Size
+{
+
+const uint skMaxRecentProjects = 5;
 
 }
 }
