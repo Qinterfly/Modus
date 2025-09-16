@@ -17,6 +17,7 @@ namespace Frontend
 {
 
 class Logger;
+class ProjectBrowser;
 
 class MainWindow : public QMainWindow
 {
@@ -47,7 +48,7 @@ private:
     void createHelpActions();
     void createDockManager();
     ads::CDockWidget* createProjectBrowser();
-    ads::CDockWidget* createPlotManager();
+    ads::CDockWidget* createViewManager();
     ads::CDockWidget* createLogger();
 
     // State
@@ -79,6 +80,7 @@ private:
     ads::CDockManager* mpDockManager;
     QMenu* mpRecentMenu;
     QMenu* mpWindowMenu;
+    ProjectBrowser* mpProjectBrowser;
 
     // Project
     Backend::Core::Project mProject;

@@ -5,11 +5,13 @@
 #include <QFontDatabase>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QToolBar>
 #include <QTreeView>
 
 #include "config.h"
 #include "logger.h"
 #include "mainwindow.h"
+#include "projectbrowser.h"
 #include "uiconstants.h"
 #include "uiutility.h"
 
@@ -40,6 +42,7 @@ void MainWindow::newProject()
     mProject = Core::Project();
     qInfo() << tr("New project was created");
     setModified(false);
+    mpProjectBrowser->update();
 }
 
 //! Read the project located at the specified path
@@ -50,6 +53,7 @@ bool MainWindow::openProject(QString const& pathFile)
         qInfo() << tr("Project %1 was successfully opened").arg(pathFile);
         setModified(false);
         addToRecentProjects();
+        mpProjectBrowser->update();
         return true;
     }
     return false;
@@ -124,8 +128,8 @@ void MainWindow::createContent()
     ads::CDockWidget* pWidget = createProjectBrowser();
     ads::CDockAreaWidget* pArea = mpDockManager->addDockWidget(ads::BottomDockWidgetArea, pWidget);
 
-    // Create plot manager
-    pWidget = createPlotManager();
+    // Create view manager
+    pWidget = createViewManager();
     pArea = mpDockManager->addDockWidget(ads::RightDockWidgetArea, pWidget, pArea);
 
     // Create logger
@@ -144,24 +148,24 @@ void MainWindow::createDockManager()
 //! Create a widget to navigate through project structure
 ads::CDockWidget* MainWindow::createProjectBrowser()
 {
-    // Create the widget to edit panel data
-    QWidget* pWidget = new QTreeView;
+    // Create the widget
+    mpProjectBrowser = new ProjectBrowser(mProject, mSettings);
 
     // Construct the dock widget
     ads::CDockWidget* pDockWidget = new CDockWidget(mpDockManager, tr("Project Browser"));
-    pDockWidget->setWidget(pWidget);
+    pDockWidget->setWidget(mpProjectBrowser);
     mpWindowMenu->addAction(pDockWidget->toggleViewAction());
     return pDockWidget;
 }
 
-//! Create a widget to plot project entities
-ads::CDockWidget* MainWindow::createPlotManager()
+//! Create a widget to display project entities
+ads::CDockWidget* MainWindow::createViewManager()
 {
-    // Create the widget to plot project entities
+    // Create the widget
     QWidget* pWidget = new QTreeView;
 
     // Construct the dock widget
-    ads::CDockWidget* pDockWidget = new CDockWidget(mpDockManager, tr("Plot Manager"));
+    ads::CDockWidget* pDockWidget = new CDockWidget(mpDockManager, tr("View Manager"));
     pDockWidget->setWidget(pWidget);
     mpWindowMenu->addAction(pDockWidget->toggleViewAction());
     return pDockWidget;
@@ -226,6 +230,17 @@ void MainWindow::createFileActions()
     pFileMenu->addSeparator();
     pFileMenu->addAction(pExitAction);
     menuBar()->addMenu(pFileMenu);
+
+    // Create the toolbar
+    QToolBar* pFileToolBar = new QToolBar;
+    pFileToolBar->setIconSize(Constants::Size::skToolBarIcon);
+    pFileToolBar->addAction(pNewAction);
+    pFileToolBar->addAction(pOpenProjectAction);
+    pFileToolBar->addSeparator();
+    pFileToolBar->addAction(pSaveAction);
+    pFileToolBar->addAction(pSaveAsAction);
+    Utility::setShortcutHints(pFileToolBar);
+    addToolBar(pFileToolBar);
 }
 
 //! Create the actions to customize windows

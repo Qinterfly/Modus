@@ -25,12 +25,20 @@ set(FRONTEND_HEADERS
     uiconstants.h
     uiutility.h
     logger.h
+    projectbrowser.h
+    projecthierarchymodel.h
+    abstracthierarchyitem.h
+    subprojecthierarchyitem.h
 )
 
 set(FRONTEND_SOURCES
     mainwindow.cpp
     uiutility.cpp
     logger.cpp
+    projectbrowser.cpp
+    projecthierarchymodel.cpp
+    abstracthierarchyitem.cpp
+    subprojecthierarchyitem.cpp
 )
 
 qt_add_library(frontend STATIC

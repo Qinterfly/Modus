@@ -4,6 +4,7 @@
 		<file>fonts/RobotoMono.ttf</file>
 	
 		<file>icons/application.svg</file>
+		<file>icons/subproject.svg</file>
 		<file>icons/document-open.svg</file>
 		<file>icons/document-new.svg</file>
 		<file>icons/document-save.svg</file>

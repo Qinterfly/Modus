@@ -23,7 +23,15 @@ const QString skMainWindow = "mainWindow";
 namespace Size
 {
 
+const QSize skToolBarIcon = QSize(25, 25);
 const uint skMaxRecentProjects = 5;
+
+}
+
+namespace Role
+{
+
+const int skParent = Qt::UserRole + 1;
 
 }
 }
