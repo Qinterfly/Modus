@@ -4,7 +4,12 @@
 		<file>fonts/RobotoMono.ttf</file>
 	
 		<file>icons/application.svg</file>
+		<file>icons/arrows-expand.svg</file>
+		<file>icons/arrows-collapse.svg</file>
 		<file>icons/subproject.svg</file>
+		<file>icons/model.svg</file>
+		<file>icons/surface.svg</file>
+		<file>icons/surface-special.svg</file>
 		<file>icons/document-open.svg</file>
 		<file>icons/document-new.svg</file>
 		<file>icons/document-save.svg</file>

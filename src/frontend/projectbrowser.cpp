@@ -1,3 +1,4 @@
+#include <QToolBar>
 #include <QTreeView>
 #include <QVBoxLayout>
 
@@ -49,9 +50,31 @@ void ProjectBrowser::createContent()
     mpView->setSortingEnabled(false);
     mpView->setContextMenuPolicy(Qt::CustomContextMenu);
 
+    // Create the actions
+    QAction* pExpandAction = new QAction(tr("E&xpand all"), this);
+    QAction* pCollapseAction = new QAction(tr("&Collapse all"), this);
+
+    // Set the shortcuts
+    pExpandAction->setShortcut(Qt::CTRL | Qt::Key_E);
+    pCollapseAction->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_E);
+
+    // Set the icons
+    pExpandAction->setIcon(QIcon(":/icons/arrows-expand.svg"));
+    pCollapseAction->setIcon(QIcon(":/icons/arrows-collapse.svg"));
+
+    // Connect the actions
+    connect(pExpandAction, &QAction::triggered, mpView, &QTreeView::expandAll);
+    connect(pCollapseAction, &QAction::triggered, mpView, &QTreeView::collapseAll);
+
+    // Create the tool bar
+    QToolBar* pToolBar = new QToolBar();
+    pToolBar->addAction(pExpandAction);
+    pToolBar->addAction(pCollapseAction);
+
     // Insert the widgets into the main layout
     QVBoxLayout* pLayout = new QVBoxLayout();
     pLayout->setContentsMargins(kMargin, kMargin, kMargin, kMargin);
+    pLayout->addWidget(pToolBar);
     pLayout->addWidget(mpView);
     setLayout(pLayout);
 }

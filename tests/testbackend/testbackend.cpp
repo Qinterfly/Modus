@@ -3,7 +3,6 @@
 #include "config.h"
 #include "fileutility.h"
 #include "fluttersolver.h"
-#include "magicenum/magic_enum.hpp"
 #include "optimsolver.h"
 #include "selector.h"
 #include "subproject.h"
@@ -16,10 +15,16 @@ using namespace KCL;
 
 TestBackend::TestBackend()
 {
-    mFileNames[simpleWing] = "DATWEXA";
-    mFileNames[hunterWing] = "DATW70";
-    mFileNames[fullHunterSym] = "DATH70s";
-    mFileNames[fullHunterASym] = "DATH70a";
+    // Files
+    mFileNames[kSimpleWing] = "DATWEXA";
+    mFileNames[kHunterWing] = "DATW70";
+    mFileNames[kFullHunterSym] = "DATH70s";
+    mFileNames[kFullHunterASym] = "DATH70a";
+    // Subprojects
+    mSubprojectNames[kSimpleWing] = "Simple wing";
+    mSubprojectNames[kHunterWing] = "Hunter wing";
+    mSubprojectNames[kFullHunterSym] = "Full Hunter (sym)";
+    mSubprojectNames[kFullHunterASym] = "Full Hunter (asym)";
 }
 
 //! Load all the models and write them to temporary text files
@@ -27,13 +32,13 @@ void TestBackend::testLoadModels()
 {
     for (auto [key, value] : mFileNames.asKeyValueRange())
     {
-        QString exampleName = magic_enum::enum_name(key).data();
         QString inPathFile = Utility::combineFilePath(EXAMPLES_DIR, value + ".dat");
         QString outPathFile = Utility::combineFilePath(TEMPORARY_DIR, value + ".txt");
         Model model(inPathFile.toStdString());
         model.write(outPathFile.toStdString());
         QVERIFY(!model.isEmpty());
-        Subproject subproject(exampleName);
+        QString subprojectName = mSubprojectNames[key];
+        Subproject subproject(subprojectName);
         subproject.model() = model;
         mProject.addSubproject(subproject);
     }
@@ -43,7 +48,7 @@ void TestBackend::testLoadModels()
 //! Load the experimental obtained modal solutions
 void TestBackend::testLoadModalSolution()
 {
-    Example const example = Example::hunterWing;
+    Example const example = Example::kHunterWing;
 
     // Slice the subproject
     Subproject& subproject = mProject.subprojects()[example];
@@ -58,7 +63,7 @@ void TestBackend::testLoadModalSolution()
 //! Try to select elements
 void TestBackend::testSelector()
 {
-    Example const example = Example::simpleWing;
+    Example const example = Example::kSimpleWing;
 
     // Slice the subproject
     Subproject& subproject = mProject.subprojects()[example];
@@ -90,7 +95,7 @@ void TestBackend::testSelector()
 //! Obtain the modal solution associated with the simple wing
 void TestBackend::testModalSolver()
 {
-    Example const example = Example::simpleWing;
+    Example const example = Example::kSimpleWing;
     int const numModes = 15;
 
     // Slice the subproject
@@ -112,7 +117,7 @@ void TestBackend::testModalSolver()
 //! Update the model of the simple wing
 void TestBackend::testOptimSolver()
 {
-    Example const example = Example::simpleWing;
+    Example const example = Example::kSimpleWing;
     int const numModes = 3;
     double const error = 0.01;
 
@@ -170,7 +175,7 @@ void TestBackend::testOptimSolver()
 //! Solve flutter problem for the hunter wing
 void TestBackend::testFlutterSolver()
 {
-    Example const example = Example::hunterWing;
+    Example const example = Example::kHunterWing;
     int const numModes = 30;
 
     // Slice the subproject

@@ -27,8 +27,7 @@ set(FRONTEND_HEADERS
     logger.h
     projectbrowser.h
     projecthierarchymodel.h
-    abstracthierarchyitem.h
-    subprojecthierarchyitem.h
+    hierarchyitem.h
 )
 
 set(FRONTEND_SOURCES
@@ -37,8 +36,7 @@ set(FRONTEND_SOURCES
     logger.cpp
     projectbrowser.cpp
     projecthierarchymodel.cpp
-    abstracthierarchyitem.cpp
-    subprojecthierarchyitem.cpp
+    hierarchyitem.cpp
 )
 
 qt_add_library(frontend STATIC

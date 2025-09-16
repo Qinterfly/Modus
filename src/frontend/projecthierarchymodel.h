@@ -13,6 +13,8 @@ namespace Frontend
 
 class ProjectHierarchyModel : public QStandardItemModel
 {
+    Q_OBJECT
+
 public:
     ProjectHierarchyModel(Backend::Core::Project& project, QObject* pParent = nullptr);
     ~ProjectHierarchyModel();

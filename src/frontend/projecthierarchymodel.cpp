@@ -1,8 +1,8 @@
 #include <QMimeData>
 
+#include "hierarchyitem.h"
 #include "project.h"
 #include "projecthierarchymodel.h"
-#include "subprojecthierarchyitem.h"
 
 using namespace Frontend;
 
@@ -22,4 +22,3 @@ ProjectHierarchyModel::~ProjectHierarchyModel()
 {
 
 }
-

@@ -11,10 +11,10 @@ namespace Tests
 
 enum Example
 {
-    simpleWing,
-    hunterWing,
-    fullHunterSym,
-    fullHunterASym
+    kSimpleWing,
+    kHunterWing,
+    kFullHunterSym,
+    kFullHunterASym
 };
 
 class TestBackend : public QObject
@@ -45,6 +45,7 @@ private:
 private:
     Backend::Core::Project mProject;
     QMap<Example, QString> mFileNames;
+    QMap<Example, QString> mSubprojectNames;
 };
 
 }
