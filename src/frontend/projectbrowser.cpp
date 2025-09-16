@@ -24,7 +24,7 @@ ProjectBrowser::~ProjectBrowser()
 
 QSize ProjectBrowser::sizeHint() const
 {
-    return QSize(200, 1000);
+    return QSize(150, 1000);
 }
 
 //! Update the viewer content

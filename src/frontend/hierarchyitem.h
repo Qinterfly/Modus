@@ -49,14 +49,14 @@ public:
     SubprojectHierarchyItem(Backend::Core::Subproject& subproject, QUuid const& parentID);
     virtual ~SubprojectHierarchyItem();
 
-    void appendChildren();
-
     int type() const override;
     QUuid id() const override;
 
     Backend::Core::Subproject& subproject();
 
 private:
+    void appendChildren();
+
     Backend::Core::Subproject& mSubproject;
 };
 
@@ -67,14 +67,14 @@ public:
     ModelHierarchyItem(KCL::Model& model, QUuid const& parentID);
     virtual ~ModelHierarchyItem();
 
-    void appendChildren();
-
     int type() const override;
     QUuid id() const override;
 
     KCL::Model& model();
 
 private:
+    void appendChildren();
+
     KCL::Model& mModel;
 };
 
@@ -85,14 +85,14 @@ public:
     SurfaceHierarchyItem(KCL::ElasticSurface& surface, QIcon const& icon, QString const& name, QUuid const& parentID);
     virtual ~SurfaceHierarchyItem();
 
-    void appendChildren();
-
     int type() const override;
     QUuid id() const override;
 
     KCL::ElasticSurface& surface();
 
 private:
+    void appendChildren();
+
     KCL::ElasticSurface& mSurface;
 };
 

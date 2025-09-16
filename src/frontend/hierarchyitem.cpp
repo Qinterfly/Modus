@@ -8,6 +8,8 @@
 using namespace Backend;
 using namespace Frontend;
 
+QIcon getIcon(KCL::AbstractElement const* pElement);
+
 AbstractHierarchyItem::AbstractHierarchyItem(QUuid const& parentID)
 {
     setData(parentID, Constants::Role::skParent);
@@ -133,10 +135,23 @@ void SurfaceHierarchyItem::appendChildren()
         KCL::ElementType type = types[iType];
         QString typeName = magic_enum::enum_name(type).data();
         int numElements = mSurface.numElements(type);
-        for (int iElement = 0; iElement != numElements; ++iElement)
+        if (numElements > 1)
         {
-            QString name = QObject::tr("%1: %2").arg(typeName).arg(1 + iElement);
-            appendRow(new ElementHierarchyItem(mSurface.element(type, iElement), name, parentID));
+            QStandardItem* pTypeItem = new QStandardItem(typeName);
+            pTypeItem->setEditable(false);
+            for (int iElement = 0; iElement != numElements; ++iElement)
+            {
+                QString name = QObject::tr("%1: %2").arg(typeName).arg(1 + iElement);
+                ElementHierarchyItem* pElementItem = new ElementHierarchyItem(mSurface.element(type, iElement), name, parentID);
+                pTypeItem->appendRow(pElementItem);
+                if (pTypeItem->icon().isNull())
+                    pTypeItem->setIcon(pElementItem->icon());
+            }
+            appendRow(pTypeItem);
+        }
+        else if (numElements == 1)
+        {
+            appendRow(new ElementHierarchyItem(mSurface.element(type), typeName, parentID));
         }
     }
 }
@@ -161,6 +176,7 @@ ElementHierarchyItem::ElementHierarchyItem(KCL::AbstractElement* pElement, QStri
     , mpElement(pElement)
 {
     setEditable(false);
+    setIcon(getIcon(mpElement));
 }
 
 ElementHierarchyItem::~ElementHierarchyItem()
@@ -180,4 +196,52 @@ QUuid ElementHierarchyItem::id() const
 KCL::AbstractElement* ElementHierarchyItem::element()
 {
     return mpElement;
+}
+
+QIcon getIcon(KCL::AbstractElement const* pElement)
+{
+    switch (pElement->type())
+    {
+    case KCL::OD:
+        return QIcon(":/icons/configuration.png");
+    case KCL::SM:
+        return QIcon(":/icons/mass.png");
+    case KCL::BI:
+        return QIcon(":/icons/beam-bending.png");
+    case KCL::PN:
+        return QIcon(":/icons/panel.png");
+    case KCL::EL:
+        return QIcon(":/icons/aileron.png");
+    case KCL::DE:
+        return QIcon(":/icons/aileron.png");
+    case KCL::M3:
+        return QIcon(":/icons/mass.png");
+    case KCL::OP:
+        return QIcon(":/icons/layer.png");
+    case KCL::BK:
+        return QIcon(":/icons/beam-torsion.png");
+    case KCL::AE:
+        return QIcon(":/icons/trapezium.png");
+    case KCL::DQ:
+        return QIcon(":/icons/function.png");
+    case KCL::DA:
+        return QIcon(":/icons/trapezium.png");
+    case KCL::DB:
+        return QIcon(":/icons/beam-bending.png");
+    case KCL::PK:
+        return QIcon(":/icons/function.png");
+    case KCL::QK:
+        return QIcon(":/icons/function.png");
+    case KCL::WP:
+        return QIcon(":/icons/setup.png");
+    case KCL::PR:
+        return QIcon(":/icons/spring.png");
+    case KCL::TE:
+        return QIcon(":/icons/damper.png");
+    case KCL::CO:
+        return QIcon(":/icons/constants.png");
+    default:
+        break;
+    }
+    return QIcon();
 }

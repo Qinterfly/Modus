@@ -10,6 +10,19 @@
 		<file>icons/model.svg</file>
 		<file>icons/surface.svg</file>
 		<file>icons/surface-special.svg</file>
+		<file>icons/configuration.png</file>
+		<file>icons/mass.png</file>
+		<file>icons/layer.png</file>
+		<file>icons/beam-bending.png</file>
+		<file>icons/panel.png</file>
+		<file>icons/aileron.png</file>
+		<file>icons/beam-torsion.png</file>
+		<file>icons/trapezium.png</file>
+		<file>icons/function.png</file>
+		<file>icons/setup.png</file>
+		<file>icons/spring.png</file>
+		<file>icons/damper.png</file>
+		<file>icons/constants.png</file>
 		<file>icons/document-open.svg</file>
 		<file>icons/document-new.svg</file>
 		<file>icons/document-save.svg</file>
