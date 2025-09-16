@@ -3,8 +3,11 @@
 
 #include <QWidget>
 
+QT_FORWARD_DECLARE_CLASS(QLineEdit)
 QT_FORWARD_DECLARE_CLASS(QTreeView);
 QT_FORWARD_DECLARE_CLASS(QSettings);
+QT_FORWARD_DECLARE_CLASS(QStandardItem)
+QT_FORWARD_DECLARE_CLASS(QSortFilterProxyModel)
 
 namespace Backend::Core
 {
@@ -27,13 +30,22 @@ public:
     void update();
 
 private:
+    // Content
     void createContent();
+    void filterContent(QString const& pattern);
+    void processContextMenuRequest(QPoint const& point);
+
+    // Subproject management
+    QList<QStandardItem*> selectedItems();
+    void setSelectedItemsExpandedState(bool flag);
 
 private:
     Backend::Core::Project& mProject;
     QSettings& mSettings;
     QTreeView* mpView;
-    ProjectHierarchyModel* mpModel;
+    QLineEdit* mpFilterLineEdit;
+    ProjectHierarchyModel* mpSourceModel;
+    QSortFilterProxyModel* mpFilterModel;
 };
 
 }

@@ -10,6 +10,23 @@
 namespace Frontend::Utility
 {
 
+//! Retrieve the active text color from the palette
+QColor textColor(const QPalette& palette)
+{
+    return palette.color(QPalette::Active, QPalette::Text);
+}
+
+//! Change the text color of the widget
+void setTextColor(QWidget* pWidget, const QColor& color)
+{
+    auto palette = pWidget->palette();
+    if (textColor(palette) != color)
+    {
+        palette.setColor(QPalette::Active, QPalette::Text, color);
+        pWidget->setPalette(palette);
+    }
+}
+
 //! Show save dialog when closing a widget and process its output
 int showSaveDialog(QWidget* pWidget, QString const& title, QString const& message)
 {

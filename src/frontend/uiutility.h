@@ -6,9 +6,15 @@
 
 QT_FORWARD_DECLARE_CLASS(QWidget);
 QT_FORWARD_DECLARE_CLASS(QToolBar);
+QT_FORWARD_DECLARE_CLASS(QColor);
+QT_FORWARD_DECLARE_CLASS(QPalette);
 
 namespace Frontend::Utility
 {
+
+// Text
+QColor textColor(const QPalette& palette);
+void setTextColor(QWidget* pWidget, const QColor& color);
 
 // Ui
 int showSaveDialog(QWidget* pWidget, QString const& title, QString const& message);
