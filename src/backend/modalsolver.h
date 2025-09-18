@@ -137,6 +137,7 @@ signals:
     void solverFinished();
 
 public:
+    QString name;
     KCL::Model model;
     ModalOptions options;
     ModalSolution solution;

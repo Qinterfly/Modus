@@ -1,9 +1,9 @@
 #ifndef FLUTTERSOLVER_H
 #define FLUTTERSOLVER_H
 
-#include "isolver.h"
-#include "kcl/model.h"
+#include <kcl/model.h>
 
+#include "isolver.h"
 #include "geometry.h"
 
 namespace Backend::Core
@@ -120,6 +120,7 @@ signals:
     void solverFinished();
 
 public:
+    QString name;
     KCL::Model model;
     FlutterOptions options;
     FlutterSolution solution;

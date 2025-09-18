@@ -801,6 +801,7 @@ void OptimSolver::serialize(QXmlStreamWriter& stream, QString const& elementName
     stream.writeStartElement(elementName);
     stream.writeAttribute("type", Utility::toString((int) type()));
     stream.writeTextElement("id", mID.toString());
+    stream.writeTextElement("name", name);
     problem.serialize(stream, "problem");
     options.serialize(stream, "options");
     Utility::serialize(stream, "solutions", "solution", solutions);
@@ -813,6 +814,8 @@ void OptimSolver::deserialize(QXmlStreamReader& stream)
     {
         if (stream.name() == "id")
             mID = QUuid::fromString(stream.readElementText());
+        else if (stream.name() == "name")
+            name = stream.readElementText();
         else if (stream.name() == "problem")
             problem.deserialize(stream);
         else if (stream.name() == "options")

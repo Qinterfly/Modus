@@ -2,6 +2,7 @@
 #ifndef HIERARCHYITEM_H
 #define HIERARCHYITEM_H
 
+#include <Eigen/Core>
 #include <QStandardItem>
 #include <QUuid>
 
@@ -15,13 +16,17 @@ class AbstractElement;
 namespace Backend::Core
 {
 class Subproject;
+class ModalSolver;
+struct ModalOptions;
+class ModalSolution;
+class FlutterSolver;
+class OptimSolver;
 }
 
 namespace Frontend
 {
 
-//! Abstract item of project hierarchy
-class AbstractHierarchyItem : public QStandardItem
+class HierarchyItem : public QStandardItem
 {
 public:
     enum Type
@@ -29,29 +34,37 @@ public:
         kSubproject = QStandardItem::UserType,
         kModel,
         kSurface,
-        kElement
+        kGroupElements,
+        kElement,
+        kModalSolver,
+        kModalOptions,
+        kModalSolution,
+        kModalPole,
+        kFlutterSolver,
+        kOptimSolver
     };
 
-    AbstractHierarchyItem() = delete;
-    AbstractHierarchyItem(QUuid const& parentID);
-    AbstractHierarchyItem(QString const& text, QUuid const& parentID);
-    AbstractHierarchyItem(QIcon const& icon, QString const& text, QUuid const& parentID);
-    virtual ~AbstractHierarchyItem() = 0;
+    HierarchyItem() = delete;
+    HierarchyItem(Type itemType);
+    HierarchyItem(Type itemType, QString const& text);
+    HierarchyItem(Type itemType, QIcon const& icon, QString const& text);
+    virtual ~HierarchyItem() = default;
 
-    virtual int type() const = 0;
-    virtual QUuid id() const = 0;
+    virtual QUuid id() const;
+
+    int type() const override final;
+
+protected:
+    Type const mkType;
 };
 
-//! Subproject item of project hierarchy
-class SubprojectHierarchyItem : public AbstractHierarchyItem
+class SubprojectHierarchyItem : public HierarchyItem
 {
 public:
-    SubprojectHierarchyItem(Backend::Core::Subproject& subproject, QUuid const& parentID);
-    virtual ~SubprojectHierarchyItem();
+    SubprojectHierarchyItem(Backend::Core::Subproject& subproject);
+    ~SubprojectHierarchyItem() = default;
 
-    int type() const override;
     QUuid id() const override;
-
     Backend::Core::Subproject& subproject();
 
 private:
@@ -60,15 +73,11 @@ private:
     Backend::Core::Subproject& mSubproject;
 };
 
-//! Model item of subproject hierarchy
-class ModelHierarchyItem : public AbstractHierarchyItem
+class ModelHierarchyItem : public HierarchyItem
 {
 public:
-    ModelHierarchyItem(KCL::Model& model, QUuid const& parentID);
-    virtual ~ModelHierarchyItem();
-
-    int type() const override;
-    QUuid id() const override;
+    ModelHierarchyItem(KCL::Model& model);
+    ~ModelHierarchyItem() = default;
 
     KCL::Model& model();
 
@@ -78,15 +87,11 @@ private:
     KCL::Model& mModel;
 };
 
-//! Elastic surface item of subproject hierarchy
-class SurfaceHierarchyItem : public AbstractHierarchyItem
+class SurfaceHierarchyItem : public HierarchyItem
 {
 public:
-    SurfaceHierarchyItem(KCL::ElasticSurface& surface, QIcon const& icon, QString const& name, QUuid const& parentID);
-    virtual ~SurfaceHierarchyItem();
-
-    int type() const override;
-    QUuid id() const override;
+    SurfaceHierarchyItem(KCL::ElasticSurface& surface, QIcon const& icon, QString const& name);
+    ~SurfaceHierarchyItem() = default;
 
     KCL::ElasticSurface& surface();
 
@@ -96,20 +101,96 @@ private:
     KCL::ElasticSurface& mSurface;
 };
 
-//! Element item of subproject hierarchy
-class ElementHierarchyItem : public AbstractHierarchyItem
+class ElementHierarchyItem : public HierarchyItem
 {
 public:
-    ElementHierarchyItem(KCL::AbstractElement* pElement, QString const& name, QUuid const& parentID);
-    virtual ~ElementHierarchyItem();
-
-    int type() const override;
-    QUuid id() const override;
+    ElementHierarchyItem(KCL::AbstractElement* pElement, QString const& name);
+    ~ElementHierarchyItem() = default;
 
     KCL::AbstractElement* element();
 
 private:
     KCL::AbstractElement* mpElement;
+};
+
+class ModalSolverHierarchyItem : public HierarchyItem
+{
+public:
+    ModalSolverHierarchyItem(Backend::Core::ModalSolver* pSolver, QString const& defaultName);
+    ~ModalSolverHierarchyItem() = default;
+
+    Backend::Core::ModalSolver* solver();
+
+private:
+    void appendChildren();
+
+    Backend::Core::ModalSolver* mpSolver;
+};
+
+class ModalOptionsHierarchyItem : public HierarchyItem
+{
+public:
+    ModalOptionsHierarchyItem(Backend::Core::ModalOptions& options);
+    ~ModalOptionsHierarchyItem() = default;
+
+    Backend::Core::ModalOptions& options();
+
+private:
+    Backend::Core::ModalOptions& mOptions;
+};
+
+class ModalSolutionHierarchyItem : public HierarchyItem
+{
+public:
+    ModalSolutionHierarchyItem(Backend::Core::ModalSolution const& solution, QString const& name);
+    ~ModalSolutionHierarchyItem() = default;
+
+    Backend::Core::ModalSolution const& solution() const;
+
+private:
+    void appendChildren();
+
+    Backend::Core::ModalSolution const& mSolution;
+};
+
+class ModalPoleHierarchyItem : public HierarchyItem
+{
+public:
+    ModalPoleHierarchyItem(int iMode, double frequency, Eigen::MatrixXd const& modeShape);
+    ~ModalPoleHierarchyItem() = default;
+
+    int iMode() const;
+    double frequency() const;
+    Eigen::MatrixXd const& modeShape() const;
+
+private:
+    int mIMode;
+    double mFrequency;
+    Eigen::MatrixXd mModeShape;
+};
+
+class FlutterSolverHierarchyItem : public HierarchyItem
+{
+public:
+    FlutterSolverHierarchyItem(Backend::Core::FlutterSolver* pSolver, QString const& defaultName);
+    ~FlutterSolverHierarchyItem() = default;
+
+    Backend::Core::FlutterSolver* solver();
+
+private:
+    Backend::Core::FlutterSolver* mpSolver;
+};
+
+class OptimSolverHierarchyItem : public HierarchyItem
+{
+public:
+    OptimSolverHierarchyItem(Backend::Core::OptimSolver* pSolver, QString const& defaultName);
+    ~OptimSolverHierarchyItem() = default;
+
+    Backend::Core::OptimSolver* solver();
+
+private:
+    Backend::Core::OptimSolver* mpSolver;
 };
 }
 

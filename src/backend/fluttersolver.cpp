@@ -264,6 +264,7 @@ void FlutterSolver::serialize(QXmlStreamWriter& stream, QString const& elementNa
     stream.writeStartElement(elementName);
     stream.writeAttribute("type", Utility::toString((int) type()));
     stream.writeTextElement("id", mID.toString());
+    stream.writeTextElement("name", name);
     Utility::serialize(stream, "model", model);
     options.serialize(stream, "options");
     solution.serialize(stream, "solution");
@@ -276,6 +277,8 @@ void FlutterSolver::deserialize(QXmlStreamReader& stream)
     {
         if (stream.name() == "id")
             mID = QUuid::fromString(stream.readElementText());
+        else if (stream.name() == "name")
+            name = stream.readElementText();
         else if (stream.name() == "model")
             Utility::deserialize(stream, model);
         else if (stream.name() == "options")

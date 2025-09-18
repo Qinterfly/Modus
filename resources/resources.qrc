@@ -23,6 +23,12 @@
 		<file>icons/spring.png</file>
 		<file>icons/damper.png</file>
 		<file>icons/constants.png</file>
+		<file>icons/spectrum.png</file>
+		<file>icons/options.png</file>
+		<file>icons/flutter.png</file>
+		<file>icons/solution.png</file>
+		<file>icons/mode.png</file>
+		<file>icons/optimization.png</file>
 		<file>icons/document-open.svg</file>
 		<file>icons/document-new.svg</file>
 		<file>icons/document-save.svg</file>

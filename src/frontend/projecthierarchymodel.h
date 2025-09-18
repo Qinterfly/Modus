@@ -20,6 +20,10 @@ public:
     ~ProjectHierarchyModel();
 
 private:
+    void appendChildren();
+    void processItemChange(QStandardItem* pItem);
+
+private:
     Backend::Core::Project& mProject;
 };
 

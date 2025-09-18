@@ -196,6 +196,7 @@ private:
     QMap<KCL::ElementType, QList<VariableType>> getElementVariables();
 
 public:
+    QString name;
     OptimProblem problem;
     OptimOptions options;
     QList<OptimSolution> solutions;
