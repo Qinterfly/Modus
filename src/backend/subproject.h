@@ -31,9 +31,12 @@ public:
 
     QString const& name() const;
     KCL::Model const& model() const;
+    QList<ISolver*> const& solvers() const;
+    int numSolvers() const;
 
     QString& name();
     KCL::Model& model();
+    QList<ISolver*>& solvers();
 
     ISolver* solver(int index);
     ISolver* addSolver(ISolver::Type type);

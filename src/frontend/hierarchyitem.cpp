@@ -50,6 +50,8 @@ void SubprojectHierarchyItem::appendChildren()
 
     // Model
     appendRow(new ModelHierarchyItem(mSubproject.model(), parentID));
+
+    //
 }
 
 int SubprojectHierarchyItem::type() const

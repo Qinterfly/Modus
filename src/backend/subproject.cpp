@@ -56,6 +56,16 @@ KCL::Model const& Subproject::model() const
     return mModel;
 }
 
+QList<ISolver*> const& Subproject::solvers() const
+{
+    return mSolvers;
+}
+
+int Subproject::numSolvers() const
+{
+    return mSolvers.size();
+}
+
 QString& Subproject::name()
 {
     return mName;
@@ -64,6 +74,11 @@ QString& Subproject::name()
 KCL::Model& Subproject::model()
 {
     return mModel;
+}
+
+QList<ISolver*>& Subproject::solvers()
+{
+    return mSolvers;
 }
 
 ISolver* Subproject::solver(int index)
