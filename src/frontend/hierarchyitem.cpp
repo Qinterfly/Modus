@@ -224,19 +224,26 @@ void ModalSolutionHierarchyItem::appendChildren()
 {
     int numModes = mSolution.numModes();
     for (int i = 0; i != numModes; ++i)
-        appendRow(new ModalPoleHierarchyItem(i, mSolution.frequencies[i], mSolution.modeShapes[i], mSolution.geometry));
+        appendRow(new ModalPoleHierarchyItem(mSolution.geometry, i, mSolution.frequencies[i], mSolution.modeShapes[i]));
 }
 
-ModalPoleHierarchyItem::ModalPoleHierarchyItem(int iMode, double frequency, Eigen::MatrixXd const& modeShape, Core::Geometry const& geometry)
+ModalPoleHierarchyItem::ModalPoleHierarchyItem(Core::Geometry const& geometry, int iMode, double frequency, Eigen::MatrixXd const& modeShape,
+                                               double damping)
     : HierarchyItem(kModalPole)
+    , mGeometry(geometry)
     , mIMode(iMode)
     , mFrequency(frequency)
     , mModeShape(modeShape)
-    , mGeometry(geometry)
+    , mDamping(damping)
 {
     QString name = QObject::tr("Mode %1: %2 Hz").arg(1 + mIMode).arg(mFrequency, 0, 'f', 3);
     setText(name);
     setIcon(QIcon(":/icons/mode.png"));
+}
+
+Backend::Core::Geometry const& ModalPoleHierarchyItem::geometry() const
+{
+    return mGeometry;
 }
 
 int ModalPoleHierarchyItem::iMode() const
@@ -254,9 +261,9 @@ Eigen::MatrixXd const& ModalPoleHierarchyItem::modeShape() const
     return mModeShape;
 }
 
-Backend::Core::Geometry const& ModalPoleHierarchyItem::geometry() const
+double ModalPoleHierarchyItem::damping() const
 {
-    return mGeometry;
+    return mDamping;
 }
 
 FlutterSolverHierarchyItem::FlutterSolverHierarchyItem(Core::FlutterSolver* pSolver, QString const& defaultName)
@@ -266,11 +273,115 @@ FlutterSolverHierarchyItem::FlutterSolverHierarchyItem(Core::FlutterSolver* pSol
     setEditable(true);
     setText(mpSolver->name.isEmpty() ? defaultName : mpSolver->name);
     setIcon(getIcon(mpSolver));
+    appendChildren();
 }
 
 Core::FlutterSolver* FlutterSolverHierarchyItem::solver()
 {
     return mpSolver;
+}
+
+void FlutterSolverHierarchyItem::appendChildren()
+{
+    appendRow(new FlutterOptionsHierarchyItem(mpSolver->options));
+    if (!mpSolver->solution.isEmpty())
+        appendRow(new FlutterSolutionHierarchyItem(mpSolver->solution));
+}
+
+FlutterOptionsHierarchyItem::FlutterOptionsHierarchyItem(Core::FlutterOptions& options)
+    : HierarchyItem(kFlutterOptions, QIcon(":/icons/options.png"), QObject::tr("Options"))
+    , mOptions(options)
+{
+}
+
+Core::FlutterOptions& FlutterOptionsHierarchyItem::options()
+{
+    return mOptions;
+}
+
+FlutterSolutionHierarchyItem::FlutterSolutionHierarchyItem(Core::FlutterSolution const& solution)
+    : HierarchyItem(kFlutterSolution, QIcon(":/icons/solution.png"), QObject::tr("Flutter Solution"))
+    , mSolution(solution)
+{
+    appendChildren();
+}
+
+Core::FlutterSolution const& FlutterSolutionHierarchyItem::solution() const
+{
+    return mSolution;
+}
+
+void FlutterSolutionHierarchyItem::appendChildren()
+{
+    appendRow(new FlutterRootsHierarchyItem(mSolution.flow, mSolution.roots));
+    int numCrit = mSolution.numCrit();
+    if (numCrit > 0)
+    {
+        appendRow(new FlutterCritDataHierarchyItem(mSolution));
+        for (int i = 0; i != numCrit; ++i)
+        {
+            appendRow(new ModalPoleHierarchyItem(mSolution.geometry, i, mSolution.critFrequency[i], mSolution.critModeShapes[i].cwiseAbs(),
+                                                 mSolution.critDamping[i]));
+        }
+    }
+}
+
+FlutterRootsHierarchyItem::FlutterRootsHierarchyItem(Eigen::VectorXd const& flow, Eigen::MatrixXcd const& roots)
+    : HierarchyItem(kFlutterRoots, QIcon(":/icons/roots.svg"), QObject::tr("Roots"))
+    , mFlow(flow)
+    , mRoots(roots)
+{
+}
+
+Eigen::VectorXd const& FlutterRootsHierarchyItem::flow() const
+{
+    return mFlow;
+}
+
+Eigen::MatrixXcd const& FlutterRootsHierarchyItem::roots() const
+{
+    return mRoots;
+}
+
+FlutterCritDataHierarchyItem::FlutterCritDataHierarchyItem(Core::FlutterSolution const& solution)
+    : HierarchyItem(kFlutterCritData, QIcon(":/icons/crit.png"), QObject::tr("Critical Data"))
+    , mFlow(solution.critFlow)
+    , mSpeed(solution.critSpeed)
+    , mFrequency(solution.critFrequency)
+    , mCircFrequency(solution.critCircFrequency)
+    , mStrouhal(solution.critStrouhal)
+    , mDamping(solution.critDamping)
+{
+}
+
+Eigen::VectorXd const& FlutterCritDataHierarchyItem::flow() const
+{
+    return mFlow;
+}
+
+Eigen::VectorXd const& FlutterCritDataHierarchyItem::speed() const
+{
+    return mSpeed;
+}
+
+Eigen::VectorXd const& FlutterCritDataHierarchyItem::frequency() const
+{
+    return mFrequency;
+}
+
+Eigen::VectorXd const& FlutterCritDataHierarchyItem::circFrequency() const
+{
+    return mCircFrequency;
+}
+
+Eigen::VectorXd const& FlutterCritDataHierarchyItem::strouhal() const
+{
+    return mStrouhal;
+}
+
+Eigen::VectorXd const& FlutterCritDataHierarchyItem::damping() const
+{
+    return mDamping;
 }
 
 OptimSolverHierarchyItem::OptimSolverHierarchyItem(Core::OptimSolver* pSolver, QString const& defaultName)
@@ -298,7 +409,8 @@ void OptimSolverHierarchyItem::appendChildren()
     int numSolutions = mpSolver->solutions.size();
     if (numSolutions > 0)
     {
-        HierarchyItem* pGroupSolutions = new HierarchyItem(kGroupOptimSolutions, QIcon(":/icons/iterations.svg"), QObject::tr("Iterations"));
+        HierarchyItem* pGroupSolutions = new HierarchyItem(kGroupOptimSolutions, QIcon(":/icons/iterations.svg"),
+                                                           QObject::tr("Optim Iterations"));
         for (int i = 0; i != numSolutions; ++i)
             pGroupSolutions->appendRow(new OptimSolutionHierarchyItem(mpSolver->solutions[i]));
         appendRow(pGroupSolutions);
@@ -309,7 +421,6 @@ OptimOptionsHierarchyItem::OptimOptionsHierarchyItem(Core::OptimOptions& options
     : HierarchyItem(kOptimOptions, QIcon(":/icons/options.png"), QObject::tr("Options"))
     , mOptions(options)
 {
-    setEditable(false);
 }
 
 Core::OptimOptions& OptimOptionsHierarchyItem::options()

@@ -19,10 +19,15 @@ namespace Backend::Core
 {
 struct Geometry;
 class Subproject;
+
 class ModalSolver;
 struct ModalOptions;
 struct ModalSolution;
+
 class FlutterSolver;
+struct FlutterOptions;
+struct FlutterSolution;
+
 class OptimSolver;
 struct OptimProblem;
 struct OptimOptions;
@@ -49,6 +54,10 @@ public:
         kModalSolution,
         kModalPole,
         kFlutterSolver,
+        kFlutterOptions,
+        kFlutterSolution,
+        kFlutterRoots,
+        kFlutterCritData,
         kOptimSolver,
         kOptimOptions,
         kOptimTarget,
@@ -170,19 +179,22 @@ private:
 class ModalPoleHierarchyItem : public HierarchyItem
 {
 public:
-    ModalPoleHierarchyItem(int iMode, double frequency, Eigen::MatrixXd const& modeShape, Backend::Core::Geometry const& geometry);
+    ModalPoleHierarchyItem(Backend::Core::Geometry const& geometry, int iMode, double frequency, Eigen::MatrixXd const& modeShape,
+                           double damping = 0.0);
     ~ModalPoleHierarchyItem() = default;
 
+    Backend::Core::Geometry const& geometry() const;
     int iMode() const;
     double frequency() const;
     Eigen::MatrixXd const& modeShape() const;
-    Backend::Core::Geometry const& geometry() const;
+    double damping() const;
 
 private:
+    Backend::Core::Geometry const& mGeometry;
     int mIMode;
     double mFrequency;
     Eigen::MatrixXd const& mModeShape;
-    Backend::Core::Geometry const& mGeometry;
+    double mDamping;
 };
 
 class FlutterSolverHierarchyItem : public HierarchyItem
@@ -194,7 +206,71 @@ public:
     Backend::Core::FlutterSolver* solver();
 
 private:
+    void appendChildren();
+
     Backend::Core::FlutterSolver* mpSolver;
+};
+
+class FlutterOptionsHierarchyItem : public HierarchyItem
+{
+public:
+    FlutterOptionsHierarchyItem(Backend::Core::FlutterOptions& options);
+    ~FlutterOptionsHierarchyItem() = default;
+
+    Backend::Core::FlutterOptions& options();
+
+private:
+    Backend::Core::FlutterOptions& mOptions;
+};
+
+class FlutterSolutionHierarchyItem : public HierarchyItem
+{
+public:
+    FlutterSolutionHierarchyItem(Backend::Core::FlutterSolution const& solution);
+    ~FlutterSolutionHierarchyItem() = default;
+
+    Backend::Core::FlutterSolution const& solution() const;
+
+private:
+    void appendChildren();
+
+    Backend::Core::FlutterSolution const& mSolution;
+};
+
+class FlutterRootsHierarchyItem : public HierarchyItem
+{
+public:
+    FlutterRootsHierarchyItem(Eigen::VectorXd const& flow, Eigen::MatrixXcd const& roots);
+    ~FlutterRootsHierarchyItem() = default;
+
+    Eigen::VectorXd const& flow() const;
+    Eigen::MatrixXcd const& roots() const;
+
+private:
+    Eigen::VectorXd const& mFlow;
+    Eigen::MatrixXcd const& mRoots;
+};
+
+class FlutterCritDataHierarchyItem : public HierarchyItem
+{
+public:
+    FlutterCritDataHierarchyItem(Backend::Core::FlutterSolution const& solution);
+    ~FlutterCritDataHierarchyItem() = default;
+
+    Eigen::VectorXd const& flow() const;
+    Eigen::VectorXd const& speed() const;
+    Eigen::VectorXd const& frequency() const;
+    Eigen::VectorXd const& circFrequency() const;
+    Eigen::VectorXd const& strouhal() const;
+    Eigen::VectorXd const& damping() const;
+
+private:
+    Eigen::VectorXd const& mFlow;
+    Eigen::VectorXd const& mSpeed;
+    Eigen::VectorXd const& mFrequency;
+    Eigen::VectorXd const& mCircFrequency;
+    Eigen::VectorXd const& mStrouhal;
+    Eigen::VectorXd const& mDamping;
 };
 
 class OptimSolverHierarchyItem : public HierarchyItem
