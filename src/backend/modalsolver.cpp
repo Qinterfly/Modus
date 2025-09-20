@@ -15,10 +15,11 @@ ModalSolution::ModalSolution()
 {
 }
 
-ModalSolution::ModalSolution(Geometry const& geometry, Eigen::VectorXd const& frequencies, QList<Eigen::MatrixXd> const& modeShapes)
-    : mGeometry(geometry)
-    , mFrequencies(frequencies)
-    , mModeShapes(modeShapes)
+ModalSolution::ModalSolution(Geometry const& anotherGeometry, Eigen::VectorXd const& anotherFrequencies,
+                             QList<Eigen::MatrixXd> const& anotherModeShapes)
+    : geometry(anotherGeometry)
+    , frequencies(anotherFrequencies)
+    , modeShapes(anotherModeShapes)
 {
 }
 
@@ -32,13 +33,13 @@ ModalSolution::ModalSolution(KCL::EigenSolution const& solution)
     resize(numDOFs, numModes);
 
     // Copy the geometry
-    mGeometry = solution.geometry;
+    geometry = solution.geometry;
 
     // Copy modal data
     for (int i = 0; i != numModes; ++i)
     {
-        mFrequencies[i] = solution.frequencies[i];
-        mModeShapes[i] = solution.modeShapes[i];
+        frequencies[i] = solution.frequencies[i];
+        modeShapes[i] = solution.modeShapes[i];
     }
 }
 
@@ -53,22 +54,7 @@ bool ModalSolution::isEmpty() const
 
 int ModalSolution::numModes() const
 {
-    return mFrequencies.size();
-}
-
-Geometry const& ModalSolution::geometry() const
-{
-    return mGeometry;
-}
-
-Eigen::VectorXd const& ModalSolution::frequencies() const
-{
-    return mFrequencies;
-}
-
-QList<Eigen::MatrixXd> const& ModalSolution::modeShapes() const
-{
-    return mModeShapes;
+    return frequencies.size();
 }
 
 //! Compare the modal and eigen solutions
@@ -83,11 +69,11 @@ ModalComparison ModalSolution::compare(ModalSolution const& another, VectorXi co
     for (int i = 0; i != numBaseModes; ++i)
     {
         int iBaseMode = indices[i];
-        MatrixXd baseModeShape = mModeShapes[iBaseMode];
+        MatrixXd baseModeShape = modeShapes[iBaseMode];
         for (int j = 0; j != numCompareModes; ++j)
         {
             int iCompareMode = j;
-            MatrixXd compareModeShape = another.mModeShapes[iCompareMode];
+            MatrixXd compareModeShape = another.modeShapes[iCompareMode];
             tableMAC(i, j) = Utility::computeMAC(baseModeShape, compareModeShape, matches);
         }
     }
@@ -103,10 +89,10 @@ ModalComparison ModalSolution::compare(ModalSolution const& another, VectorXi co
         int iCompareMode = result.pairs[i].first;
         if (iCompareMode >= 0)
         {
-            double baseFrequency = mFrequencies[iBaseMode];
+            double baseFrequency = frequencies[iBaseMode];
             if (std::abs(baseFrequency) < std::numeric_limits<double>::epsilon())
                 continue;
-            double compareFrequency = another.mFrequencies[iCompareMode];
+            double compareFrequency = another.frequencies[iCompareMode];
             result.diffFrequencies[i] = compareFrequency - baseFrequency;
             result.errorFrequencies[i] = result.diffFrequencies[i] / baseFrequency;
             result.errorsMAC[i] = 1.0 - result.pairs[i].second;
@@ -119,7 +105,7 @@ ModalComparison ModalSolution::compare(ModalSolution const& another, VectorXi co
 //! Read the files with geometry and modal solution located in the same directory
 void ModalSolution::read(QDir const& directory)
 {
-    mGeometry.read(Utility::combineFilePath(directory.path(), "model.txt"));
+    geometry.read(Utility::combineFilePath(directory.path(), "model.txt"));
     readModesets(Utility::combineFilePath(directory.path(), "modesets.txt"));
 }
 
@@ -136,10 +122,10 @@ bool ModalSolution::operator!=(ModalSolution const& another) const
 void ModalSolution::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
     stream.writeStartElement(elementName);
-    mGeometry.serialize(stream, "geometry");
-    Utility::serialize(stream, "frequencies", mFrequencies);
-    Utility::serialize(stream, "modeShapes", "modeShape", mModeShapes);
-    Utility::serialize(stream, "names", "name", mNames);
+    geometry.serialize(stream, "geometry");
+    Utility::serialize(stream, "frequencies", frequencies);
+    Utility::serialize(stream, "modeShapes", "modeShape", modeShapes);
+    Utility::serialize(stream, "names", "name", names);
     stream.writeEndElement();
 }
 
@@ -148,13 +134,13 @@ void ModalSolution::deserialize(QXmlStreamReader& stream)
     while (stream.readNextStartElement())
     {
         if (stream.name() == "geometry")
-            mGeometry.deserialize(stream);
+            geometry.deserialize(stream);
         else if (stream.name() == "frequencies")
-            Utility::deserialize(stream, mFrequencies);
+            Utility::deserialize(stream, frequencies);
         else if (stream.name() == "modeShapes")
-            Utility::deserialize(stream, "modeShape", mModeShapes);
+            Utility::deserialize(stream, "modeShape", modeShapes);
         else if (stream.name() == "names")
-            Utility::deserialize(stream, "name", mNames);
+            Utility::deserialize(stream, "name", names);
         else
             stream.skipCurrentElement();
     }
@@ -163,10 +149,10 @@ void ModalSolution::deserialize(QXmlStreamReader& stream)
 //! Reallocate the data fields
 void ModalSolution::resize(int numDOFs, int numModes)
 {
-    mGeometry.vertices.resize(numDOFs);
-    mFrequencies.resize(numModes);
-    mModeShapes.resize(numModes);
-    for (MatrixXd& item : mModeShapes)
+    geometry.vertices.resize(numDOFs);
+    frequencies.resize(numModes);
+    modeShapes.resize(numModes);
+    for (MatrixXd& item : modeShapes)
         item.resize(numDOFs, Constants::skNumDirections);
 }
 
@@ -193,30 +179,30 @@ void ModalSolution::readModesets(QString const& pathFile)
     QTextStream stream(&file);
 
     // Map the vertices
-    int numVertices = mGeometry.vertices.size();
+    int numVertices = geometry.vertices.size();
     QMap<QString, int> mapVertices;
     for (int i = 0; i != numVertices; ++i)
-        mapVertices[mGeometry.vertices[i].name] = i;
+        mapVertices[geometry.vertices[i].name] = i;
 
     // Retrieve the number of modesets
     int numModes;
     stream >> numModes;
 
     // Loop through all the modes
-    mFrequencies.resize(numModes);
-    mModeShapes.resize(numModes);
-    mNames.resize(numModes);
+    frequencies.resize(numModes);
+    modeShapes.resize(numModes);
+    names.resize(numModes);
     for (int iMode = 0; iMode != numModes; ++iMode)
     {
         // Read the header
         stream.readLine();
-        mNames[iMode] = stream.readLine();
-        stream >> mFrequencies[iMode];
+        names[iMode] = stream.readLine();
+        stream >> frequencies[iMode];
         int numDOFs;
         stream >> numDOFs;
 
         // Read the modeshape data
-        MatrixXd& modeShape = mModeShapes[iMode];
+        MatrixXd& modeShape = modeShapes[iMode];
         modeShape.resize(numVertices, Constants::skNumDirections);
         modeShape.fill(skDummy);
         for (int iDOF = 0; iDOF != numDOFs; ++iDOF)

@@ -156,13 +156,13 @@ void TestBackend::testOptimSolver()
 
     // Set the objectives
     ModalSolution solution(eigenSolution);
-    Eigen::VectorXd targetFrequencies = solution.frequencies();
+    Eigen::VectorXd targetFrequencies = solution.frequencies;
     problem.resize(numModes);
     problem.targetIndices.setLinSpaced(0, numModes - 1);
     problem.targetWeights.setOnes();
     for (double& value : targetFrequencies)
         value *= 1.0 + generateDouble({-error, error});
-    problem.targetSolution = ModalSolution(solution.geometry(), targetFrequencies, solution.modeShapes());
+    problem.targetSolution = ModalSolution(solution.geometry, targetFrequencies, solution.modeShapes);
     problem.fillMatches();
 
     // Start the solver

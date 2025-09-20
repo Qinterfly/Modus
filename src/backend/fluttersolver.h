@@ -32,21 +32,21 @@ public:
     int numModes;
 };
 
-class FlutterSolution : public ISerializable
+struct FlutterSolution : public ISerializable
 {
     Q_GADGET
-    Q_PROPERTY(Geometry geometry MEMBER mGeometry)
-    Q_PROPERTY(Eigen::VectorXd flow MEMBER mFlow)
-    Q_PROPERTY(Eigen::MatrixXcd roots MEMBER mRoots)
-    Q_PROPERTY(Eigen::VectorXd critFlow MEMBER mCritFlow)
-    Q_PROPERTY(Eigen::VectorXd critSpeed MEMBER mCritSpeed)
-    Q_PROPERTY(Eigen::VectorXd critFrequency MEMBER mCritFrequency)
-    Q_PROPERTY(Eigen::VectorXd critCircFrequency MEMBER mCritCircFrequency)
-    Q_PROPERTY(Eigen::VectorXd critStrouhal MEMBER mCritStrouhal)
-    Q_PROPERTY(Eigen::VectorXd critDamping MEMBER mCritDamping)
-    Q_PROPERTY(QList<Eigen::MatrixXcd> critModeShapes MEMBER mCritModeShapes)
-    Q_PROPERTY(Eigen::MatrixXd critPartFactor MEMBER mCritPartFactor)
-    Q_PROPERTY(Eigen::MatrixXd critPartPhase MEMBER mCritPartPhase)
+    Q_PROPERTY(Geometry geometry MEMBER geometry)
+    Q_PROPERTY(Eigen::VectorXd flow MEMBER flow)
+    Q_PROPERTY(Eigen::MatrixXcd roots MEMBER roots)
+    Q_PROPERTY(Eigen::VectorXd critFlow MEMBER critFlow)
+    Q_PROPERTY(Eigen::VectorXd critSpeed MEMBER critSpeed)
+    Q_PROPERTY(Eigen::VectorXd critFrequency MEMBER critFrequency)
+    Q_PROPERTY(Eigen::VectorXd critCircFrequency MEMBER critCircFrequency)
+    Q_PROPERTY(Eigen::VectorXd critStrouhal MEMBER critStrouhal)
+    Q_PROPERTY(Eigen::VectorXd critDamping MEMBER critDamping)
+    Q_PROPERTY(QList<Eigen::MatrixXcd> critModeShapes MEMBER critModeShapes)
+    Q_PROPERTY(Eigen::MatrixXd critPartFactor MEMBER critPartFactor)
+    Q_PROPERTY(Eigen::MatrixXd critPartPhase MEMBER critPartPhase)
 
 public:
     FlutterSolution();
@@ -56,38 +56,24 @@ public:
     bool isEmpty() const;
     int numCrit() const;
 
-    Geometry const& geometry() const;
-    Eigen::VectorXd const& flow() const;
-    Eigen::MatrixXcd const& roots() const;
-    Eigen::VectorXd const& critFlow() const;
-    Eigen::VectorXd const& critSpeed() const;
-    Eigen::VectorXd const& critFrequency() const;
-    Eigen::VectorXd const& critCircFrequency() const;
-    Eigen::VectorXd const& critStrouhal() const;
-    Eigen::VectorXd const& critDamping() const;
-    QList<Eigen::MatrixXcd> const& critModeShapes() const;
-    Eigen::MatrixXd const& critPartFactor() const;
-    Eigen::MatrixXd const& critPartPhase() const;
-
     bool operator==(FlutterSolution const& another) const;
     bool operator!=(FlutterSolution const& another) const;
 
     void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
 
-private:
-    Geometry mGeometry;
-    Eigen::VectorXd mFlow;
-    Eigen::MatrixXcd mRoots;
-    Eigen::VectorXd mCritFlow;
-    Eigen::VectorXd mCritSpeed;
-    Eigen::VectorXd mCritFrequency;
-    Eigen::VectorXd mCritCircFrequency;
-    Eigen::VectorXd mCritStrouhal;
-    Eigen::VectorXd mCritDamping;
-    QList<Eigen::MatrixXcd> mCritModeShapes;
-    Eigen::MatrixXd mCritPartFactor;
-    Eigen::MatrixXd mCritPartPhase;
+    Geometry geometry;
+    Eigen::VectorXd flow;
+    Eigen::MatrixXcd roots;
+    Eigen::VectorXd critFlow;
+    Eigen::VectorXd critSpeed;
+    Eigen::VectorXd critFrequency;
+    Eigen::VectorXd critCircFrequency;
+    Eigen::VectorXd critStrouhal;
+    Eigen::VectorXd critDamping;
+    QList<Eigen::MatrixXcd> critModeShapes;
+    Eigen::MatrixXd critPartFactor;
+    Eigen::MatrixXd critPartPhase;
 };
 
 class FlutterSolver : public QObject, public ISolver

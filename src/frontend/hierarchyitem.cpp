@@ -6,6 +6,7 @@
 #include "modalsolver.h"
 #include "optimsolver.h"
 #include "subproject.h"
+#include "uiutility.h"
 
 using namespace Backend;
 using namespace Frontend;
@@ -193,7 +194,7 @@ void ModalSolverHierarchyItem::appendChildren()
 {
     appendRow(new ModalOptionsHierarchyItem(mpSolver->options));
     if (!mpSolver->solution.isEmpty())
-        appendRow(new ModalSolutionHierarchyItem(mpSolver->solution, QObject::tr("Solution")));
+        appendRow(new ModalSolutionHierarchyItem(mpSolver->solution));
 }
 
 ModalOptionsHierarchyItem::ModalOptionsHierarchyItem(Core::ModalOptions& options)
@@ -207,8 +208,8 @@ Core::ModalOptions& ModalOptionsHierarchyItem::options()
     return mOptions;
 }
 
-ModalSolutionHierarchyItem::ModalSolutionHierarchyItem(Core::ModalSolution const& solution, QString const& name)
-    : HierarchyItem(kModalSolution, QIcon(":/icons/solution.png"), name)
+ModalSolutionHierarchyItem::ModalSolutionHierarchyItem(Core::ModalSolution const& solution)
+    : HierarchyItem(kModalSolution, QIcon(":/icons/solution.png"), QObject::tr("Modal Solution"))
     , mSolution(solution)
 {
     appendChildren();
@@ -223,14 +224,15 @@ void ModalSolutionHierarchyItem::appendChildren()
 {
     int numModes = mSolution.numModes();
     for (int i = 0; i != numModes; ++i)
-        appendRow(new ModalPoleHierarchyItem(i, mSolution.frequencies()[i], mSolution.modeShapes()[i]));
+        appendRow(new ModalPoleHierarchyItem(i, mSolution.frequencies[i], mSolution.modeShapes[i], mSolution.geometry));
 }
 
-ModalPoleHierarchyItem::ModalPoleHierarchyItem(int iMode, double frequency, Eigen::MatrixXd const& modeShape)
+ModalPoleHierarchyItem::ModalPoleHierarchyItem(int iMode, double frequency, Eigen::MatrixXd const& modeShape, Core::Geometry const& geometry)
     : HierarchyItem(kModalPole)
     , mIMode(iMode)
     , mFrequency(frequency)
     , mModeShape(modeShape)
+    , mGeometry(geometry)
 {
     QString name = QObject::tr("Mode %1: %2 Hz").arg(1 + mIMode).arg(mFrequency, 0, 'f', 3);
     setText(name);
@@ -250,6 +252,11 @@ double ModalPoleHierarchyItem::frequency() const
 Eigen::MatrixXd const& ModalPoleHierarchyItem::modeShape() const
 {
     return mModeShape;
+}
+
+Backend::Core::Geometry const& ModalPoleHierarchyItem::geometry() const
+{
+    return mGeometry;
 }
 
 FlutterSolverHierarchyItem::FlutterSolverHierarchyItem(Core::FlutterSolver* pSolver, QString const& defaultName)
@@ -273,11 +280,118 @@ OptimSolverHierarchyItem::OptimSolverHierarchyItem(Core::OptimSolver* pSolver, Q
     setEditable(true);
     setText(mpSolver->name.isEmpty() ? defaultName : mpSolver->name);
     setIcon(getIcon(mpSolver));
+    appendChildren();
 }
 
 Core::OptimSolver* OptimSolverHierarchyItem::solver()
 {
     return mpSolver;
+}
+
+void OptimSolverHierarchyItem::appendChildren()
+{
+    Core::OptimProblem& problem = mpSolver->problem;
+    appendRow(new OptimOptionsHierarchyItem(mpSolver->options));
+    appendRow(new OptimTargetHierarchyItem(problem.targetIndices, problem.targetWeights, problem.targetSolution, problem.targetMatches));
+    appendRow(new OptimSelectorHierarchyItem(problem.selector));
+    appendRow(new OptimConstraintsHierarchyItem(problem.constraints));
+    int numSolutions = mpSolver->solutions.size();
+    if (numSolutions > 0)
+    {
+        HierarchyItem* pGroupSolutions = new HierarchyItem(kGroupOptimSolutions, QIcon(":/icons/iterations.svg"), QObject::tr("Iterations"));
+        for (int i = 0; i != numSolutions; ++i)
+            pGroupSolutions->appendRow(new OptimSolutionHierarchyItem(mpSolver->solutions[i]));
+        appendRow(pGroupSolutions);
+    }
+}
+
+OptimOptionsHierarchyItem::OptimOptionsHierarchyItem(Core::OptimOptions& options)
+    : HierarchyItem(kOptimOptions, QIcon(":/icons/options.png"), QObject::tr("Options"))
+    , mOptions(options)
+{
+    setEditable(false);
+}
+
+Core::OptimOptions& OptimOptionsHierarchyItem::options()
+{
+    return mOptions;
+}
+
+OptimTargetHierarchyItem::OptimTargetHierarchyItem(Eigen::VectorXi& indices, Eigen::VectorXd& weights, Core::ModalSolution& solution,
+                                                   Core::Matches& matches)
+    : HierarchyItem(kOptimTarget, QIcon(":/icons/target.svg"), QObject::tr("Target"))
+    , mIndices(indices)
+    , mWeights(weights)
+    , mSolution(solution)
+    , mMatches(matches)
+{
+}
+
+Eigen::VectorXi& OptimTargetHierarchyItem::indices()
+{
+    return mIndices;
+}
+
+Eigen::VectorXd& OptimTargetHierarchyItem::weights()
+{
+    return mWeights;
+}
+
+Core::ModalSolution& OptimTargetHierarchyItem::solution()
+{
+    return mSolution;
+}
+
+Core::Matches& OptimTargetHierarchyItem::matches()
+{
+    return mMatches;
+}
+
+OptimSelectorHierarchyItem::OptimSelectorHierarchyItem(Core::Selector& selector)
+    : HierarchyItem(kOptimSelector, QIcon(":/icons/selector.svg"), QObject::tr("Selector"))
+    , mSelector(selector)
+{
+}
+
+Core::Selector& OptimSelectorHierarchyItem::selector()
+{
+    return mSelector;
+}
+
+OptimConstraintsHierarchyItem::OptimConstraintsHierarchyItem(Core::Constraints& constraints)
+    : HierarchyItem(kOptimConstraints, QIcon(":/icons/constraints.png"), QObject::tr("Constraints"))
+    , mConstraints(constraints)
+{
+}
+
+Core::Constraints& OptimConstraintsHierarchyItem::constraints()
+{
+    return mConstraints;
+}
+
+OptimSolutionHierarchyItem::OptimSolutionHierarchyItem(Core::OptimSolution& solution)
+    : HierarchyItem(kOptimSolution)
+    , mSolution(solution)
+{
+    const double kAcceptThreshold = 0.01;
+    const double kCritialThreshold = 0.05;
+    double error = mSolution.modalComparison.errorFrequencies.array().abs().maxCoeff();
+    QString name = QObject::tr("Iteration %1: %2 %").arg(QString::number(mSolution.iteration), QString::number(error * 100, 'f', 3));
+    QIcon icon(QString(":/icons/flag-%1.svg").arg(Utility::errorColorName(error, kAcceptThreshold, kCritialThreshold)));
+    setText(name);
+    setIcon(icon);
+    appendChildren();
+}
+
+Core::OptimSolution const& OptimSolutionHierarchyItem::solution() const
+{
+    return mSolution;
+}
+
+void OptimSolutionHierarchyItem::appendChildren()
+{
+    appendRow(new ModelHierarchyItem(mSolution.model));
+    appendRow(new ModalSolutionHierarchyItem(mSolution.modalSolution));
 }
 
 QIcon getIcon(KCL::AbstractElement const* pElement)

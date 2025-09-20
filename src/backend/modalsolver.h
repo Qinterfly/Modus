@@ -16,25 +16,22 @@ namespace Backend::Core
 
 struct ModalComparison;
 
-class ModalSolution : public ISerializable
+struct ModalSolution : public ISerializable
 {
     Q_GADGET
-    Q_PROPERTY(Geometry geometry MEMBER mGeometry)
-    Q_PROPERTY(Eigen::VectorXd frequencies MEMBER mFrequencies)
-    Q_PROPERTY(QList<Eigen::MatrixXd> modeShapes MEMBER mModeShapes)
-    Q_PROPERTY(QList<QString> names MEMBER mNames)
+    Q_PROPERTY(Geometry geometry MEMBER geometry)
+    Q_PROPERTY(Eigen::VectorXd frequencies MEMBER frequencies)
+    Q_PROPERTY(QList<Eigen::MatrixXd> modeShapes MEMBER modeShapes)
+    Q_PROPERTY(QList<QString> names MEMBER names)
 
 public:
     ModalSolution();
-    ModalSolution(Geometry const& geometry, Eigen::VectorXd const& frequencies, QList<Eigen::MatrixXd> const& modeShapes);
+    ModalSolution(Geometry const& anotherGeometry, Eigen::VectorXd const& anotherFrequencies, QList<Eigen::MatrixXd> const& anotherModeShapes);
     ModalSolution(KCL::EigenSolution const& solution);
     ~ModalSolution();
 
     bool isEmpty() const;
     int numModes() const;
-    Geometry const& geometry() const;
-    Eigen::VectorXd const& frequencies() const;
-    QList<Eigen::MatrixXd> const& modeShapes() const;
     ModalComparison compare(ModalSolution const& another, Eigen::VectorXi const& indices, Matches const& matches, double minMAC) const;
 
     void read(QDir const& directory);
@@ -45,15 +42,13 @@ public:
     void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
 
-private:
     void resize(int numDOFs, int numModes);
     void readModesets(QString const& pathFile);
 
-private:
-    Geometry mGeometry;
-    Eigen::VectorXd mFrequencies;
-    QList<Eigen::MatrixXd> mModeShapes;
-    QList<QString> mNames;
+    Geometry geometry;
+    Eigen::VectorXd frequencies;
+    QList<Eigen::MatrixXd> modeShapes;
+    QList<QString> names;
 };
 
 struct ModalComparison : public ISerializable

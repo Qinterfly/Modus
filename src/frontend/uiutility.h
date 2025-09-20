@@ -20,6 +20,7 @@ void setTextColor(QWidget* pWidget, const QColor& color);
 int showSaveDialog(QWidget* pWidget, QString const& title, QString const& message);
 void fullScreenResize(QWidget* pWidget);
 void setShortcutHints(QToolBar* pToolBar);
+QString errorColorName(double value, double acceptThreshold, double criticalThreshold);
 
 // File
 void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix);

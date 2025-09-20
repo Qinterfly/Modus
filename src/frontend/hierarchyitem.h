@@ -6,6 +6,8 @@
 #include <QStandardItem>
 #include <QUuid>
 
+#include "aliasdata.h"
+
 namespace KCL
 {
 class ElasticSurface;
@@ -15,12 +17,18 @@ class AbstractElement;
 
 namespace Backend::Core
 {
+struct Geometry;
 class Subproject;
 class ModalSolver;
 struct ModalOptions;
-class ModalSolution;
+struct ModalSolution;
 class FlutterSolver;
 class OptimSolver;
+struct OptimProblem;
+struct OptimOptions;
+struct OptimSolution;
+class Selector;
+class Constraints;
 }
 
 namespace Frontend
@@ -41,7 +49,13 @@ public:
         kModalSolution,
         kModalPole,
         kFlutterSolver,
-        kOptimSolver
+        kOptimSolver,
+        kOptimOptions,
+        kOptimTarget,
+        kOptimSelector,
+        kOptimConstraints,
+        kGroupOptimSolutions,
+        kOptimSolution
     };
 
     HierarchyItem() = delete;
@@ -142,7 +156,7 @@ private:
 class ModalSolutionHierarchyItem : public HierarchyItem
 {
 public:
-    ModalSolutionHierarchyItem(Backend::Core::ModalSolution const& solution, QString const& name);
+    ModalSolutionHierarchyItem(Backend::Core::ModalSolution const& solution);
     ~ModalSolutionHierarchyItem() = default;
 
     Backend::Core::ModalSolution const& solution() const;
@@ -156,17 +170,19 @@ private:
 class ModalPoleHierarchyItem : public HierarchyItem
 {
 public:
-    ModalPoleHierarchyItem(int iMode, double frequency, Eigen::MatrixXd const& modeShape);
+    ModalPoleHierarchyItem(int iMode, double frequency, Eigen::MatrixXd const& modeShape, Backend::Core::Geometry const& geometry);
     ~ModalPoleHierarchyItem() = default;
 
     int iMode() const;
     double frequency() const;
     Eigen::MatrixXd const& modeShape() const;
+    Backend::Core::Geometry const& geometry() const;
 
 private:
     int mIMode;
     double mFrequency;
-    Eigen::MatrixXd mModeShape;
+    Eigen::MatrixXd const& mModeShape;
+    Backend::Core::Geometry const& mGeometry;
 };
 
 class FlutterSolverHierarchyItem : public HierarchyItem
@@ -190,7 +206,78 @@ public:
     Backend::Core::OptimSolver* solver();
 
 private:
+    void appendChildren();
+
     Backend::Core::OptimSolver* mpSolver;
+};
+
+class OptimOptionsHierarchyItem : public HierarchyItem
+{
+public:
+    OptimOptionsHierarchyItem(Backend::Core::OptimOptions& options);
+    ~OptimOptionsHierarchyItem() = default;
+
+    Backend::Core::OptimOptions& options();
+
+private:
+    Backend::Core::OptimOptions& mOptions;
+};
+
+class OptimTargetHierarchyItem : public HierarchyItem
+{
+public:
+    OptimTargetHierarchyItem(Eigen::VectorXi& indices, Eigen::VectorXd& weights, Backend::Core::ModalSolution& solution,
+                             Backend::Core::Matches& matches);
+    ~OptimTargetHierarchyItem() = default;
+
+    Eigen::VectorXi& indices();
+    Eigen::VectorXd& weights();
+    Backend::Core::ModalSolution& solution();
+    Backend::Core::Matches& matches();
+
+private:
+    Eigen::VectorXi& mIndices;
+    Eigen::VectorXd& mWeights;
+    Backend::Core::ModalSolution& mSolution;
+    Backend::Core::Matches& mMatches;
+};
+
+class OptimSelectorHierarchyItem : public HierarchyItem
+{
+public:
+    OptimSelectorHierarchyItem(Backend::Core::Selector& selector);
+    ~OptimSelectorHierarchyItem() = default;
+
+    Backend::Core::Selector& selector();
+
+private:
+    Backend::Core::Selector& mSelector;
+};
+
+class OptimConstraintsHierarchyItem : public HierarchyItem
+{
+public:
+    OptimConstraintsHierarchyItem(Backend::Core::Constraints& constraints);
+    ~OptimConstraintsHierarchyItem() = default;
+
+    Backend::Core::Constraints& constraints();
+
+private:
+    Backend::Core::Constraints& mConstraints;
+};
+
+class OptimSolutionHierarchyItem : public HierarchyItem
+{
+public:
+    OptimSolutionHierarchyItem(Backend::Core::OptimSolution& solution);
+    ~OptimSolutionHierarchyItem() = default;
+
+    Backend::Core::OptimSolution const& solution() const;
+
+private:
+    void appendChildren();
+
+    Backend::Core::OptimSolution& mSolution;
 };
 }
 

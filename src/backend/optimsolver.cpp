@@ -104,8 +104,8 @@ ceres::CallbackReturnType OptimCallback::operator()(ceres::IterationSummary cons
         int iTargetMode = mProblem.targetIndices[i];
         int iCurrentMode = modalComparison.pairs[i].first;
         double MAC = modalComparison.pairs[i].second;
-        double targetFrequency = mProblem.targetSolution.frequencies()[i];
-        double currentFrequency = modalSolution.frequencies()[iCurrentMode];
+        double targetFrequency = mProblem.targetSolution.frequencies[i];
+        double currentFrequency = modalSolution.frequencies[iCurrentMode];
         double error = modalComparison.errorFrequencies[i] * 100;
         double weight = mProblem.targetWeights[i];
         maxError = std::max(maxError, std::abs(error));
@@ -851,8 +851,8 @@ OptimProblem::~OptimProblem()
 bool OptimProblem::isValid() const
 {
     int numModes = targetIndices.size();
-    bool isSlice = numModes == targetWeights.size() && numModes <= targetSolution.frequencies().size()
-                   && numModes <= targetSolution.modeShapes().size();
+    bool isSlice = numModes == targetWeights.size() && numModes <= targetSolution.frequencies.size()
+                   && numModes <= targetSolution.modeShapes.size();
     return !model.isEmpty() && numModes > 0 && isSlice;
 }
 
@@ -870,7 +870,7 @@ void OptimProblem::fillMatches()
         qWarning() << QObject::tr("Could not fill the matches because the target solution has not been set");
         return;
     }
-    int numVertices = targetSolution.geometry().numVertices();
+    int numVertices = targetSolution.geometry.numVertices();
     targetMatches.resize(numVertices);
     for (int i = 0; i != numVertices; ++i)
         targetMatches[i] = {i, i};

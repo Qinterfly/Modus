@@ -27,6 +27,13 @@
 		<file>icons/options.png</file>
 		<file>icons/flutter.png</file>
 		<file>icons/solution.png</file>
+		<file>icons/iterations.svg</file>
+		<file>icons/flag-green.svg</file>
+		<file>icons/flag-yellow.svg</file>
+		<file>icons/flag-red.svg</file>
+		<file>icons/target.svg</file>
+		<file>icons/selector.svg</file>
+		<file>icons/constraints.png</file>
 		<file>icons/mode.png</file>
 		<file>icons/optimization.png</file>
 		<file>icons/document-open.svg</file>

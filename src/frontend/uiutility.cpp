@@ -67,6 +67,17 @@ void setShortcutHints(QToolBar* pToolBar)
     }
 }
 
+//! Get color name associated with error value
+QString errorColorName(double value, double acceptThreshold, double criticalThreshold)
+{
+    QString result = "yellow";
+    if (qAbs(value) < acceptThreshold)
+        result = "green";
+    else if (qAbs(value) > criticalThreshold)
+        result = "red";
+    return result;
+}
+
 //! Substitute a file suffix to the expected one, if necessary
 void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix)
 {

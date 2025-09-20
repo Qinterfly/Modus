@@ -39,21 +39,21 @@ FlutterSolution::FlutterSolution()
 
 FlutterSolution::FlutterSolution(KCL::FlutterSolution const& solution)
 {
-    mGeometry = solution.geometry;
-    mFlow = solution.flow;
-    mRoots = solution.roots;
-    mCritFlow = solution.critFlow;
-    mCritSpeed = solution.critSpeed;
-    mCritFrequency = solution.critFrequency;
-    mCritCircFrequency = solution.critCircFrequency;
-    mCritStrouhal = solution.critStrouhal;
-    mCritDamping = solution.critDamping;
+    geometry = solution.geometry;
+    flow = solution.flow;
+    roots = solution.roots;
+    critFlow = solution.critFlow;
+    critSpeed = solution.critSpeed;
+    critFrequency = solution.critFrequency;
+    critCircFrequency = solution.critCircFrequency;
+    critStrouhal = solution.critStrouhal;
+    critDamping = solution.critDamping;
     int numModes = solution.critModeShapes.size();
-    mCritModeShapes.resize(numModes);
+    critModeShapes.resize(numModes);
     for (int i = 0; i != numModes; ++i)
-        mCritModeShapes[i] = solution.critModeShapes[i];
-    mCritPartFactor = solution.critPartFactor;
-    mCritPartPhase = solution.critPartPhase;
+        critModeShapes[i] = solution.critModeShapes[i];
+    critPartFactor = solution.critPartFactor;
+    critPartPhase = solution.critPartPhase;
 }
 
 FlutterSolution::~FlutterSolution()
@@ -62,72 +62,12 @@ FlutterSolution::~FlutterSolution()
 
 bool FlutterSolution::isEmpty() const
 {
-    return mFlow.size() == 0;
+    return flow.size() == 0;
 }
 
 int FlutterSolution::numCrit() const
 {
-    return mCritFlow.size();
-}
-
-Geometry const& FlutterSolution::geometry() const
-{
-    return mGeometry;
-}
-
-Eigen::VectorXd const& FlutterSolution::flow() const
-{
-    return mFlow;
-}
-
-Eigen::MatrixXcd const& FlutterSolution::roots() const
-{
-    return mRoots;
-}
-
-Eigen::VectorXd const& FlutterSolution::critFlow() const
-{
-    return mCritFlow;
-}
-
-Eigen::VectorXd const& FlutterSolution::critSpeed() const
-{
-    return mCritSpeed;
-}
-
-Eigen::VectorXd const& FlutterSolution::critFrequency() const
-{
-    return mCritFrequency;
-}
-
-Eigen::VectorXd const& FlutterSolution::critCircFrequency() const
-{
-    return mCritCircFrequency;
-}
-
-Eigen::VectorXd const& FlutterSolution::critStrouhal() const
-{
-    return mCritStrouhal;
-}
-
-Eigen::VectorXd const& FlutterSolution::critDamping() const
-{
-    return mCritDamping;
-}
-
-QList<Eigen::MatrixXcd> const& FlutterSolution::critModeShapes() const
-{
-    return mCritModeShapes;
-}
-
-Eigen::MatrixXd const& FlutterSolution::critPartFactor() const
-{
-    return mCritPartFactor;
-}
-
-Eigen::MatrixXd const& FlutterSolution::critPartPhase() const
-{
-    return mCritPartPhase;
+    return critFlow.size();
 }
 
 bool FlutterSolution::operator==(FlutterSolution const& another) const
@@ -143,18 +83,18 @@ bool FlutterSolution::operator!=(FlutterSolution const& another) const
 void FlutterSolution::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
     stream.writeStartElement(elementName);
-    mGeometry.serialize(stream, "geometry");
-    Utility::serialize(stream, "flow", mFlow);
-    Utility::serialize(stream, "roots", mRoots);
-    Utility::serialize(stream, "critFlow", mCritFlow);
-    Utility::serialize(stream, "critSpeed", mCritSpeed);
-    Utility::serialize(stream, "critFrequency", mCritFrequency);
-    Utility::serialize(stream, "critCircFrequency", mCritCircFrequency);
-    Utility::serialize(stream, "critStrouhal", mCritStrouhal);
-    Utility::serialize(stream, "critDamping", mCritDamping);
-    Utility::serialize(stream, "critModeShapes", "critModeShape", mCritModeShapes);
-    Utility::serialize(stream, "critPartFactor", mCritPartFactor);
-    Utility::serialize(stream, "critPartPhase", mCritPartPhase);
+    geometry.serialize(stream, "geometry");
+    Utility::serialize(stream, "flow", flow);
+    Utility::serialize(stream, "roots", roots);
+    Utility::serialize(stream, "critFlow", critFlow);
+    Utility::serialize(stream, "critSpeed", critSpeed);
+    Utility::serialize(stream, "critFrequency", critFrequency);
+    Utility::serialize(stream, "critCircFrequency", critCircFrequency);
+    Utility::serialize(stream, "critStrouhal", critStrouhal);
+    Utility::serialize(stream, "critDamping", critDamping);
+    Utility::serialize(stream, "critModeShapes", "critModeShape", critModeShapes);
+    Utility::serialize(stream, "critPartFactor", critPartFactor);
+    Utility::serialize(stream, "critPartPhase", critPartPhase);
     stream.writeEndElement();
 }
 
@@ -163,29 +103,29 @@ void FlutterSolution::deserialize(QXmlStreamReader& stream)
     while (stream.readNextStartElement())
     {
         if (stream.name() == "geometry")
-            mGeometry.deserialize(stream);
+            geometry.deserialize(stream);
         else if (stream.name() == "flow")
-            Utility::deserialize(stream, mFlow);
+            Utility::deserialize(stream, flow);
         else if (stream.name() == "roots")
-            Utility::deserialize(stream, mRoots);
+            Utility::deserialize(stream, roots);
         else if (stream.name() == "critFlow")
-            Utility::deserialize(stream, mCritFlow);
+            Utility::deserialize(stream, critFlow);
         else if (stream.name() == "critSpeed")
-            Utility::deserialize(stream, mCritSpeed);
+            Utility::deserialize(stream, critSpeed);
         else if (stream.name() == "critFrequency")
-            Utility::deserialize(stream, mCritFrequency);
+            Utility::deserialize(stream, critFrequency);
         else if (stream.name() == "critCircFrequency")
-            Utility::deserialize(stream, mCritCircFrequency);
+            Utility::deserialize(stream, critCircFrequency);
         else if (stream.name() == "critStrouhal")
-            Utility::deserialize(stream, mCritStrouhal);
+            Utility::deserialize(stream, critStrouhal);
         else if (stream.name() == "critDamping")
-            Utility::deserialize(stream, mCritDamping);
+            Utility::deserialize(stream, critDamping);
         else if (stream.name() == "critModeShapes")
-            Utility::deserialize(stream, "critModeShape", mCritModeShapes);
+            Utility::deserialize(stream, "critModeShape", critModeShapes);
         else if (stream.name() == "critPartFactor")
-            Utility::deserialize(stream, mCritPartFactor);
+            Utility::deserialize(stream, critPartFactor);
         else if (stream.name() == "critPartPhase")
-            Utility::deserialize(stream, mCritPartPhase);
+            Utility::deserialize(stream, critPartPhase);
         else
             stream.skipCurrentElement();
     }
