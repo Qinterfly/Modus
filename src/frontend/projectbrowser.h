@@ -8,6 +8,7 @@ QT_FORWARD_DECLARE_CLASS(QTreeView);
 QT_FORWARD_DECLARE_CLASS(QSettings);
 QT_FORWARD_DECLARE_CLASS(QStandardItem)
 QT_FORWARD_DECLARE_CLASS(QSortFilterProxyModel)
+QT_FORWARD_DECLARE_CLASS(QItemSelection)
 
 namespace Backend::Core
 {
@@ -18,9 +19,12 @@ namespace Frontend
 {
 
 class ProjectHierarchyModel;
+class HierarchyItem;
 
 class ProjectBrowser : public QWidget
 {
+    Q_OBJECT
+
 public:
     ProjectBrowser(Backend::Core::Project& project, QSettings& settings, QWidget* pParent = nullptr);
     virtual ~ProjectBrowser();
@@ -29,14 +33,18 @@ public:
 
     void update();
 
+signals:
+    void selectionChanged(QList<HierarchyItem*>);
+
 private:
     // Content
     void createContent();
     void filterContent(QString const& pattern);
     void processContextMenuRequest(QPoint const& point);
+    void processSelection(QItemSelection const& selected, QItemSelection const& deselected);
 
     // Subproject management
-    QList<QStandardItem*> selectedItems();
+    QList<HierarchyItem*> selectedItems();
     void setSelectedItemsExpandedState(bool flag);
 
 private:

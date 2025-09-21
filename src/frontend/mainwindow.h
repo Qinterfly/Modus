@@ -18,6 +18,7 @@ namespace Frontend
 
 class Logger;
 class ProjectBrowser;
+class ViewManager;
 
 class MainWindow : public QMainWindow
 {
@@ -33,6 +34,10 @@ public:
     bool openProject(QString const& pathFile);
     void saveProject();
     void saveAsProject(QString const& pathFile);
+
+    // Widgets
+    ProjectBrowser* projectBrowser();
+    ViewManager* viewManager();
 
 public:
     static QString language;
@@ -50,6 +55,7 @@ private:
     ads::CDockWidget* createProjectBrowser();
     ads::CDockWidget* createViewManager();
     ads::CDockWidget* createLogger();
+    void createConnections();
 
     // State
     void setProjectTitle();
@@ -81,6 +87,7 @@ private:
     QMenu* mpRecentMenu;
     QMenu* mpWindowMenu;
     ProjectBrowser* mpProjectBrowser;
+    ViewManager* mpViewManager;
 
     // Project
     Backend::Core::Project mProject;

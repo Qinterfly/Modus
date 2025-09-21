@@ -28,6 +28,7 @@ set(FRONTEND_HEADERS
     projectbrowser.h
     projecthierarchymodel.h
     hierarchyitem.h
+    viewmanager.h
 )
 
 set(FRONTEND_SOURCES
@@ -37,12 +38,15 @@ set(FRONTEND_SOURCES
     projectbrowser.cpp
     projecthierarchymodel.cpp
     hierarchyitem.cpp
+    viewmanager.cpp
 )
 
 qt_add_library(frontend STATIC
     ${FRONTEND_HEADERS}
     ${FRONTEND_SOURCES}
     ${RESOURCES_FILE}
+    iview.h
+    modelview.h modelview.cpp
 )
 
 target_link_libraries(frontend PRIVATE

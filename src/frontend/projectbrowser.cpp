@@ -5,6 +5,7 @@
 #include <QTreeView>
 #include <QVBoxLayout>
 
+#include "hierarchyitem.h"
 #include "project.h"
 #include "projectbrowser.h"
 #include "projecthierarchymodel.h"
@@ -43,6 +44,9 @@ void ProjectBrowser::update()
     mpFilterModel->setSourceModel(mpSourceModel);
     mpView->setModel(mpFilterModel);
     delete pOldSelectionModel;
+
+    // Specify the connections between the model and view widget
+    connect(mpView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &ProjectBrowser::processSelection);
 }
 
 //! Create all the widgets and corresponding actions
@@ -127,7 +131,7 @@ void ProjectBrowser::filterContent(QString const& pattern)
 void ProjectBrowser::processContextMenuRequest(QPoint const& point)
 {
     // Retrieve the selected items
-    QList<QStandardItem*> items = selectedItems();
+    QList<HierarchyItem*> items = selectedItems();
     if (items.isEmpty())
         return;
 
@@ -146,18 +150,24 @@ void ProjectBrowser::processContextMenuRequest(QPoint const& point)
     pMenu->exec(position);
 }
 
+//! Process selection of hierarchy items
+void ProjectBrowser::processSelection(QItemSelection const& selected, QItemSelection const& deselected)
+{
+    emit selectionChanged(selectedItems());
+}
+
 //! Retrieve the currently selected items
-QList<QStandardItem*> ProjectBrowser::selectedItems()
+QList<HierarchyItem*> ProjectBrowser::selectedItems()
 {
     QModelIndexList indices = mpView->selectionModel()->selectedIndexes();
-    QList<QStandardItem*> result;
+    QList<HierarchyItem*> result;
     uint numIndices = indices.size();
     result.reserve(numIndices);
     for (int i = 0; i != numIndices; ++i)
     {
         QModelIndex const& proxyIndex = indices[i];
         QModelIndex sourceIndex = mpFilterModel->mapToSource(proxyIndex);
-        QStandardItem* pItem = mpSourceModel->itemFromIndex(sourceIndex);
+        HierarchyItem* pItem = (HierarchyItem*) mpSourceModel->itemFromIndex(sourceIndex);
         result.push_back(pItem);
     }
     return result;

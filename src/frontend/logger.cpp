@@ -23,7 +23,7 @@ Logger::~Logger()
 
 QSize Logger::sizeHint() const
 {
-    return QSize(800, 50);
+    return QSize(800, 100);
 }
 
 //! Represent a message sent

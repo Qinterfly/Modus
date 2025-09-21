@@ -6,7 +6,6 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QToolBar>
-#include <QTreeView>
 
 #include "config.h"
 #include "logger.h"
@@ -14,6 +13,7 @@
 #include "projectbrowser.h"
 #include "uiconstants.h"
 #include "uiutility.h"
+#include "viewmanager.h"
 
 using namespace ads;
 using namespace Frontend;
@@ -28,6 +28,7 @@ MainWindow::MainWindow(QWidget* pParent)
 {
     initializeWindow();
     createContent();
+    createConnections();
     // restoreSettings();
     newProject();
 }
@@ -84,6 +85,18 @@ void MainWindow::saveAsProject(QString const& pathFile)
         addToRecentProjects();
         setModified(false);
     }
+}
+
+//! Get the widget to browse project hierarchy
+ProjectBrowser* MainWindow::projectBrowser()
+{
+    return mpProjectBrowser;
+}
+
+//! Get the manager to view project entities
+ViewManager* MainWindow::viewManager()
+{
+    return mpViewManager;
 }
 
 //! Set a state and geometry of the main window
@@ -162,11 +175,11 @@ ads::CDockWidget* MainWindow::createProjectBrowser()
 ads::CDockWidget* MainWindow::createViewManager()
 {
     // Create the widget
-    QWidget* pWidget = new QTreeView;
+    mpViewManager = new ViewManager(mSettings);
 
     // Construct the dock widget
     ads::CDockWidget* pDockWidget = new CDockWidget(mpDockManager, tr("View Manager"));
-    pDockWidget->setWidget(pWidget);
+    pDockWidget->setWidget(mpViewManager);
     mpWindowMenu->addAction(pDockWidget->toggleViewAction());
     return pDockWidget;
 }
@@ -183,6 +196,12 @@ ads::CDockWidget* MainWindow::createLogger()
     pDockWidget->setWidget(pLogger);
     mpWindowMenu->addAction(pDockWidget->toggleViewAction());
     return pDockWidget;
+}
+
+//! Connect the widgets between each other
+void MainWindow::createConnections()
+{
+    connect(mpProjectBrowser, &ProjectBrowser::selectionChanged, mpViewManager, &ViewManager::processItems);
 }
 
 //! Create the actions to interact with files
