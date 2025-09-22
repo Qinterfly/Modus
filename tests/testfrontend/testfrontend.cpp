@@ -25,7 +25,7 @@ void TestFrontend::testOpenProject()
 //! View a model using project browser hierarchy
 void TestFrontend::testViewModel()
 {
-    KCL::Model& model = mpMainWindow->project().subprojects()[0].model();
+    KCL::Model& model = mpMainWindow->project().subprojects()[1].model();
     mpMainWindow->viewManager()->clear();
     mpMainWindow->viewManager()->createView(model);
 }

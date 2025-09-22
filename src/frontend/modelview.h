@@ -2,9 +2,11 @@
 #define MODELVIEW_H
 
 #include <Eigen/Geometry>
-#include <kcl/alias.h>
+#include <vtkNamedColors.h>
 #include <vtkPolyDataMapper.h>
 #include <QWidget>
+
+#include <kcl/element.h>
 
 #include "iview.h"
 
@@ -15,8 +17,6 @@ struct Model;
 
 class QVTKOpenGLNativeWidget;
 class vtkOrientationMarkerWidget;
-class vtkNamedColors;
-class vtkColor3d;
 
 namespace Frontend
 {
@@ -30,10 +30,25 @@ enum Axis
     kZ,
 };
 
+struct ModelViewOptions
+{
+    ModelViewOptions();
+    ~ModelViewOptions() = default;
+
+    // Color scheme
+    vtkSmartPointer<vtkNamedColors> const availableColors;
+    vtkColor3d sceneColor;
+    vtkColor3d symmetryColor;
+    QMap<KCL::ElementType, vtkColor3d> elementColors;
+
+    // Elements
+    QMap<KCL::ElementType, bool> maskElements;
+};
+
 class ModelView : public QWidget, public IView
 {
 public:
-    ModelView(KCL::Model const& model);
+    ModelView(KCL::Model const& model, ModelViewOptions const& options = ModelViewOptions());
     virtual ~ModelView();
 
     void clear() override;
@@ -48,15 +63,16 @@ private:
     void createContent();
     void drawAxes();
     void drawModel();
-    void drawBeam(Transformation const& transform, KCL::Vec2 const& startCoords, KCL::Vec2 const& endCoords, vtkColor3d color);
+    void drawBeams(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
+    void drawPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
 
 private:
     KCL::Model const& mModel;
+    ModelViewOptions mOptions;
     QVTKOpenGLNativeWidget* mRenderWidget;
     vtkSmartPointer<vtkRenderWindow> mRenderWindow;
     vtkSmartPointer<vtkRenderer> mRenderer;
     vtkSmartPointer<vtkOrientationMarkerWidget> mOrientationWidget;
-    vtkSmartPointer<vtkNamedColors> mColors;
 };
 }
 

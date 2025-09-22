@@ -4,7 +4,6 @@
 #include <vtkCamera.h>
 #include <vtkCellArray.h>
 #include <vtkGenericOpenGLRenderWindow.h>
-#include <vtkNamedColors.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
@@ -14,14 +13,37 @@
 #include <QVTKOpenGLNativeWidget.h>
 
 #include <kcl/model.h>
+#include <magicenum/magic_enum.hpp>
 
 #include "modelview.h"
 
 using namespace Frontend;
 using namespace Eigen;
 
-ModelView::ModelView(KCL::Model const& model)
+ModelViewOptions::ModelViewOptions()
+    : availableColors(vtkNamedColors::New())
+{
+    constexpr auto types = magic_enum::enum_values<KCL::ElementType>();
+
+    // Color scheme
+    sceneColor = availableColors->GetColor3d("WhiteSmoke");
+    symmetryColor = availableColors->GetColor3d("Gray");
+    for (auto type : types)
+        elementColors[type] = availableColors->GetColor3d("Black");
+    elementColors[KCL::BI] = availableColors->GetColor3d("Blue");
+    elementColors[KCL::DB] = availableColors->GetColor3d("Blue");
+    elementColors[KCL::BK] = availableColors->GetColor3d("Green");
+    elementColors[KCL::PN] = availableColors->GetColor3d("Indigo");
+    elementColors[KCL::OP] = availableColors->GetColor3d("Indigo");
+
+    // Elements
+    for (auto type : types)
+        maskElements[type] = true;
+}
+
+ModelView::ModelView(KCL::Model const& model, ModelViewOptions const& options)
     : mModel(model)
+    , mOptions(options)
 {
     createContent();
     initialize();
@@ -54,12 +76,11 @@ IView::Type ModelView::type() const
 
 void ModelView::initialize()
 {
-    mColors = vtkNamedColors::New();
     mOrientationWidget = vtkOrientationMarkerWidget::New();
 
     // Set up the scence
     mRenderer = vtkRenderer::New();
-    mRenderer->SetBackground(mColors->GetColor3d("WhiteSmoke").GetData());
+    mRenderer->SetBackground(mOptions.sceneColor.GetData());
 
     // Create the window
     mRenderWindow = vtkGenericOpenGLRenderWindow::New();
@@ -86,7 +107,7 @@ void ModelView::drawAxes()
     vtkNew<vtkAxesActor> axes;
 
     double rgba[4]{0.0, 0.0, 0.0, 0.0};
-    mColors->GetColor("Carrot", rgba);
+    mOptions.availableColors->GetColor("Carrot", rgba);
     mOrientationWidget->SetOutlineColor(rgba[0], rgba[1], rgba[2]);
     mOrientationWidget->SetOrientationMarker(axes);
     mOrientationWidget->SetInteractor(mRenderWindow->GetInteractor());
@@ -125,47 +146,72 @@ void ModelView::drawModel()
         int numTypes = types.size();
         for (int iType = 0; iType != numTypes; ++iType)
         {
-            // Loop through all the elements of the same
             KCL::ElementType type = types[iType];
-            int numElements = surface.numElements(type);
-            for (int iElement = 0; iElement != numElements; ++iElement)
+
+            // Check if the element is enabled for rendering
+            if (!mOptions.maskElements[type])
+                continue;
+            vtkColor3d elementColor = mOptions.elementColors[type];
+
+            // Obtain the list of elements of the same type
+            std::vector<KCL::AbstractElement const*> elements = surface.elements(type);
+
+            // Render the elements
+            bool isBeam = type == KCL::BI || type == KCL::BK || type == KCL::DB;
+            bool isPanel = type == KCL::PN || type == KCL::OP;
+            if (isBeam)
             {
-                KCL::AbstractElement const* pBaseElement = surface.element(type, iElement);
-                switch (type)
-                {
-                case KCL::BI:
-                {
-                    auto pElement = (KCL::BendingBeam*) pBaseElement;
-                    drawBeam(transform, pElement->startCoords, pElement->endCoords, mColors->GetColor3d("Blue"));
-                    if (isSymmetry)
-                        drawBeam(reflectTransform, pElement->startCoords, pElement->endCoords, mColors->GetColor3d("Gray"));
-                    break;
-                }
-                default:
-                    break;
-                }
+                drawBeams(transform, elements, elementColor);
+                if (isSymmetry)
+                    drawBeams(reflectTransform, elements, mOptions.symmetryColor);
+            }
+            else if (isPanel)
+            {
+                drawPanels(transform, elements, elementColor);
+                if (isSymmetry)
+                    drawPanels(reflectTransform, elements, mOptions.symmetryColor);
             }
         }
     }
 }
 
-//! Represent the beam element
-void ModelView::drawBeam(Transformation const& transform, KCL::Vec2 const& startCoords, KCL::Vec2 const& endCoords, vtkColor3d color)
+//! Render beam elements
+void ModelView::drawBeams(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
 {
-    // Compute the coordinates of both ends
-    auto startPosition = transform * Vector3d(startCoords[0], 0.0, startCoords[1]);
-    auto endPosition = transform * Vector3d(endCoords[0], 0.0, endCoords[1]);
+    int const kNumCellPoints = 2;
 
-    // Set the points
+    // Allocate the points and their connectivity list
     vtkNew<vtkPoints> points;
-    points->InsertNextPoint(startPosition[0], startPosition[1], startPosition[2]);
-    points->InsertNextPoint(endPosition[0], endPosition[1], endPosition[2]);
-
-    // Set the connectivity indices
     vtkNew<vtkCellArray> indices;
-    indices->InsertNextCell(2);
-    indices->InsertCellPoint(0);
-    indices->InsertCellPoint(1);
+
+    // Process all the elements
+    int iPoint = 0;
+    int numElements = elements.size();
+    for (int i = 0; i != numElements; ++i)
+    {
+        KCL::AbstractElement const* pElement = elements[i];
+
+        // Slice element coordinates
+        KCL::VecN elementData = pElement->get();
+        KCL::Vec2 startCoords = {elementData[0], elementData[1]};
+        KCL::Vec2 endCoords = {elementData[2], elementData[3]};
+
+        // Transform the coordinates to global coordinate system
+        auto startPosition = transform * Vector3d(startCoords[0], 0.0, startCoords[1]);
+        auto endPosition = transform * Vector3d(endCoords[0], 0.0, endCoords[1]);
+
+        // Set the points
+        points->InsertNextPoint(startPosition[0], startPosition[1], startPosition[2]);
+        points->InsertNextPoint(endPosition[0], endPosition[1], endPosition[2]);
+
+        // Set the connectivity indices
+        indices->InsertNextCell(kNumCellPoints);
+        indices->InsertCellPoint(iPoint);
+        indices->InsertCellPoint(iPoint + 1);
+
+        // Increase the counter
+        iPoint += kNumCellPoints;
+    }
 
     // Create the polygons
     vtkNew<vtkPolyData> data;
@@ -183,6 +229,22 @@ void ModelView::drawBeam(Transformation const& transform, KCL::Vec2 const& start
 
     // Add the actor to the scene
     mRenderer->AddActor(actor);
+}
+
+//! Render panel elements
+void ModelView::drawPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
+{
+    // Allocate the points and their connectivity list
+    vtkNew<vtkPoints> points;
+    vtkNew<vtkCellArray> indices;
+
+    // Process all the elements
+    int iPoint = 0;
+    int numElements = elements.size();
+    for (int i = 0; i != numElements; ++i)
+    {
+        // TODO
+    }
 }
 
 //! Set the isometric view
