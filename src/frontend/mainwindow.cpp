@@ -87,6 +87,12 @@ void MainWindow::saveAsProject(QString const& pathFile)
     }
 }
 
+//! Obtain the current project instance
+Core::Project& MainWindow::project()
+{
+    return mProject;
+}
+
 //! Get the widget to browse project hierarchy
 ProjectBrowser* MainWindow::projectBrowser()
 {

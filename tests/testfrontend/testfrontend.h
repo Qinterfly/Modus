@@ -23,10 +23,10 @@ public:
 
 private slots:
     void testOpenProject();
+    void testViewModel();
 
 private:
     Frontend::MainWindow* mpMainWindow;
-
 };
 
 }

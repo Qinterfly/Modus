@@ -35,6 +35,9 @@ public:
     void saveProject();
     void saveAsProject(QString const& pathFile);
 
+    // Objects
+    Backend::Core::Project& project();
+
     // Widgets
     ProjectBrowser* projectBrowser();
     ViewManager* viewManager();

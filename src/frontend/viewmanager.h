@@ -28,14 +28,15 @@ public:
 
     QSize sizeHint() const override;
 
-    IView const* currentView() const;
-    IView const* view(int iView) const;
-    QList<IView const*> views() const;
+    IView* currentView();
+    IView* view(int iView);
+    QList<IView*> views();
     int numViews() const;
     bool isEmpty() const;
 
     void processItems(QList<HierarchyItem*> const& items);
     IView* createView(KCL::Model const& model);
+    void refresh();
     void clear();
 
 private:

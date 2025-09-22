@@ -30,7 +30,7 @@ QSize ViewManager::sizeHint() const
 }
 
 //! Retrieve the current view
-IView const* ViewManager::currentView() const
+IView* ViewManager::currentView()
 {
     if (numViews() > 0)
         return (IView*) mpTabWidget->currentWidget();
@@ -38,7 +38,7 @@ IView const* ViewManager::currentView() const
 }
 
 //! Get the view located at the specified position
-IView const* ViewManager::view(int iView) const
+IView* ViewManager::view(int iView)
 {
     if (iView >= 0 && iView < numViews())
         return (IView*) mpTabWidget->widget(iView);
@@ -46,10 +46,10 @@ IView const* ViewManager::view(int iView) const
 }
 
 //! Retrieve all the views
-QList<IView const*> ViewManager::views() const
+QList<IView*> ViewManager::views()
 {
     int numItems = numViews();
-    QList<IView const*> result(numItems);
+    QList<IView*> result(numItems);
     for (int i = 0; i != numItems; ++i)
         result[i] = view(i);
     return result;
@@ -108,8 +108,17 @@ void ViewManager::processItems(QList<HierarchyItem*> const& items)
 IView* ViewManager::createView(KCL::Model const& model)
 {
     ModelView* pView = new ModelView(model);
+    pView->refresh();
+    pView->setIsometricView();
     mpTabWidget->addTab(pView, newViewName());
     return pView;
+}
+
+//! Update all the views
+void ViewManager::refresh()
+{
+    for (int i = 0; i != numViews(); ++i)
+        view(i)->refresh();
 }
 
 //! Destroy all views
@@ -123,6 +132,7 @@ void ViewManager::createContent()
 {
     // Create the central widget
     mpTabWidget = new QTabWidget;
+    mpTabWidget->setContentsMargins(0, 0, 0, 0);
 
     // Insert the widgets into the main layout
     QHBoxLayout* pLayout = new QHBoxLayout();

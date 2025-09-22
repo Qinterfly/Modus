@@ -2,6 +2,7 @@
 
 #include "fileutility.h"
 #include "testfrontend.h"
+#include "viewmanager.h"
 
 using namespace Tests;
 using namespace Frontend;
@@ -19,6 +20,14 @@ void TestFrontend::testOpenProject()
     QString pathFile = Utility::combineFilePath(EXAMPLES_DIR, fileName);
     QVERIFY(mpMainWindow->openProject(pathFile));
     mpMainWindow->show();
+}
+
+//! View a model using project browser hierarchy
+void TestFrontend::testViewModel()
+{
+    KCL::Model& model = mpMainWindow->project().subprojects()[0].model();
+    mpMainWindow->viewManager()->clear();
+    mpMainWindow->viewManager()->createView(model);
 }
 
 TestFrontend::~TestFrontend()
