@@ -1,6 +1,8 @@
 #ifndef UICONSTANTS_H
 #define UICONSTANTS_H
 
+#include <vtkNamedColors.h>
+#include <vtkNew.h>
 #include <QIcon>
 #include <QString>
 
@@ -18,6 +20,12 @@ const QString skRecent = "recent";
 const QString skFileName = "Settings.ini";
 const QString skMainWindow = "mainWindow";
 
+}
+
+namespace Colors
+{
+
+vtkNew<vtkNamedColors> const vtkColors;
 }
 
 namespace Size

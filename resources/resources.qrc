@@ -1,5 +1,5 @@
 <RCC>
-	<qresource prefix="/">
+	<qresource>
 		<file>fonts/Roboto.ttf</file>
 		<file>fonts/RobotoMono.ttf</file>
 	
@@ -56,6 +56,8 @@
 		<file>icons/go-down.svg</file>
 		<file>icons/go-next.svg</file>
 		<file>icons/go-previous.svg</file>
+
+		<file>textures/mass.png</file>
 
 		<file>styles/modern.qss</file>
 	</qresource>
