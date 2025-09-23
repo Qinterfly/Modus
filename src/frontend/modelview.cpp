@@ -343,24 +343,40 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
 
         // Slice element coordinates
         Vector3d position;
+        double lengthRod = 0.0;
+        double angleRodZ = 0.0;
         switch (pBaseElement->type())
         {
         case KCL::SM:
         {
             auto pElement = (KCL::PointMass1 const*) pBaseElement;
             position = {pElement->coords[0], 0.0, pElement->coords[1]};
+            lengthRod = pElement->lengthRod;
+            angleRodZ = pElement->angleRodZ;
             break;
         }
         case KCL::M3:
         {
             auto pElement = (KCL::PointMass3 const*) pBaseElement;
             position = {pElement->coords[0], pElement->coords[1], pElement->coords[2]};
+            lengthRod = pElement->lengthRod;
+            angleRodZ = pElement->angleRodZ;
             break;
         }
         default:
             continue;
         }
-        position = transform * position;
+
+        // Build up the additional transformation matrix
+        auto addTransform = Transformation::Identity();
+        if (lengthRod > 0.0)
+        {
+            addTransform.translate(Vector3d(0, 0, lengthRod));
+            addTransform.rotate(AngleAxisd(qDegreesToRadians(angleRodZ), Vector3d::UnitY()));
+        }
+
+        // Transform the coordiantes to the global coordinate system
+        position = transform * addTransform * position;
 
         // Create and position the source
         vtkNew<vtkPlaneSource> source;
