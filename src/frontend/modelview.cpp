@@ -1,6 +1,7 @@
 #include <QHBoxLayout>
 
 #include <vtkAxesActor.h>
+#include <vtkCallbackCommand.h>
 #include <vtkCamera.h>
 #include <vtkCellArray.h>
 #include <vtkGenericOpenGLRenderWindow.h>
@@ -14,7 +15,6 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkTexture.h>
-#include <vtkTextureMapToPlane.h>
 #include <QFile>
 #include <QVTKOpenGLNativeWidget.h>
 
@@ -31,20 +31,45 @@ using namespace Constants::Colors;
 
 vtkSmartPointer<vtkTexture> readTexture(QString const& pathFile);
 
+class PlaneFollowerCallback : public vtkCallbackCommand
+{
+public:
+    static PlaneFollowerCallback* New()
+    {
+        return new PlaneFollowerCallback;
+    }
+
+    void Execute(vtkObject* caller, unsigned long evId, void*) override
+    {
+        double normal[3];
+        camera->GetViewPlaneNormal(normal);
+        vtkMath::Normalize(normal);
+        source->SetNormal(normal);
+        source->Update();
+    }
+
+    vtkSmartPointer<vtkPlaneSource> source;
+    vtkCamera* camera;
+};
+
 ModelViewOptions::ModelViewOptions()
 {
     constexpr auto types = magic_enum::enum_values<KCL::ElementType>();
 
     // Color scheme
-    sceneColor = vtkColors->GetColor3d("white");
+    sceneColor = vtkColors->GetColor3d("aliceblue");
+    sceneColor2 = vtkColors->GetColor3d("white");
     edgeColor = vtkColors->GetColor3d("gainsboro");
     for (auto type : types)
         elementColors[type] = vtkColors->GetColor3d("black");
     elementColors[KCL::BI] = vtkColors->GetColor3d("gold");
     elementColors[KCL::DB] = vtkColors->GetColor3d("gold");
     elementColors[KCL::BK] = vtkColors->GetColor3d("yellow");
+    elementColors[KCL::ST] = vtkColors->GetColor3d("moccasin");
+    elementColors[KCL::BP] = vtkColors->GetColor3d("khaki");
     elementColors[KCL::PN] = vtkColors->GetColor3d("paleturquoise");
     elementColors[KCL::OP] = vtkColors->GetColor3d("turquoise");
+    elementColors[KCL::P4] = vtkColors->GetColor3d("aquamarine");
 
     // Elements
     for (auto type : types)
@@ -96,6 +121,8 @@ void ModelView::initialize()
     // Set up the scence
     mRenderer = vtkRenderer::New();
     mRenderer->SetBackground(mOptions.sceneColor.GetData());
+    mRenderer->SetBackground2(mOptions.sceneColor2.GetData());
+    mRenderer->GradientBackgroundOn();
 
     // Create the window
     mRenderWindow = vtkGenericOpenGLRenderWindow::New();
@@ -180,8 +207,8 @@ void ModelView::drawModel()
             std::vector<KCL::AbstractElement const*> elements = surface.elements(type);
 
             // Render the elements
-            bool isBeam = type == KCL::BI || type == KCL::BK || type == KCL::DB;
-            bool isPanel = type == KCL::PN || type == KCL::OP;
+            bool isBeam = type == KCL::BI || type == KCL::BK || type == KCL::DB || type == KCL::ST || type == KCL::BP;
+            bool isPanel = type == KCL::PN || type == KCL::OP || type == KCL::P4;
             bool isMass = type == KCL::M3 || type == KCL::SM;
             if (isBeam)
             {
@@ -387,21 +414,26 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
         source->SetPoint1(x + w, y - w, z);
         source->SetPoint2(x - w, y + w, z);
 
-        // Create the mapper for the texture
-        vtkNew<vtkTextureMapToPlane> mapTexture;
-        mapTexture->SetInputConnection(source->GetOutputPort());
-
         // Map the resulting polygons
-        vtkNew<vtkPolyDataMapper> mapPolygons;
-        mapPolygons->SetInputConnection(mapTexture->GetOutputPort());
+        vtkNew<vtkPolyDataMapper> polyMap;
+        polyMap->SetInputConnection(source->GetOutputPort());
 
         // Create the actor
         vtkNew<vtkActor> actor;
-        actor->SetMapper(mapPolygons);
+        actor->SetMapper(polyMap);
         actor->SetTexture(texture);
 
         // Add the actor to the scene
         mRenderer->AddActor(actor);
+
+        // Create the plane follower event
+        vtkNew<PlaneFollowerCallback> callBack;
+        callBack->source = source;
+        callBack->camera = mRenderer->GetActiveCamera();
+
+        // Attach the follower event to the interactor
+        auto renderWindowInteractor = mRenderWindow->GetInteractor();
+        renderWindowInteractor->AddObserver(vtkCommand::RenderEvent, callBack);
     }
 }
 

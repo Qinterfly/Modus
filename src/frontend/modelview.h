@@ -38,6 +38,7 @@ struct ModelViewOptions
 
     // Color scheme
     vtkColor3d sceneColor;
+    vtkColor3d sceneColor2;
     vtkColor3d edgeColor;
     QMap<KCL::ElementType, vtkColor3d> elementColors;
 
