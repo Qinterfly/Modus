@@ -41,7 +41,7 @@ if (WIN32)
     set(scriptDir ${PROJECT_SOURCE_DIR}/cmake)
     set(installDir ${ROOT_INSTALL_DIR}/${systemName}-${configName})
     set(targetFiles ${CMAKE_CURRENT_BINARY_DIR}/*)
-    set(kclFiles ${kclDir}/*)
+    set(kclFiles ${KCL_DIR}/*)
     add_custom_command(TARGET application POST_BUILD
         COMMAND ${TOOL_WINDEPLOYQT} $<TARGET_FILE:application>
         COMMAND ${CMAKE_COMMAND} -E make_directory ${installDir}

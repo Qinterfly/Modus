@@ -33,7 +33,7 @@ if (WIN32)
         find_program(TOOL_WINDEPLOYQT NAMES windeployqt)
     endif()
    set(scriptDir ${PROJECT_SOURCE_DIR}/cmake)
-   set(kclFiles ${kclDir}/*)
+   set(kclFiles ${KCL_DIR}/*)
    add_custom_command(TARGET testfrontend POST_BUILD
        COMMAND ${TOOL_WINDEPLOYQT} $<TARGET_FILE:testfrontend>
        COMMAND ${CMAKE_COMMAND} "-DSRCS=${kclFiles}" "-DDEST=${CMAKE_CURRENT_BINARY_DIR}" -P "${scriptDir}/copy.cmake"
