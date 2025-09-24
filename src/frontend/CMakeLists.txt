@@ -8,8 +8,6 @@ find_package(VTK REQUIRED COMPONENTS
   CommonColor
   CommonCore
   CommonDataModel
-  FiltersSources
-  FiltersTexture
   InteractionStyle
   InteractionWidgets
   RenderingAnnotation

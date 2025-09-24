@@ -72,6 +72,7 @@ private:
     void drawModel();
     void drawBeams(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
     void drawPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
+    void drawAeroPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
     void drawMasses(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements);
     double getMaximumDimension();
 

@@ -29,6 +29,8 @@ using namespace Eigen;
 
 using namespace Constants::Colors;
 
+Transformation computeTransformation(KCL::Vec3 const& coords, double sweepAngle, double dihedralAngle);
+Transformation reflectTransformation(Transformation const& transform);
 vtkSmartPointer<vtkTexture> readTexture(QString const& pathFile);
 
 class PlaneFollowerCallback : public vtkCallbackCommand
@@ -181,15 +183,12 @@ void ModelView::drawModel()
         bool isSymmetry = pData->iSymmetry == 0;
 
         // Build up the transformation
-        auto transform = Transformation::Identity();
-        transform.translate(Vector3d(pData->coords[0], pData->coords[1], pData->coords[2]));
-        transform.rotate(AngleAxisd(qDegreesToRadians(pData->sweepAngle), Vector3d::UnitY()));
-        transform.rotate(AngleAxisd(qDegreesToRadians(pData->dihedralAngle), -Vector3d::UnitX()));
+        auto transform = computeTransformation(pData->coords, pData->sweepAngle, pData->dihedralAngle);
+        auto aeroTransform = computeTransformation(pData->coords, 0.0, pData->dihedralAngle);
 
         // Reflect the transformation about the XOY plane
-        Matrix4d reflectMatrix = Matrix4d::Identity();
-        reflectMatrix(2, 2) = -1.0;
-        auto reflectTransform = Transformation(reflectMatrix * transform.matrix());
+        auto reflectTransform = reflectTransformation(transform);
+        auto reflectAeroTransform = reflectTransformation(aeroTransform);
 
         // Loop through all the element types
         std::vector<KCL::ElementType> const types = surface.types();
@@ -209,6 +208,7 @@ void ModelView::drawModel()
             // Render the elements
             bool isBeam = type == KCL::BI || type == KCL::BK || type == KCL::DB || type == KCL::ST || type == KCL::BP;
             bool isPanel = type == KCL::PN || type == KCL::OP || type == KCL::P4;
+            bool isAeroPanel = type == KCL::AE;
             bool isMass = type == KCL::M3 || type == KCL::SM;
             if (isBeam)
             {
@@ -221,6 +221,12 @@ void ModelView::drawModel()
                 drawPanels(transform, elements, elementColor);
                 if (isSymmetry)
                     drawPanels(reflectTransform, elements, elementColor);
+            }
+            else if (isAeroPanel)
+            {
+                drawAeroPanels(aeroTransform, elements, elementColor);
+                if (isSymmetry)
+                    drawAeroPanels(reflectAeroTransform, elements, elementColor);
             }
             else if (isMass)
             {
@@ -351,6 +357,29 @@ void ModelView::drawPanels(Transformation const& transform, std::vector<KCL::Abs
     mRenderer->AddActor(actor);
 }
 
+//! Render aerodynamic panel elements
+void ModelView::drawAeroPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
+{
+    // Check if there are any elements to render
+    if (elements.empty())
+        return;
+
+    // Allocate the points and their connectivity list
+    vtkNew<vtkPoints> points;
+    vtkNew<vtkCellArray> polygons;
+
+    // Process all the elements
+    int iPoint = 0;
+    int numElements = elements.size();
+    for (int i = 0; i != numElements; ++i)
+    {
+        KCL::AbstractElement const* pElement = elements[i];
+
+        // Slice element coordinates
+        KCL::VecN elementData = pElement->get();
+    }
+}
+
 //! Represent point masses
 void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements)
 {
@@ -427,13 +456,13 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
         mRenderer->AddActor(actor);
 
         // Create the plane follower event
-        vtkNew<PlaneFollowerCallback> callBack;
-        callBack->source = source;
-        callBack->camera = mRenderer->GetActiveCamera();
+        vtkNew<PlaneFollowerCallback> callback;
+        callback->source = source;
+        callback->camera = mRenderer->GetActiveCamera();
 
         // Attach the follower event to the interactor
         auto renderWindowInteractor = mRenderWindow->GetInteractor();
-        renderWindowInteractor->AddObserver(vtkCommand::RenderEvent, callBack);
+        renderWindowInteractor->AddObserver(vtkCommand::RenderEvent, callback);
     }
 }
 
@@ -474,6 +503,24 @@ double ModelView::getMaximumDimension()
     result = std::max(result, std::abs(dimensions[3] - dimensions[2]));
     result = std::max(result, std::abs(dimensions[5] - dimensions[4]));
     return result;
+}
+
+//! Helper function to build up the transformation for the elastic surface using its local coordinate
+Transformation computeTransformation(KCL::Vec3 const& coords, double sweepAngle, double dihedralAngle)
+{
+    Transformation result = Transformation::Identity();
+    result.translate(Vector3d(coords[0], coords[1], coords[2]));
+    result.rotate(AngleAxisd(qDegreesToRadians(sweepAngle), Vector3d::UnitY()));
+    result.rotate(AngleAxisd(qDegreesToRadians(dihedralAngle), -Vector3d::UnitX()));
+    return result;
+}
+
+//! Helper function to reflect the current transformation about the XOY plane
+Transformation reflectTransformation(Transformation const& transform)
+{
+    Matrix4d matrix = Matrix4d::Identity();
+    matrix(2, 2) = -1.0;
+    return Transformation(matrix * transform.matrix());
 }
 
 //! Helper function to read texture from a file
