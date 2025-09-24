@@ -50,6 +50,7 @@ public:
         source->Update();
     }
 
+    Vector3d origin;
     vtkSmartPointer<vtkPlaneSource> source;
     vtkCamera* camera;
 };
@@ -69,9 +70,10 @@ ModelViewOptions::ModelViewOptions()
     elementColors[KCL::BK] = vtkColors->GetColor3d("yellow");
     elementColors[KCL::ST] = vtkColors->GetColor3d("moccasin");
     elementColors[KCL::BP] = vtkColors->GetColor3d("khaki");
-    elementColors[KCL::PN] = vtkColors->GetColor3d("paleturquoise");
-    elementColors[KCL::OP] = vtkColors->GetColor3d("turquoise");
-    elementColors[KCL::P4] = vtkColors->GetColor3d("aquamarine");
+    elementColors[KCL::PN] = vtkColors->GetColor3d("darkturquoise");
+    elementColors[KCL::OP] = vtkColors->GetColor3d("lightseagreen");
+    elementColors[KCL::P4] = vtkColors->GetColor3d("mediumturquoise");
+    elementColors[KCL::AE] = vtkColors->GetColor3d("purple");
 
     // Elements
     for (auto type : types)
@@ -80,7 +82,7 @@ ModelViewOptions::ModelViewOptions()
     // Dimensions
     edgeOpacity = 0.5;
     beamLineWidth = 2.0f;
-    massSize = 0.01;
+    massSize = 0.005;
 }
 
 ModelView::ModelView(KCL::Model const& model, ModelViewOptions const& options)
@@ -208,7 +210,7 @@ void ModelView::drawModel()
             // Render the elements
             bool isBeam = type == KCL::BI || type == KCL::BK || type == KCL::DB || type == KCL::ST || type == KCL::BP;
             bool isPanel = type == KCL::PN || type == KCL::OP || type == KCL::P4;
-            bool isAeroPanel = type == KCL::AE;
+            bool isAeroPanel = type == KCL::AE || type == KCL::DA;
             bool isMass = type == KCL::M3 || type == KCL::SM;
             if (isBeam)
             {
@@ -336,7 +338,7 @@ void ModelView::drawPanels(Transformation const& transform, std::vector<KCL::Abs
         polygons->InsertNextCell(polygon);
     }
 
-    // Create the polygons
+    // Create the polygon objects
     vtkNew<vtkPolyData> data;
     data->SetPoints(points);
     data->SetPolys(polygons);
@@ -360,29 +362,102 @@ void ModelView::drawPanels(Transformation const& transform, std::vector<KCL::Abs
 //! Render aerodynamic panel elements
 void ModelView::drawAeroPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
 {
+    double const kOpacity = 0.5;
+    double const kPolyOffset = 0.01;
+    double const kPolyUnits = 10;
+
     // Check if there are any elements to render
     if (elements.empty())
         return;
 
-    // Allocate the points and their connectivity list
-    vtkNew<vtkPoints> points;
-    vtkNew<vtkCellArray> polygons;
-
     // Process all the elements
-    int iPoint = 0;
     int numElements = elements.size();
     for (int i = 0; i != numElements; ++i)
     {
         KCL::AbstractElement const* pElement = elements[i];
 
-        // Slice element coordinates
-        KCL::VecN elementData = pElement->get();
+        // Slice element parameters
+        if (pElement->subType() == KCL::ElementSubType::AE1)
+            continue;
+        bool isVertical = pElement->type() == KCL::ElementType::DA;
+        KCL::VecN data = pElement->get();
+        KCL::Vec2 coords0 = {data[0], data[1]};
+        KCL::Vec2 coords1 = {data[2], data[3]};
+        KCL::Vec2 coords2 = {data[4], data[5]};
+        int numStrips = data[6];
+        int numPanels = data[7];
+
+        // Combine the vertex coordinates
+        Vector2d A = {coords0[0], coords0[1]}; // Bottom left
+        Vector2d B = {coords2[0], coords0[1]}; // Bottom right
+        Vector2d C = {coords2[1], coords1[1]}; // Top right
+        Vector2d D = {coords1[0], coords1[1]}; // Top left
+
+        // Allocate the points and their connectivity list
+        vtkNew<vtkPoints> points;
+        vtkNew<vtkCellArray> polygons;
+
+        // Create the grid of points
+        for (int s = 0; s <= numPanels; ++s)
+        {
+            double u = (double) s / numPanels;
+            for (int r = 0; r <= numStrips; ++r)
+            {
+                double v = (double) r / numStrips;
+                double x = (1.0 - v) * ((1.0 - u) * A[0] + u * B[0]) + v * ((1.0 - u) * D[0] + u * C[0]);
+                double z = (1.0 - v) * ((1.0 - u) * A[1] + u * B[1]) + v * ((1.0 - u) * D[1] + u * C[1]);
+                auto position = isVertical ? Vector3d(x, z, 0) : Vector3d(x, 0, z);
+                position = transform * position;
+                points->InsertNextPoint(position[0], position[1], position[2]);
+            }
+        }
+
+        // Set the polygon data
+        for (int s = 0; s != numPanels; ++s)
+        {
+            for (int r = 0; r != numStrips; ++r)
+            {
+                vtkNew<vtkPolygon> polygon;
+                polygon->GetPointIds()->InsertNextId(s * (numStrips + 1) + r);
+                polygon->GetPointIds()->InsertNextId(s * (numStrips + 1) + r + 1);
+                polygon->GetPointIds()->InsertNextId((s + 1) * (numStrips + 1) + r + 1);
+                polygon->GetPointIds()->InsertNextId((s + 1) * (numStrips + 1) + r);
+                polygons->InsertNextCell(polygon);
+            }
+        }
+
+        // Create the polygon objects
+        vtkNew<vtkPolyData> polyData;
+        polyData->SetPoints(points);
+        polyData->SetPolys(polygons);
+
+        // Build the mapper
+        vtkNew<vtkPolyDataMapper> mapper;
+        mapper->SetInputData(polyData);
+        mapper->SetRelativeCoincidentTopologyPolygonOffsetParameters(kPolyOffset, kPolyUnits);
+        mapper->SetResolveCoincidentTopologyToPolygonOffset();
+
+        // Create the actor and add to the scene
+        vtkNew<vtkActor> actor;
+        actor->SetMapper(mapper);
+        actor->GetProperty()->SetColor(color.GetData());
+        actor->GetProperty()->SetOpacity(kOpacity);
+        actor->GetProperty()->SetEdgeColor(mOptions.edgeColor.GetData());
+        actor->GetProperty()->SetEdgeOpacity(mOptions.edgeOpacity);
+        actor->GetProperty()->EdgeVisibilityOn();
+
+        // Add the actor to the scene
+        mRenderer->AddActor(actor);
     }
 }
 
 //! Represent point masses
 void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements)
 {
+    double const kPolyOffset = -1;
+    double const kPolyUnits = -66000;
+    vtkColor3d kRodColor = vtkColors->GetColor3d("red");
+
     // Check if there are any elements to render
     if (elements.empty())
         return;
@@ -398,7 +473,7 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
         KCL::AbstractElement const* pBaseElement = elements[i];
 
         // Slice element coordinates
-        Vector3d position;
+        Vector3d startPosition;
         double lengthRod = 0.0;
         double angleRodZ = 0.0;
         switch (pBaseElement->type())
@@ -406,7 +481,7 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
         case KCL::SM:
         {
             auto pElement = (KCL::PointMass1 const*) pBaseElement;
-            position = {pElement->coords[0], 0.0, pElement->coords[1]};
+            startPosition = {pElement->coords[0], 0.0, pElement->coords[1]};
             lengthRod = pElement->lengthRod;
             angleRodZ = pElement->angleRodZ;
             break;
@@ -414,7 +489,7 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
         case KCL::M3:
         {
             auto pElement = (KCL::PointMass3 const*) pBaseElement;
-            position = {pElement->coords[0], pElement->coords[1], pElement->coords[2]};
+            startPosition = {pElement->coords[0], pElement->coords[1], pElement->coords[2]};
             lengthRod = pElement->lengthRod;
             angleRodZ = pElement->angleRodZ;
             break;
@@ -422,34 +497,63 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
         default:
             continue;
         }
+        startPosition = transform * startPosition;
+        auto endPosition = startPosition;
 
-        // Build up the additional transformation matrix
-        auto addTransform = Transformation::Identity();
+        // Build up the additional line which connects the mass to the elastic surface
         if (lengthRod > 0.0)
         {
+            // Transform the coordiantes to the global coordinate system
+            auto addTransform = Transformation::Identity();
             addTransform.translate(Vector3d(0, 0, lengthRod));
             addTransform.rotate(AngleAxisd(qDegreesToRadians(angleRodZ), Vector3d::UnitY()));
-        }
+            endPosition = addTransform * endPosition;
 
-        // Transform the coordiantes to the global coordinate system
-        position = transform * addTransform * position;
+            // Create the points and connectivity list
+            vtkNew<vtkPoints> points;
+            points->InsertNextPoint(startPosition[0], startPosition[1], startPosition[2]);
+            points->InsertNextPoint(endPosition[0], endPosition[1], endPosition[2]);
+            vtkNew<vtkCellArray> indices;
+            indices->InsertNextCell(2);
+            indices->InsertCellPoint(0);
+            indices->InsertCellPoint(1);
+
+            // Set the polygonal data
+            vtkNew<vtkPolyData> data;
+            data->SetPoints(points);
+            data->SetLines(indices);
+
+            // Build the mapper
+            vtkNew<vtkPolyDataMapper> mapper;
+            mapper->SetInputData(data);
+
+            // Create the actor and add to the scene
+            vtkNew<vtkActor> actor;
+            actor->SetMapper(mapper);
+            actor->GetProperty()->SetColor(kRodColor.GetData());
+
+            // Add the actor to the scene
+            mRenderer->AddActor(actor);
+        }
 
         // Create and position the source
         vtkNew<vtkPlaneSource> source;
-        double x = position[0];
-        double y = position[1];
-        double z = position[2];
+        double x = endPosition[0];
+        double y = endPosition[1];
+        double z = endPosition[2];
         source->SetOrigin(x - w, y - w, z);
         source->SetPoint1(x + w, y - w, z);
         source->SetPoint2(x - w, y + w, z);
 
         // Map the resulting polygons
-        vtkNew<vtkPolyDataMapper> polyMap;
-        polyMap->SetInputConnection(source->GetOutputPort());
+        vtkNew<vtkPolyDataMapper> mapper;
+        mapper->SetInputConnection(source->GetOutputPort());
+        mapper->SetRelativeCoincidentTopologyPolygonOffsetParameters(kPolyOffset, kPolyUnits);
+        mapper->SetResolveCoincidentTopologyToPolygonOffset();
 
         // Create the actor
         vtkNew<vtkActor> actor;
-        actor->SetMapper(polyMap);
+        actor->SetMapper(mapper);
         actor->SetTexture(texture);
 
         // Add the actor to the scene
@@ -457,12 +561,13 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
 
         // Create the plane follower event
         vtkNew<PlaneFollowerCallback> callback;
+        callback->origin = endPosition;
         callback->source = source;
         callback->camera = mRenderer->GetActiveCamera();
 
         // Attach the follower event to the interactor
         auto renderWindowInteractor = mRenderWindow->GetInteractor();
-        renderWindowInteractor->AddObserver(vtkCommand::RenderEvent, callback);
+        renderWindowInteractor->AddObserver(vtkCommand::InteractionEvent, callback);
     }
 }
 
