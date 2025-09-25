@@ -5,7 +5,16 @@
 #include <QToolBar>
 #include <QWidget>
 
+#include <Eigen/Geometry>
+#include <vtkPoints.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
+#include <vtkRenderer.h>
+
 #include "uiutility.h"
+
+using namespace Eigen;
 
 namespace Frontend::Utility
 {
@@ -117,5 +126,62 @@ QList<KCL::ElementType> massTypes()
 QList<KCL::ElementType> springTypes()
 {
     return {KCL::PR};
+}
+
+//! Construct a helix of the given radius between two points
+vtkSmartPointer<vtkActor> createHelix(Eigen::Vector3d const& startPosition, Eigen::Vector3d const& endPosition, double radius, int numTurns,
+                                      int resolution)
+{
+    int kNumCellPoints = 2;
+
+    // Compute the direction vector
+    Vector3d direction = endPosition - startPosition;
+    double length = direction.norm();
+    direction.normalize();
+
+    // Compute the rotation axis as well as angle
+    auto rotationAxis = Vector3d::UnitZ().cross(direction);
+    rotationAxis.normalize();
+    double rotationAngle = qAcos(Vector3d::UnitZ().dot(direction));
+
+    // Build up the transformation matrix
+    auto transform = Eigen::Transform<double, 3, Eigen::Affine>::Identity();
+    transform.rotate(AngleAxisd(rotationAngle, rotationAxis));
+
+    // Construct the list of points
+    vtkNew<vtkPoints> points;
+    int numPoints = resolution * numTurns;
+    double h = 2.0 * M_PI * numTurns / (numPoints - 1);
+    double t = 0.0;
+    for (int k = 0; k != numPoints; ++k)
+    {
+        Vector3d positon = startPosition + transform * Vector3d(radius * cos(t), radius * sin(t), length * k / numPoints);
+        points->InsertNextPoint(positon[0], positon[1], positon[2]);
+        t += h;
+    }
+
+    // Set the connectivity list
+    vtkNew<vtkCellArray> indices;
+    for (int k = 0; k != numPoints - 1; ++k)
+    {
+        indices->InsertNextCell(kNumCellPoints);
+        indices->InsertCellPoint(k);
+        indices->InsertCellPoint(k + 1);
+    }
+
+    // Create the polygons
+    vtkNew<vtkPolyData> data;
+    data->SetPoints(points);
+    data->SetLines(indices);
+
+    // Map the geometrical data
+    vtkNew<vtkPolyDataMapper> mapper;
+    mapper->SetInputData(data);
+
+    // Create the actor
+    vtkNew<vtkActor> actor;
+    actor->SetMapper(mapper);
+
+    return actor;
 }
 }

@@ -4,12 +4,16 @@
 
 #include <QtGlobal>
 
+#include <Eigen/Core>
 #include <kcl/element.h>
+#include <vtkNew.h>
 
 QT_FORWARD_DECLARE_CLASS(QWidget);
 QT_FORWARD_DECLARE_CLASS(QToolBar);
 QT_FORWARD_DECLARE_CLASS(QColor);
 QT_FORWARD_DECLARE_CLASS(QPalette);
+
+class vtkActor;
 
 namespace Frontend::Utility
 {
@@ -27,12 +31,14 @@ QString errorColorName(double value, double acceptThreshold, double criticalThre
 // File
 void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix);
 
-// KCL
+// Rendering
 QList<KCL::ElementType> beamTypes();
 QList<KCL::ElementType> panelTypes();
 QList<KCL::ElementType> aeroPanelsTypes();
 QList<KCL::ElementType> massTypes();
 QList<KCL::ElementType> springTypes();
+vtkSmartPointer<vtkActor> createHelix(Eigen::Vector3d const& startPosition, Eigen::Vector3d const& endPosition, double radius, int numTurns,
+                                      int resolution);
 }
 
 #endif // UIUTILITY_H

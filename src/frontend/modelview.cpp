@@ -1,3 +1,4 @@
+#include <QFile>
 #include <QHBoxLayout>
 
 #include <vtkAxesActor.h>
@@ -15,7 +16,6 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkTexture.h>
-#include <QFile>
 #include <QVTKOpenGLNativeWidget.h>
 
 #include <kcl/model.h>
@@ -30,7 +30,7 @@ using namespace Eigen;
 
 using namespace Constants::Colors;
 
-Transformation computeTransformation(KCL::Vec3 const& coords, double sweepAngle, double dihedralAngle);
+Transformation computeTransformation(KCL::Vec3 const& coords, double dihedralAngle, double sweepAngle, double zAngle);
 Transformation reflectTransformation(Transformation const& transform);
 vtkSmartPointer<vtkTexture> readTexture(QString const& pathFile);
 
@@ -102,6 +102,8 @@ ModelViewOptions::ModelViewOptions()
     elementColors[KCL::OP] = vtkColors->GetColor3d("lightseagreen");
     elementColors[KCL::P4] = vtkColors->GetColor3d("mediumturquoise");
     elementColors[KCL::AE] = vtkColors->GetColor3d("purple");
+    elementColors[KCL::DA] = vtkColors->GetColor3d("purple");
+    elementColors[KCL::PR] = vtkColors->GetColor3d("red");
 
     // Elements
     for (auto type : types)
@@ -110,7 +112,9 @@ ModelViewOptions::ModelViewOptions()
     // Dimensions
     edgeOpacity = 0.5;
     beamLineWidth = 2.0f;
-    massSize = 0.005;
+    springLineWidth = 2.0f;
+    massScale = 0.005;
+    springScale = 0.005;
 }
 
 ModelView::ModelView(KCL::Model const& model, ModelViewOptions const& options)
@@ -201,6 +205,10 @@ void ModelView::drawAxes()
 //! Represent the model entities
 void ModelView::drawModel()
 {
+    // Check if the model is suitable for drawing
+    if (mModel.isEmpty())
+        return;
+
     // Get element types
     auto const beamTypes = Utility::beamTypes();
     auto const panelTypes = Utility::panelTypes();
@@ -221,8 +229,8 @@ void ModelView::drawModel()
         bool isSymmetry = pData->iSymmetry == 0;
 
         // Build up the transformation
-        auto transform = computeTransformation(pData->coords, pData->sweepAngle, pData->dihedralAngle);
-        auto aeroTransform = computeTransformation(pData->coords, 0.0, pData->dihedralAngle);
+        auto transform = computeTransformation(pData->coords, pData->dihedralAngle, pData->sweepAngle, pData->zAngle);
+        auto aeroTransform = computeTransformation(pData->coords, pData->dihedralAngle, 0.0, pData->zAngle);
 
         // Reflect the transformation about the XOY plane
         auto reflectTransform = reflectTransformation(transform);
@@ -271,7 +279,10 @@ void ModelView::drawModel()
     // Process the special surface
     for (auto type : springTypes)
     {
-        // TODO
+        auto elements = mModel.specialSurface.elements(type);
+        auto color = mOptions.elementColors[type];
+        drawSprings(elements, false, color);
+        drawSprings(elements, true, color);
     }
 }
 
@@ -294,6 +305,8 @@ void ModelView::drawBeams(Transformation const& transform, std::vector<KCL::Abst
     for (int i = 0; i != numElements; ++i)
     {
         KCL::AbstractElement const* pElement = elements[i];
+        if (!mOptions.maskElements[pElement->type()])
+            continue;
 
         // Slice element coordinates
         KCL::VecN elementData = pElement->get();
@@ -355,6 +368,8 @@ void ModelView::drawPanels(Transformation const& transform, std::vector<KCL::Abs
     for (int i = 0; i != numElements; ++i)
     {
         KCL::AbstractElement const* pElement = elements[i];
+        if (!mOptions.maskElements[pElement->type()])
+            continue;
 
         // Slice element coordinates
         KCL::VecN elementData = pElement->get();
@@ -410,11 +425,13 @@ void ModelView::drawAeroPanels(Transformation const& transform, std::vector<KCL:
     for (int i = 0; i != numElements; ++i)
     {
         KCL::AbstractElement const* pElement = elements[i];
-
-        // Slice element parameters
+        if (!mOptions.maskElements[pElement->type()])
+            continue;
         if (pElement->subType() == KCL::ElementSubType::AE1)
             continue;
         bool isVertical = pElement->type() == KCL::ElementType::DA;
+
+        // Slice element parameters
         KCL::VecN data = pElement->get();
         KCL::Vec2 coords0 = {data[0], data[1]};
         KCL::Vec2 coords1 = {data[2], data[3]};
@@ -499,7 +516,7 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
 
     // Get the visualization texture
     vtkSmartPointer<vtkTexture> texture = mTextures["mass"];
-    double w = mOptions.massSize * getMaximumDimension();
+    double w = mOptions.massScale * getMaximumDimension();
 
     // Process all the elements
     int numElements = elements.size();
@@ -507,6 +524,8 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
     for (int i = 0; i != numElements; ++i)
     {
         KCL::AbstractElement const* pBaseElement = elements[i];
+        if (!mOptions.maskElements[pBaseElement->type()])
+            continue;
 
         // Slice element coordinates
         Vector3d startPosition;
@@ -597,21 +616,26 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
         // Add the actor to the scene
         mRenderer->AddActor(actor);
     }
+    if (!sources.empty())
+    {
+        // Create the plane follower event
+        vtkNew<PlaneFollowerCallback> callback;
+        callback->scale = 2.0 * w;
+        callback->sources = sources;
+        callback->camera = mRenderer->GetActiveCamera();
 
-    // Create the plane follower event
-    vtkNew<PlaneFollowerCallback> callback;
-    callback->scale = 2.0 * w;
-    callback->sources = sources;
-    callback->camera = mRenderer->GetActiveCamera();
-
-    // Attach the follower event to the interactor
-    auto interactor = mRenderWindow->GetInteractor();
-    interactor->AddObserver(vtkCommand::EndInteractionEvent, callback);
+        // Attach the follower event to the interactor
+        auto interactor = mRenderWindow->GetInteractor();
+        interactor->AddObserver(vtkCommand::EndInteractionEvent, callback);
+    }
 }
 
 //! Represent springs
-void ModelView::drawSprings(std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
+void ModelView::drawSprings(std::vector<KCL::AbstractElement const*> const& elements, bool isReflect, vtkColor3d color)
 {
+    int const kNumTurns = 6;
+    int const kResolution = 30;
+
     // Check if there are any elements to render
     if (elements.empty())
         return;
@@ -621,11 +645,52 @@ void ModelView::drawSprings(std::vector<KCL::AbstractElement const*> const& elem
     for (int i = 0; i != numElements; ++i)
     {
         KCL::AbstractElement const* pBaseElement = elements[i];
+        if (!mOptions.maskElements[pBaseElement->type()])
+            continue;
         if (pBaseElement->type() != KCL::PR)
             continue;
         auto pElement = (KCL::SpringDamper const*) pBaseElement;
 
-        // TODO
+        // Process the first elastic surface
+        auto firstSurface = mModel.surfaces[pElement->iFirstSurface - 1];
+        auto pFirstData = (KCL::GeneralData*) firstSurface.element(KCL::OD);
+        auto firstTransform = computeTransformation(pFirstData->coords, pFirstData->dihedralAngle, pFirstData->sweepAngle, pFirstData->zAngle);
+        if (pFirstData->iSymmetry != 0 && isReflect)
+            continue;
+        if (isReflect)
+            firstTransform = reflectTransformation(firstTransform);
+        Vector3d firstPosition = firstTransform * Vector3d(pElement->coordsFirstRod[0], 0.0, pElement->coordsFirstRod[1]);
+
+        // Process the second elastic surface
+        Vector3d secondPosition = {0.0, 0.0, 0.0};
+        if (pElement->iSecondSurface > 0)
+        {
+            auto secondSurface = mModel.surfaces[pElement->iSecondSurface - 1];
+            auto pSecondData = (KCL::GeneralData*) secondSurface.element(KCL::OD);
+            auto secondTransform = computeTransformation(pSecondData->coords, pSecondData->dihedralAngle, pSecondData->sweepAngle,
+                                                         pSecondData->zAngle);
+            if (pSecondData->iSymmetry != 0 && isReflect)
+                continue;
+            if (isReflect)
+                secondTransform = reflectTransformation(secondTransform);
+            secondPosition = secondTransform * Vector3d(pElement->coordsSecondRod[0], 0.0, pElement->coordsSecondRod[1]);
+        }
+        else
+        {
+            KCL::Vec3 addCoords = {0, 0, pElement->lengthFirstRod};
+            auto addTransform = computeTransformation(addCoords, pElement->anglesFirstRod[0], pElement->anglesFirstRod[1], 0.0);
+            secondPosition = addTransform * firstPosition;
+        }
+
+        // Create the helix between two points
+        double length = (secondPosition - firstPosition).norm();
+        double radius = mOptions.springScale * getMaximumDimension() * length;
+        auto actor = Utility::createHelix(firstPosition, secondPosition, radius, kNumTurns, kResolution);
+        actor->GetProperty()->SetColor(color.GetData());
+        actor->GetProperty()->SetLineWidth(mOptions.springLineWidth);
+
+        // Add the helix to the scene
+        mRenderer->AddActor(actor);
     }
 }
 
@@ -669,12 +734,13 @@ double ModelView::getMaximumDimension()
 }
 
 //! Helper function to build up the transformation for the elastic surface using its local coordinate
-Transformation computeTransformation(KCL::Vec3 const& coords, double sweepAngle, double dihedralAngle)
+Transformation computeTransformation(KCL::Vec3 const& coords, double dihedralAngle, double sweepAngle, double zAngle)
 {
     Transformation result = Transformation::Identity();
     result.translate(Vector3d(coords[0], coords[1], coords[2]));
+    result.rotate(AngleAxisd(-qDegreesToRadians(dihedralAngle), Vector3d::UnitX()));
     result.rotate(AngleAxisd(qDegreesToRadians(sweepAngle), Vector3d::UnitY()));
-    result.rotate(AngleAxisd(qDegreesToRadians(dihedralAngle), -Vector3d::UnitX()));
+    result.rotate(AngleAxisd(qDegreesToRadians(zAngle), Vector3d::UnitZ()));
     return result;
 }
 

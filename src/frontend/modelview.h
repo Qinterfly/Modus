@@ -48,7 +48,9 @@ struct ModelViewOptions
     // Dimensions
     double edgeOpacity;
     float beamLineWidth;
-    double massSize;
+    float springLineWidth;
+    double massScale;
+    double springScale;
 };
 
 class ModelView : public QWidget, public IView
@@ -74,7 +76,7 @@ private:
     void drawPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
     void drawAeroPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
     void drawMasses(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements);
-    void drawSprings(std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
+    void drawSprings(std::vector<KCL::AbstractElement const*> const& elements, bool isReflect, vtkColor3d color);
     double getMaximumDimension();
 
 private:
