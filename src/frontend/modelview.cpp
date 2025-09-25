@@ -43,15 +43,15 @@ public:
 
     void Execute(vtkObject* caller, unsigned long evId, void*) override
     {
+        int numSources = sources.size();
         double normal[3];
         camera->GetViewPlaneNormal(normal);
         vtkMath::Normalize(normal);
-        source->SetNormal(normal);
-        source->Update();
+        for (int i = 0; i != numSources; ++i)
+            sources[i]->SetNormal(normal);
     }
 
-    Vector3d origin;
-    vtkSmartPointer<vtkPlaneSource> source;
+    QList<vtkSmartPointer<vtkPlaneSource>> sources;
     vtkCamera* camera;
 };
 
@@ -82,7 +82,7 @@ ModelViewOptions::ModelViewOptions()
     // Dimensions
     edgeOpacity = 0.5;
     beamLineWidth = 2.0f;
-    massSize = 0.005;
+    massSize = 0.003;
 }
 
 ModelView::ModelView(KCL::Model const& model, ModelViewOptions const& options)
@@ -468,6 +468,7 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
 
     // Process all the elements
     int numElements = elements.size();
+    QList<vtkSmartPointer<vtkPlaneSource>> sources;
     for (int i = 0; i != numElements; ++i)
     {
         KCL::AbstractElement const* pBaseElement = elements[i];
@@ -544,6 +545,8 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
         source->SetOrigin(x - w, y - w, z);
         source->SetPoint1(x + w, y - w, z);
         source->SetPoint2(x - w, y + w, z);
+        source->SetResolution(1, 1);
+        sources.push_back(source);
 
         // Map the resulting polygons
         vtkNew<vtkPolyDataMapper> mapper;
@@ -558,17 +561,16 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
 
         // Add the actor to the scene
         mRenderer->AddActor(actor);
-
-        // Create the plane follower event
-        vtkNew<PlaneFollowerCallback> callback;
-        callback->origin = endPosition;
-        callback->source = source;
-        callback->camera = mRenderer->GetActiveCamera();
-
-        // Attach the follower event to the interactor
-        auto renderWindowInteractor = mRenderWindow->GetInteractor();
-        renderWindowInteractor->AddObserver(vtkCommand::InteractionEvent, callback);
     }
+
+    // Create the plane follower event
+    vtkNew<PlaneFollowerCallback> callback;
+    callback->sources = sources;
+    callback->camera = mRenderer->GetActiveCamera();
+
+    // Attach the follower event to the interactor
+    auto interactor = mRenderWindow->GetInteractor();
+    interactor->AddObserver(vtkCommand::EndInteractionEvent, callback);
 }
 
 //! Set the isometric view
