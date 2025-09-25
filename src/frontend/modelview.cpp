@@ -23,6 +23,7 @@
 
 #include "modelview.h"
 #include "uiconstants.h"
+#include "uiutility.h"
 
 using namespace Frontend;
 using namespace Eigen;
@@ -200,6 +201,14 @@ void ModelView::drawAxes()
 //! Represent the model entities
 void ModelView::drawModel()
 {
+    // Get element types
+    auto const beamTypes = Utility::beamTypes();
+    auto const panelTypes = Utility::panelTypes();
+    auto const aeroPanelTypes = Utility::aeroPanelsTypes();
+    auto const massTypes = Utility::massTypes();
+    auto const springTypes = Utility::springTypes();
+
+    // Loop through all the elastic surfaces
     int numSurfaces = mModel.surfaces.size();
     for (int iSurface = 0; iSurface != numSurfaces; ++iSurface)
     {
@@ -219,51 +228,50 @@ void ModelView::drawModel()
         auto reflectTransform = reflectTransformation(transform);
         auto reflectAeroTransform = reflectTransformation(aeroTransform);
 
-        // Loop through all the element types
-        std::vector<KCL::ElementType> const types = surface.types();
-        int numTypes = types.size();
-        for (int iType = 0; iType != numTypes; ++iType)
+        // Draw the aero panels
+        for (auto type : aeroPanelTypes)
         {
-            KCL::ElementType type = types[iType];
-
-            // Check if the element is enabled for rendering
-            if (!mOptions.maskElements[type])
-                continue;
-            vtkColor3d elementColor = mOptions.elementColors[type];
-
-            // Obtain the list of elements of the same type
-            std::vector<KCL::AbstractElement const*> elements = surface.elements(type);
-
-            // Render the elements
-            bool isBeam = type == KCL::BI || type == KCL::BK || type == KCL::DB || type == KCL::ST || type == KCL::BP;
-            bool isPanel = type == KCL::PN || type == KCL::OP || type == KCL::P4;
-            bool isAeroPanel = type == KCL::AE || type == KCL::DA;
-            bool isMass = type == KCL::M3 || type == KCL::SM;
-            if (isBeam)
-            {
-                drawBeams(transform, elements, elementColor);
-                if (isSymmetry)
-                    drawBeams(reflectTransform, elements, elementColor);
-            }
-            else if (isPanel)
-            {
-                drawPanels(transform, elements, elementColor);
-                if (isSymmetry)
-                    drawPanels(reflectTransform, elements, elementColor);
-            }
-            else if (isAeroPanel)
-            {
-                drawAeroPanels(aeroTransform, elements, elementColor);
-                if (isSymmetry)
-                    drawAeroPanels(reflectAeroTransform, elements, elementColor);
-            }
-            else if (isMass)
-            {
-                drawMasses(transform, elements);
-                if (isSymmetry)
-                    drawMasses(reflectTransform, elements);
-            }
+            auto elements = surface.elements(type);
+            auto color = mOptions.elementColors[type];
+            drawAeroPanels(aeroTransform, elements, color);
+            if (isSymmetry)
+                drawAeroPanels(reflectAeroTransform, elements, color);
         }
+
+        // Draw the panels
+        for (auto type : panelTypes)
+        {
+            auto elements = surface.elements(type);
+            auto color = mOptions.elementColors[type];
+            drawPanels(transform, elements, color);
+            if (isSymmetry)
+                drawPanels(reflectTransform, elements, color);
+        }
+
+        // Draw the beams
+        for (auto type : beamTypes)
+        {
+            auto elements = surface.elements(type);
+            auto color = mOptions.elementColors[type];
+            drawBeams(transform, elements, color);
+            if (isSymmetry)
+                drawBeams(reflectTransform, elements, color);
+        }
+
+        // Draw the masses
+        for (auto type : massTypes)
+        {
+            auto elements = surface.elements(type);
+            drawMasses(transform, elements);
+            if (isSymmetry)
+                drawMasses(reflectTransform, elements);
+        }
+    }
+
+    // Process the special surface
+    for (auto type : springTypes)
+    {
+        // TODO
     }
 }
 
@@ -599,6 +607,26 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
     // Attach the follower event to the interactor
     auto interactor = mRenderWindow->GetInteractor();
     interactor->AddObserver(vtkCommand::EndInteractionEvent, callback);
+}
+
+//! Represent springs
+void ModelView::drawSprings(std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
+{
+    // Check if there are any elements to render
+    if (elements.empty())
+        return;
+
+    // Process all the elements
+    int numElements = elements.size();
+    for (int i = 0; i != numElements; ++i)
+    {
+        KCL::AbstractElement const* pBaseElement = elements[i];
+        if (pBaseElement->type() != KCL::PR)
+            continue;
+        auto pElement = (KCL::SpringDamper const*) pBaseElement;
+
+        // TODO
+    }
 }
 
 //! Set the isometric view

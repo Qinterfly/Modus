@@ -89,4 +89,33 @@ void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix)
         pathFile.replace(currentSuffix, expectedSuffix);
 }
 
+//! Retrieve the KCL types which are associated with beam elements
+QList<KCL::ElementType> beamTypes()
+{
+    return {KCL::BI, KCL::BK, KCL::DB, KCL::ST, KCL::BP};
+}
+
+//! Retrieve the KCL types which are associated with panel elements
+QList<KCL::ElementType> panelTypes()
+{
+    return {KCL::PN, KCL::OP, KCL::P4};
+}
+
+//! Retrieve the KCL types which are associated with aerodynamic panel elements
+QList<KCL::ElementType> aeroPanelsTypes()
+{
+    return {KCL::AE, KCL::DA};
+}
+
+//! Retrieve the KCL types which are associated with mass elements
+QList<KCL::ElementType> massTypes()
+{
+    return {KCL::M3, KCL::SM};
+}
+
+//! Retrieve the KCL types which are associated with spring elements
+QList<KCL::ElementType> springTypes()
+{
+    return {KCL::PR};
+}
 }
