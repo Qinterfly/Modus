@@ -33,6 +33,7 @@ Transformation computeTransformation(KCL::Vec3 const& coords, double sweepAngle,
 Transformation reflectTransformation(Transformation const& transform);
 vtkSmartPointer<vtkTexture> readTexture(QString const& pathFile);
 
+//! Helper class to update plane textures, so that they point to the camera
 class PlaneFollowerCallback : public vtkCallbackCommand
 {
 public:
@@ -43,14 +44,40 @@ public:
 
     void Execute(vtkObject* caller, unsigned long evId, void*) override
     {
-        int numSources = sources.size();
+        // Retrieve the view vectors
         double normal[3];
+        double up[3];
+        double right[3];
         camera->GetViewPlaneNormal(normal);
+        camera->GetViewUp(up);
         vtkMath::Normalize(normal);
+        vtkMath::Normalize(up);
+        vtkMath::Cross(normal, up, right);
+
+        // Process all the sources
+        double origin[3];
+        double point[3];
+        int numSources = sources.size();
         for (int i = 0; i != numSources; ++i)
-            sources[i]->SetNormal(normal);
+        {
+            auto source = sources[i];
+            source->GetOrigin(origin);
+
+            // Set the point along width
+            vtkMath::Assign(right, point);
+            vtkMath::MultiplyScalar(point, scale);
+            vtkMath::Add(origin, point, point);
+            source->SetPoint1(point);
+
+            // Set the point along height
+            vtkMath::Assign(up, point);
+            vtkMath::MultiplyScalar(point, scale);
+            vtkMath::Add(origin, point, point);
+            source->SetPoint2(point);
+        }
     }
 
+    double scale;
     QList<vtkSmartPointer<vtkPlaneSource>> sources;
     vtkCamera* camera;
 };
@@ -82,7 +109,7 @@ ModelViewOptions::ModelViewOptions()
     // Dimensions
     edgeOpacity = 0.5;
     beamLineWidth = 2.0f;
-    massSize = 0.003;
+    massSize = 0.005;
 }
 
 ModelView::ModelView(KCL::Model const& model, ModelViewOptions const& options)
@@ -565,6 +592,7 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
 
     // Create the plane follower event
     vtkNew<PlaneFollowerCallback> callback;
+    callback->scale = 2.0 * w;
     callback->sources = sources;
     callback->camera = mRenderer->GetActiveCamera();
 
