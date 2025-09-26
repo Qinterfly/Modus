@@ -37,8 +37,9 @@ QList<KCL::ElementType> panelTypes();
 QList<KCL::ElementType> aeroPanelsTypes();
 QList<KCL::ElementType> massTypes();
 QList<KCL::ElementType> springTypes();
-vtkSmartPointer<vtkActor> createHelix(Eigen::Vector3d const& startPosition, Eigen::Vector3d const& endPosition, double radius, int numTurns,
-                                      int resolution);
+vtkSmartPointer<vtkActor> createHelixActor(Eigen::Vector3d const& startPosition, Eigen::Vector3d const& endPosition, double radius, int numTurns,
+                                           int resolution);
+vtkSmartPointer<vtkActor> createPointsActor(QList<Eigen::Vector3d> const& positions, double radius);
 }
 
 #endif // UIUTILITY_H

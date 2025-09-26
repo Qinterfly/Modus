@@ -51,6 +51,7 @@ struct ModelViewOptions
     float springLineWidth;
     double massScale;
     double springScale;
+    double pointScale;
 };
 
 class ModelView : public QWidget, public IView

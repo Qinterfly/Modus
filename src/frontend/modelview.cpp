@@ -6,6 +6,7 @@
 #include <vtkCamera.h>
 #include <vtkCellArray.h>
 #include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkGlyph3DMapper.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkPNGReader.h>
 #include <vtkPlaneSource.h>
@@ -15,6 +16,7 @@
 #include <vtkProperty.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
+#include <vtkSphereSource.h>
 #include <vtkTexture.h>
 #include <QVTKOpenGLNativeWidget.h>
 
@@ -29,6 +31,13 @@ using namespace Frontend;
 using namespace Eigen;
 
 using namespace Constants::Colors;
+
+constexpr auto skAllTypes = magic_enum::enum_values<KCL::ElementType>();
+auto const skBeamTypes = Utility::beamTypes();
+auto const skPanelTypes = Utility::panelTypes();
+auto const skAeroPanelTypes = Utility::aeroPanelsTypes();
+auto const skMassTypes = Utility::massTypes();
+auto const skSpringTypes = Utility::springTypes();
 
 Transformation computeTransformation(KCL::Vec3 const& coords, double dihedralAngle, double sweepAngle, double zAngle);
 Transformation reflectTransformation(Transformation const& transform);
@@ -85,28 +94,23 @@ public:
 
 ModelViewOptions::ModelViewOptions()
 {
-    constexpr auto types = magic_enum::enum_values<KCL::ElementType>();
-
     // Color scheme
     sceneColor = vtkColors->GetColor3d("aliceblue");
     sceneColor2 = vtkColors->GetColor3d("white");
     edgeColor = vtkColors->GetColor3d("gainsboro");
-    for (auto type : types)
+    for (auto type : skAllTypes)
         elementColors[type] = vtkColors->GetColor3d("black");
-    elementColors[KCL::BI] = vtkColors->GetColor3d("gold");
-    elementColors[KCL::DB] = vtkColors->GetColor3d("gold");
-    elementColors[KCL::BK] = vtkColors->GetColor3d("yellow");
-    elementColors[KCL::ST] = vtkColors->GetColor3d("moccasin");
-    elementColors[KCL::BP] = vtkColors->GetColor3d("khaki");
-    elementColors[KCL::PN] = vtkColors->GetColor3d("darkturquoise");
-    elementColors[KCL::OP] = vtkColors->GetColor3d("lightseagreen");
-    elementColors[KCL::P4] = vtkColors->GetColor3d("mediumturquoise");
-    elementColors[KCL::AE] = vtkColors->GetColor3d("purple");
-    elementColors[KCL::DA] = vtkColors->GetColor3d("purple");
-    elementColors[KCL::PR] = vtkColors->GetColor3d("red");
+    for (auto type : skBeamTypes)
+        elementColors[type] = vtkColors->GetColor3d("gold");
+    for (auto type : skPanelTypes)
+        elementColors[type] = vtkColors->GetColor3d("lightseagreen");
+    for (auto type : skAeroPanelTypes)
+        elementColors[type] = vtkColors->GetColor3d("purple");
+    for (auto type : skSpringTypes)
+        elementColors[type] = vtkColors->GetColor3d("red");
 
     // Elements
-    for (auto type : types)
+    for (auto type : skAllTypes)
         maskElements[type] = true;
 
     // Dimensions
@@ -115,6 +119,7 @@ ModelViewOptions::ModelViewOptions()
     springLineWidth = 2.0f;
     massScale = 0.005;
     springScale = 0.005;
+    pointScale = 0.003;
 }
 
 ModelView::ModelView(KCL::Model const& model, ModelViewOptions const& options)
@@ -209,13 +214,6 @@ void ModelView::drawModel()
     if (mModel.isEmpty())
         return;
 
-    // Get element types
-    auto const beamTypes = Utility::beamTypes();
-    auto const panelTypes = Utility::panelTypes();
-    auto const aeroPanelTypes = Utility::aeroPanelsTypes();
-    auto const massTypes = Utility::massTypes();
-    auto const springTypes = Utility::springTypes();
-
     // Loop through all the elastic surfaces
     int numSurfaces = mModel.surfaces.size();
     for (int iSurface = 0; iSurface != numSurfaces; ++iSurface)
@@ -237,7 +235,7 @@ void ModelView::drawModel()
         auto reflectAeroTransform = reflectTransformation(aeroTransform);
 
         // Draw the aero panels
-        for (auto type : aeroPanelTypes)
+        for (auto type : skAeroPanelTypes)
         {
             auto elements = surface.elements(type);
             auto color = mOptions.elementColors[type];
@@ -247,7 +245,7 @@ void ModelView::drawModel()
         }
 
         // Draw the panels
-        for (auto type : panelTypes)
+        for (auto type : skPanelTypes)
         {
             auto elements = surface.elements(type);
             auto color = mOptions.elementColors[type];
@@ -257,7 +255,7 @@ void ModelView::drawModel()
         }
 
         // Draw the beams
-        for (auto type : beamTypes)
+        for (auto type : skBeamTypes)
         {
             auto elements = surface.elements(type);
             auto color = mOptions.elementColors[type];
@@ -267,7 +265,7 @@ void ModelView::drawModel()
         }
 
         // Draw the masses
-        for (auto type : massTypes)
+        for (auto type : skMassTypes)
         {
             auto elements = surface.elements(type);
             drawMasses(transform, elements);
@@ -277,7 +275,7 @@ void ModelView::drawModel()
     }
 
     // Process the special surface
-    for (auto type : springTypes)
+    for (auto type : skSpringTypes)
     {
         auto elements = mModel.specialSurface.elements(type);
         auto color = mOptions.elementColors[type];
@@ -683,14 +681,21 @@ void ModelView::drawSprings(std::vector<KCL::AbstractElement const*> const& elem
         }
 
         // Create the helix between two points
-        double length = (secondPosition - firstPosition).norm();
-        double radius = mOptions.springScale * getMaximumDimension() * length;
-        auto actor = Utility::createHelix(firstPosition, secondPosition, radius, kNumTurns, kResolution);
-        actor->GetProperty()->SetColor(color.GetData());
-        actor->GetProperty()->SetLineWidth(mOptions.springLineWidth);
+        double maxDimension = getMaximumDimension();
+        double lengthHelix = (secondPosition - firstPosition).norm();
+        double radiusHelix = mOptions.springScale * maxDimension * lengthHelix;
+        auto actorHelix = Utility::createHelixActor(firstPosition, secondPosition, radiusHelix, kNumTurns, kResolution);
+        actorHelix->GetProperty()->SetColor(color.GetData());
+        actorHelix->GetProperty()->SetLineWidth(mOptions.springLineWidth);
 
-        // Add the helix to the scene
-        mRenderer->AddActor(actor);
+        // Set the point renderer
+        double radiusPoints = mOptions.pointScale * maxDimension;
+        auto actorPoints = Utility::createPointsActor({firstPosition, secondPosition}, radiusPoints);
+        actorPoints->GetProperty()->SetColor(color.GetData());
+
+        // Add the actors to the scene
+        mRenderer->AddActor(actorPoints);
+        mRenderer->AddActor(actorHelix);
     }
 }
 

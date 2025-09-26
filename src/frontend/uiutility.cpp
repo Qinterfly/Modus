@@ -6,11 +6,13 @@
 #include <QWidget>
 
 #include <Eigen/Geometry>
+#include <vtkGlyph3DMapper.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
+#include <vtkSphereSource.h>
 
 #include "uiutility.h"
 
@@ -129,8 +131,8 @@ QList<KCL::ElementType> springTypes()
 }
 
 //! Construct a helix of the given radius between two points
-vtkSmartPointer<vtkActor> createHelix(Eigen::Vector3d const& startPosition, Eigen::Vector3d const& endPosition, double radius, int numTurns,
-                                      int resolution)
+vtkSmartPointer<vtkActor> createHelixActor(Eigen::Vector3d const& startPosition, Eigen::Vector3d const& endPosition, double radius, int numTurns,
+                                           int resolution)
 {
     int kNumCellPoints = 2;
 
@@ -153,16 +155,18 @@ vtkSmartPointer<vtkActor> createHelix(Eigen::Vector3d const& startPosition, Eige
     int numPoints = resolution * numTurns;
     double h = 2.0 * M_PI * numTurns / (numPoints - 1);
     double t = 0.0;
+    points->InsertNextPoint(startPosition[0], startPosition[1], startPosition[2]);
     for (int k = 0; k != numPoints; ++k)
     {
         Vector3d positon = startPosition + transform * Vector3d(radius * cos(t), radius * sin(t), length * k / numPoints);
         points->InsertNextPoint(positon[0], positon[1], positon[2]);
         t += h;
     }
+    points->InsertNextPoint(endPosition[0], endPosition[1], endPosition[2]);
 
     // Set the connectivity list
     vtkNew<vtkCellArray> indices;
-    for (int k = 0; k != numPoints - 1; ++k)
+    for (int k = 0; k <= numPoints; ++k)
     {
         indices->InsertNextCell(kNumCellPoints);
         indices->InsertCellPoint(k);
@@ -177,6 +181,36 @@ vtkSmartPointer<vtkActor> createHelix(Eigen::Vector3d const& startPosition, Eige
     // Map the geometrical data
     vtkNew<vtkPolyDataMapper> mapper;
     mapper->SetInputData(data);
+
+    // Create the actor
+    vtkNew<vtkActor> actor;
+    actor->SetMapper(mapper);
+
+    return actor;
+}
+
+//! Construct an actor for a given set of points
+vtkSmartPointer<vtkActor> createPointsActor(QList<Eigen::Vector3d> const& positions, double radius)
+{
+    // Construct the source to be rendered at each location
+    vtkNew<vtkSphereSource> sphereSource;
+    sphereSource->SetRadius(radius);
+
+    // Add the points
+    vtkNew<vtkPoints> points;
+    for (Vector3d const& position : positions)
+        points->InsertNextPoint(position[0], position[1], position[2]);
+
+    // Construct the polygons
+    vtkNew<vtkPolyData> data;
+    data->SetPoints(points);
+
+    // Build up the mapper
+    vtkNew<vtkGlyph3DMapper> mapper;
+    mapper->SetInputData(data);
+    mapper->SetSourceConnection(sphereSource->GetOutputPort());
+    mapper->ScalarVisibilityOff();
+    mapper->ScalingOff();
 
     // Create the actor
     vtkNew<vtkActor> actor;
