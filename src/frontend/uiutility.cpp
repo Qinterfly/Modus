@@ -135,6 +135,7 @@ vtkSmartPointer<vtkActor> createHelixActor(Eigen::Vector3d const& startPosition,
                                            int resolution)
 {
     int kNumCellPoints = 2;
+    double kRunoutFactor = 0.1;
 
     // Compute the direction vector
     Vector3d direction = endPosition - startPosition;
@@ -150,23 +151,35 @@ vtkSmartPointer<vtkActor> createHelixActor(Eigen::Vector3d const& startPosition,
     auto transform = Eigen::Transform<double, 3, Eigen::Affine>::Identity();
     transform.rotate(AngleAxisd(rotationAngle, rotationAxis));
 
+    // Compute the runout positions
+    double multiplier = 0.5 * kRunoutFactor * length;
+    Vector3d startRunoutPosition = startPosition + multiplier * direction;
+    Vector3d endRunoutPosition = endPosition - multiplier * direction;
+
     // Construct the list of points
     vtkNew<vtkPoints> points;
     int numPoints = resolution * numTurns;
     double h = 2.0 * M_PI * numTurns / (numPoints - 1);
     double t = 0.0;
     points->InsertNextPoint(startPosition[0], startPosition[1], startPosition[2]);
-    for (int k = 0; k != numPoints; ++k)
+    if (length > std::numeric_limits<double>::epsilon())
     {
-        Vector3d positon = startPosition + transform * Vector3d(radius * cos(t), radius * sin(t), length * k / numPoints);
-        points->InsertNextPoint(positon[0], positon[1], positon[2]);
-        t += h;
+        points->InsertNextPoint(startRunoutPosition[0], startRunoutPosition[1], startRunoutPosition[2]);
+        for (int k = 0; k != numPoints; ++k)
+        {
+            double z = (1.0 - kRunoutFactor) * length * k / numPoints;
+            Vector3d positon = startRunoutPosition + transform * Vector3d(radius * cos(t), radius * sin(t), z);
+            points->InsertNextPoint(positon[0], positon[1], positon[2]);
+            t += h;
+        }
+        points->InsertNextPoint(endRunoutPosition[0], endRunoutPosition[1], endRunoutPosition[2]);
     }
     points->InsertNextPoint(endPosition[0], endPosition[1], endPosition[2]);
 
     // Set the connectivity list
     vtkNew<vtkCellArray> indices;
-    for (int k = 0; k <= numPoints; ++k)
+    int numFullPoints = points->GetNumberOfPoints();
+    for (int k = 0; k != numFullPoints - 1; ++k)
     {
         indices->InsertNextCell(kNumCellPoints);
         indices->InsertCellPoint(k);
