@@ -6,7 +6,6 @@
 #include <vtkCamera.h>
 #include <vtkCellArray.h>
 #include <vtkGenericOpenGLRenderWindow.h>
-#include <vtkGlyph3DMapper.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkPNGReader.h>
 #include <vtkPlaneSource.h>
@@ -16,7 +15,6 @@
 #include <vtkProperty.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
-#include <vtkSphereSource.h>
 #include <vtkTexture.h>
 #include <QVTKOpenGLNativeWidget.h>
 
@@ -120,6 +118,11 @@ ModelViewOptions::ModelViewOptions()
     massScale = 0.005;
     springScale = 0.005;
     pointScale = 0.003;
+    beamScale = 0.003;
+
+    // Flags
+    showThickness = true;
+    showWireframe = false;
 }
 
 ModelView::ModelView(KCL::Model const& model, ModelViewOptions const& options)
@@ -259,9 +262,18 @@ void ModelView::drawModel()
         {
             auto elements = surface.elements(type);
             auto color = mOptions.elementColors[type];
-            drawBeams(transform, elements, color);
-            if (isSymmetry)
-                drawBeams(reflectTransform, elements, color);
+            if (mOptions.showThickness)
+            {
+                drawBeams3D(transform, elements, color);
+                if (isSymmetry)
+                    drawBeams3D(reflectTransform, elements, color);
+            }
+            else
+            {
+                drawBeams2D(transform, elements, color);
+                if (isSymmetry)
+                    drawBeams2D(reflectTransform, elements, color);
+            }
         }
 
         // Draw the masses
@@ -284,8 +296,8 @@ void ModelView::drawModel()
     }
 }
 
-//! Render beam elements
-void ModelView::drawBeams(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
+//! Render beam elements as lines
+void ModelView::drawBeams2D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
 {
     int const kNumCellPoints = 2;
 
@@ -347,6 +359,47 @@ void ModelView::drawBeams(Transformation const& transform, std::vector<KCL::Abst
     mRenderer->AddActor(actor);
 }
 
+//! Draw beams as cylinders
+void ModelView::drawBeams3D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
+{
+    // Constants
+    int kResolution = 8;
+
+    // Check if there are any elements to render
+    if (elements.empty())
+        return;
+
+    // Compute the cyliner radius
+    double radius = mOptions.beamScale * getMaximumDimension();
+
+    // Process all the elements
+    int numElements = elements.size();
+    for (int i = 0; i != numElements; ++i)
+    {
+        KCL::AbstractElement const* pElement = elements[i];
+        if (!mOptions.maskElements[pElement->type()])
+            continue;
+
+        // Slice element coordinates
+        KCL::VecN elementData = pElement->get();
+        KCL::Vec2 startCoords = {elementData[0], elementData[1]};
+        KCL::Vec2 endCoords = {elementData[2], elementData[3]};
+
+        // Transform the coordinates to global coordinate system
+        Vector3d startPosition = transform * Vector3d(startCoords[0], 0.0, startCoords[1]);
+        Vector3d endPosition = transform * Vector3d(endCoords[0], 0.0, endCoords[1]);
+
+        // Create the cylinder actor
+        auto actor = Utility::createCylinderActor(startPosition, endPosition, radius, kResolution);
+        actor->GetProperty()->SetColor(color.GetData());
+        if (mOptions.showWireframe)
+            actor->GetProperty()->SetRepresentationToWireframe();
+
+        // Add the actor to the scene
+        mRenderer->AddActor(actor);
+    }
+}
+
 //! Render panel elements
 void ModelView::drawPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
 {
@@ -402,6 +455,8 @@ void ModelView::drawPanels(Transformation const& transform, std::vector<KCL::Abs
     actor->GetProperty()->SetEdgeColor(mOptions.edgeColor.GetData());
     actor->GetProperty()->SetEdgeOpacity(mOptions.edgeOpacity);
     actor->GetProperty()->EdgeVisibilityOn();
+    if (mOptions.showWireframe)
+        actor->GetProperty()->SetRepresentationToWireframe();
 
     // Add the actor to the scene
     mRenderer->AddActor(actor);
@@ -495,6 +550,8 @@ void ModelView::drawAeroPanels(Transformation const& transform, std::vector<KCL:
         actor->GetProperty()->SetEdgeColor(mOptions.edgeColor.GetData());
         actor->GetProperty()->SetEdgeOpacity(mOptions.edgeOpacity);
         actor->GetProperty()->EdgeVisibilityOn();
+        if (mOptions.showWireframe)
+            actor->GetProperty()->SetRepresentationToWireframe();
 
         // Add the actor to the scene
         mRenderer->AddActor(actor);
@@ -638,6 +695,9 @@ void ModelView::drawSprings(std::vector<KCL::AbstractElement const*> const& elem
     if (elements.empty())
         return;
 
+    // Retrieve the scene parameters
+    double maxDimension = getMaximumDimension();
+
     // Process all the elements
     int numElements = elements.size();
     for (int i = 0; i != numElements; ++i)
@@ -681,7 +741,6 @@ void ModelView::drawSprings(std::vector<KCL::AbstractElement const*> const& elem
         }
 
         // Create the helix between two points
-        double maxDimension = getMaximumDimension();
         double lengthHelix = (secondPosition - firstPosition).norm();
         double radiusHelix = mOptions.springScale * maxDimension * lengthHelix;
         auto actorHelix = Utility::createHelixActor(firstPosition, secondPosition, radiusHelix, kNumTurns, kResolution);

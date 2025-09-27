@@ -52,6 +52,11 @@ struct ModelViewOptions
     double massScale;
     double springScale;
     double pointScale;
+    double beamScale;
+
+    // Flags
+    bool showThickness;
+    bool showWireframe;
 };
 
 class ModelView : public QWidget, public IView
@@ -73,7 +78,8 @@ private:
     void createContent();
     void drawAxes();
     void drawModel();
-    void drawBeams(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
+    void drawBeams2D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
+    void drawBeams3D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
     void drawPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
     void drawAeroPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
     void drawMasses(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements);

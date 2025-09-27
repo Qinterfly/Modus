@@ -6,6 +6,7 @@
 #include <QWidget>
 
 #include <Eigen/Geometry>
+#include <vtkCylinderSource.h>
 #include <vtkGlyph3DMapper.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
@@ -13,6 +14,8 @@
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
 #include <vtkSphereSource.h>
+#include <vtkTransform.h>
+#include <vtkTransformPolyDataFilter.h>
 
 #include "uiutility.h"
 
@@ -142,14 +145,15 @@ vtkSmartPointer<vtkActor> createHelixActor(Eigen::Vector3d const& startPosition,
     double length = direction.norm();
     direction.normalize();
 
-    // Compute the rotation axis as well as angle
-    auto rotationAxis = Vector3d::UnitZ().cross(direction);
-    rotationAxis.normalize();
-    double rotationAngle = qAcos(Vector3d::UnitZ().dot(direction));
-
     // Build up the transformation matrix
     auto transform = Eigen::Transform<double, 3, Eigen::Affine>::Identity();
-    transform.rotate(AngleAxisd(rotationAngle, rotationAxis));
+    double rotationAngle = acos(Vector3d::UnitZ().dot(direction));
+    if (std::abs(rotationAngle) > std::numeric_limits<double>::epsilon())
+    {
+        auto rotationAxis = Vector3d::UnitZ().cross(direction);
+        rotationAxis.normalize();
+        transform.rotate(AngleAxisd(rotationAngle, rotationAxis));
+    }
 
     // Compute the runout positions
     double multiplier = 0.5 * kRunoutFactor * length;
@@ -227,6 +231,50 @@ vtkSmartPointer<vtkActor> createPointsActor(QList<Eigen::Vector3d> const& positi
 
     // Create the actor
     vtkNew<vtkActor> actor;
+    actor->SetMapper(mapper);
+
+    return actor;
+}
+
+//! Construct an oriented cylinder which connects two points
+vtkSmartPointer<vtkActor> createCylinderActor(Eigen::Vector3d const& startPosition, Eigen::Vector3d const& endPosition, double radius,
+                                              int resolution)
+{
+    // Constants
+    Vector3d kBaseAxis = Vector3d::UnitY();
+
+    // Compute the direction vector
+    Vector3d direction = endPosition - startPosition;
+    double length = direction.norm();
+    direction.normalize();
+
+    // Create the cylinder
+    vtkNew<vtkCylinderSource> source;
+    source->SetResolution(resolution);
+    source->SetRadius(radius);
+    source->SetHeight(length);
+    source->SetCenter(0, 0.5 * length, 0);
+
+    // Compute the transformation in order to align the cylinder
+    vtkNew<vtkTransform> sourceTransform;
+    double rotationAngle = acos(kBaseAxis.dot(direction));
+    if (std::abs(rotationAngle) > std::numeric_limits<double>::epsilon())
+    {
+        Vector3d rotationAxis = kBaseAxis.cross(direction);
+        rotationAxis.normalize();
+        sourceTransform->Translate(startPosition[0], startPosition[1], startPosition[2]);
+        sourceTransform->RotateWXYZ(qRadiansToDegrees(rotationAngle), rotationAxis.data());
+    }
+
+    // Set the transformation filter
+    vtkNew<vtkTransformPolyDataFilter> filter;
+    filter->SetTransform(sourceTransform);
+    filter->SetInputConnection(source->GetOutputPort());
+
+    // Create a mapper and actor for the cylinder
+    vtkNew<vtkPolyDataMapper> mapper;
+    vtkNew<vtkActor> actor;
+    mapper->SetInputConnection(filter->GetOutputPort());
     actor->SetMapper(mapper);
 
     return actor;
