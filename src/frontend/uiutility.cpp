@@ -7,7 +7,9 @@
 
 #include <Eigen/Geometry>
 #include <vtkCylinderSource.h>
+#include <vtkDataSetMapper.h>
 #include <vtkGlyph3DMapper.h>
+#include <vtkHexahedron.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
@@ -16,6 +18,7 @@
 #include <vtkSphereSource.h>
 #include <vtkTransform.h>
 #include <vtkTransformPolyDataFilter.h>
+#include <vtkUnstructuredGrid.h>
 
 #include "uiutility.h"
 
@@ -131,6 +134,75 @@ QList<KCL::ElementType> massTypes()
 QList<KCL::ElementType> springTypes()
 {
     return {KCL::PR};
+}
+
+//! Check whether three points are located clockwise or counterclockwise
+int orientation(Point const& p, Point const& q, Point const& r)
+{
+    int product = (q.x - p.x) * (r.y - p.y) - (r.x - p.x) * (q.y - p.y);
+    if (product > 0)
+        return 1; // Counterclockwise
+    else if (product < 0)
+        return -1; // Clockwise
+    return 0;      // Collinear
+}
+
+//! Create a convex hull
+QList<int> jarvisMarch(QList<Point> const& points)
+{
+    // Check if the number of points is enough
+    int n = points.size();
+    if (n < 3)
+    {
+        qWarning() << QObject::tr("There must be at least three points to build a convex hull");
+        return {};
+    }
+
+    // Find the leftmost point
+    int l = 0;
+    for (int i = 1; i != n; ++i)
+        if (points[i].y < points[l].y)
+            l = i;
+
+    // Search for points in clockwise orientation
+    QList<int> order;
+    int p = l;
+    int q;
+    do
+    {
+        order.push_back(p);
+        q = (p + 1) % n;
+        for (int i = 0; i < n; i++)
+            if (orientation(points[p], points[i], points[q]) == -1)
+                q = i;
+        p = q;
+    } while (p != l);
+
+    return order;
+}
+
+//! Evalute the depth of the last point
+void setLastDepth(Matrix42d const& coords, Vector4d& depths)
+{
+    int iLast = depths.size() - 1;
+
+    // Build up the depth equation
+    Matrix3d A;
+    Vector3d b;
+    for (int i = 0; i != iLast; ++i)
+    {
+        A(i, 0) = coords(i, 0);
+        A(i, 1) = coords(i, 1);
+        A(i, 2) = 1.0;
+        b(i) = depths[i];
+    }
+
+    // Solve the linear system to find depth coefficients
+    ColPivHouseholderQR<Matrix3d> dec(A);
+    Vector3d c = dec.solve(b);
+
+    // Set the last depth
+    depths[iLast] = coords(iLast, 0) * c[0] + coords(iLast, 1) * c[1] + c[2];
 }
 
 //! Construct a helix of the given radius between two points
@@ -275,6 +347,95 @@ vtkSmartPointer<vtkActor> createCylinderActor(Eigen::Vector3d const& startPositi
     vtkNew<vtkPolyDataMapper> mapper;
     vtkNew<vtkActor> actor;
     mapper->SetInputConnection(filter->GetOutputPort());
+    actor->SetMapper(mapper);
+
+    return actor;
+}
+
+//! Construct a shell actor using coordinates of middle surface, thickness and depths
+vtkSmartPointer<vtkActor> createShellActor(Transformation const& transform, Matrix42d const& coords, Eigen::Vector4d const& depths,
+                                           double thickness)
+{
+    int kNumVertices = 8;
+
+    // Reorder the points
+    int numCoords = coords.rows();
+    QList<Point> planePoints(numCoords);
+    for (int i = 0; i != numCoords; ++i)
+        planePoints[i] = {coords(i, 0), coords(i, 1)};
+    QList<int> order = jarvisMarch(planePoints);
+
+    // Create the hexahedrons
+    vtkNew<vtkPoints> points;
+    vtkNew<vtkUnstructuredGrid> grid;
+    if (thickness != 0.0)
+    {
+        // Add the points
+        for (int i = 0; i != numCoords; ++i)
+        {
+            int iOrder = order[i];
+            double x = coords(iOrder, 0);
+            double z = coords(iOrder, 1);
+            double d = depths[iOrder];
+            double db = 0.5 * (d - thickness);
+            double dt = 0.5 * (d + thickness);
+
+            // Top surface
+            Vector3d bottomPosition = transform * Vector3d(x, db, z);
+            Vector3d topPosition = transform * Vector3d(x, dt, z);
+            points->InsertPoint(i, bottomPosition[0], bottomPosition[1], bottomPosition[2]);
+            points->InsertPoint(i + numCoords, topPosition[0], topPosition[1], topPosition[2]);
+
+            // Bottom surface
+            bottomPosition = transform * Vector3d(x, -db, z);
+            topPosition = transform * Vector3d(x, -dt, z);
+            points->InsertPoint(i + kNumVertices, bottomPosition[0], bottomPosition[1], bottomPosition[2]);
+            points->InsertPoint(i + kNumVertices + numCoords, topPosition[0], topPosition[1], topPosition[2]);
+        }
+
+        // Create a hexahedron from the points
+        vtkNew<vtkHexahedron> bottomHex;
+        vtkNew<vtkHexahedron> topHex;
+        for (int i = 0; i != kNumVertices; ++i)
+        {
+            bottomHex->GetPointIds()->SetId(i, i);
+            topHex->GetPointIds()->SetId(i, i + kNumVertices);
+        }
+
+        // Add the points and hexahedron to an unstructured grid
+        grid->SetPoints(points);
+        grid->InsertNextCell(bottomHex->GetCellType(), bottomHex->GetPointIds());
+        grid->InsertNextCell(topHex->GetCellType(), topHex->GetPointIds());
+    }
+    else
+    {
+        // Add the points
+        for (int i = 0; i != numCoords; ++i)
+        {
+            int iOrder = order[i];
+            double x = coords(iOrder, 0);
+            double z = coords(iOrder, 1);
+            double d = 0.5 * depths[iOrder];
+            Vector3d bottomPosition = transform * Vector3d(x, -d, z);
+            Vector3d topPosition = transform * Vector3d(x, d, z);
+            points->InsertPoint(i, bottomPosition[0], bottomPosition[1], bottomPosition[2]);
+            points->InsertPoint(i + numCoords, topPosition[0], topPosition[1], topPosition[2]);
+        }
+
+        // Create a hexahedron from the points
+        vtkNew<vtkHexahedron> hex;
+        for (int i = 0; i != kNumVertices; ++i)
+            hex->GetPointIds()->SetId(i, i);
+
+        // Add the points and hexahedron to an unstructured grid
+        grid->SetPoints(points);
+        grid->InsertNextCell(hex->GetCellType(), hex->GetPointIds());
+    }
+
+    // Create a mapper and actor
+    vtkNew<vtkDataSetMapper> mapper;
+    mapper->SetInputData(grid);
+    vtkNew<vtkActor> actor;
     actor->SetMapper(mapper);
 
     return actor;

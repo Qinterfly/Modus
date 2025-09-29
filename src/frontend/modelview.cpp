@@ -27,7 +27,6 @@
 
 using namespace Frontend;
 using namespace Eigen;
-
 using namespace Constants::Colors;
 
 constexpr auto skAllTypes = magic_enum::enum_values<KCL::ElementType>();
@@ -121,7 +120,7 @@ ModelViewOptions::ModelViewOptions()
     beamScale = 0.003;
 
     // Flags
-    showThickness = true;
+    showThickness = false;
     showWireframe = false;
 }
 
@@ -252,9 +251,18 @@ void ModelView::drawModel()
         {
             auto elements = surface.elements(type);
             auto color = mOptions.elementColors[type];
-            drawPanels(transform, elements, color);
-            if (isSymmetry)
-                drawPanels(reflectTransform, elements, color);
+            if (mOptions.showThickness)
+            {
+                drawPanels3D(transform, elements, color);
+                if (isSymmetry)
+                    drawPanels3D(reflectTransform, elements, color);
+            }
+            else
+            {
+                drawPanels2D(transform, elements, color);
+                if (isSymmetry)
+                    drawPanels2D(reflectTransform, elements, color);
+            }
         }
 
         // Draw the beams
@@ -312,9 +320,9 @@ void ModelView::drawBeams2D(Transformation const& transform, std::vector<KCL::Ab
     // Process all the elements
     int iPoint = 0;
     int numElements = elements.size();
-    for (int i = 0; i != numElements; ++i)
+    for (int iElement = 0; iElement != numElements; ++iElement)
     {
-        KCL::AbstractElement const* pElement = elements[i];
+        KCL::AbstractElement const* pElement = elements[iElement];
         if (!mOptions.maskElements[pElement->type()])
             continue;
 
@@ -374,9 +382,9 @@ void ModelView::drawBeams3D(Transformation const& transform, std::vector<KCL::Ab
 
     // Process all the elements
     int numElements = elements.size();
-    for (int i = 0; i != numElements; ++i)
+    for (int iElement = 0; iElement != numElements; ++iElement)
     {
-        KCL::AbstractElement const* pElement = elements[i];
+        KCL::AbstractElement const* pElement = elements[iElement];
         if (!mOptions.maskElements[pElement->type()])
             continue;
 
@@ -400,8 +408,8 @@ void ModelView::drawBeams3D(Transformation const& transform, std::vector<KCL::Ab
     }
 }
 
-//! Render panel elements
-void ModelView::drawPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
+//! Render panel elements as planes
+void ModelView::drawPanels2D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
 {
     int const kNumCellPoints = 4;
 
@@ -416,9 +424,9 @@ void ModelView::drawPanels(Transformation const& transform, std::vector<KCL::Abs
     // Process all the elements
     int iPoint = 0;
     int numElements = elements.size();
-    for (int i = 0; i != numElements; ++i)
+    for (int iElement = 0; iElement != numElements; ++iElement)
     {
-        KCL::AbstractElement const* pElement = elements[i];
+        KCL::AbstractElement const* pElement = elements[iElement];
         if (!mOptions.maskElements[pElement->type()])
             continue;
 
@@ -428,7 +436,7 @@ void ModelView::drawPanels(Transformation const& transform, std::vector<KCL::Abs
         // Set points and connections between them
         int iData = 1;
         vtkNew<vtkPolygon> polygon;
-        for (int j = 0; j != kNumCellPoints; ++j)
+        for (int iPosition = 0; iPosition != kNumCellPoints; ++iPosition)
         {
             auto position = transform * Vector3d(elementData[iData], 0.0, elementData[iData + 1]);
             points->InsertNextPoint(position[0], position[1], position[2]);
@@ -460,6 +468,65 @@ void ModelView::drawPanels(Transformation const& transform, std::vector<KCL::Abs
 
     // Add the actor to the scene
     mRenderer->AddActor(actor);
+}
+
+//! Render panel elements as hexahedrons
+void ModelView::drawPanels3D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
+{
+    int const kNumVertices = 4;
+
+    // Check if there are any elements to render
+    if (elements.empty())
+        return;
+
+    // Process all the elements
+    int numElements = elements.size();
+    for (int iElement = 0; iElement != numElements; ++iElement)
+    {
+        KCL::AbstractElement const* pElement = elements[iElement];
+        auto type = pElement->type();
+        if (!mOptions.maskElements[type])
+            continue;
+
+        // Get element data
+        KCL::VecN elementData = pElement->get();
+
+        // Get the plane coordinates
+        int iData = 0;
+        double thickness = elementData[iData++];
+        Matrix42d coords;
+        for (int iVertex = 0; iVertex != kNumVertices; ++iVertex)
+        {
+            coords(iVertex, 0) = elementData[iData];
+            coords(iVertex, 1) = elementData[iData + 1];
+            iData += 2;
+        }
+
+        // Get the depths
+        Vector4d depths;
+        int numDepths = depths.size();
+        for (int iDepth = 0; iDepth != numDepths; ++iDepth)
+        {
+            depths[iDepth] = elementData[iData];
+            ++iData;
+        }
+
+        // Evaluate the depth at the last point
+        if (type != KCL::P4)
+            Utility::setLastDepth(coords, depths);
+
+        // Create the shell actor
+        auto actor = Utility::createShellActor(transform, coords, depths, thickness);
+        actor->GetProperty()->SetColor(color.GetData());
+        actor->GetProperty()->SetEdgeColor(mOptions.edgeColor.GetData());
+        actor->GetProperty()->SetEdgeOpacity(mOptions.edgeOpacity);
+        actor->GetProperty()->EdgeVisibilityOn();
+        if (mOptions.showWireframe)
+            actor->GetProperty()->SetRepresentationToWireframe();
+
+        // Add the actor to the scene
+        mRenderer->AddActor(actor);
+    }
 }
 
 //! Render aerodynamic panel elements

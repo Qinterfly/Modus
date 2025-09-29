@@ -23,13 +23,16 @@ find_package(VTK REQUIRED COMPONENTS
 
 set(FRONTEND_HEADERS
     mainwindow.h
+    uialiasdata.h
     uiconstants.h
     uiutility.h
     logger.h
     projectbrowser.h
     projecthierarchymodel.h
     hierarchyitem.h
+    iview.h
     viewmanager.h
+    modelview.h
 )
 
 set(FRONTEND_SOURCES
@@ -40,14 +43,13 @@ set(FRONTEND_SOURCES
     projecthierarchymodel.cpp
     hierarchyitem.cpp
     viewmanager.cpp
+    modelview.cpp
 )
 
 qt_add_library(frontend STATIC
     ${FRONTEND_HEADERS}
     ${FRONTEND_SOURCES}
     ${RESOURCES_FILE}
-    iview.h
-    modelview.h modelview.cpp
 )
 
 target_link_libraries(frontend PRIVATE

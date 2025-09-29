@@ -4,7 +4,7 @@
 
 #include <QtGlobal>
 
-#include <Eigen/Core>
+#include "uialiasdata.h"
 #include <kcl/element.h>
 #include <vtkNew.h>
 
@@ -31,17 +31,23 @@ QString errorColorName(double value, double acceptThreshold, double criticalThre
 // File
 void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix);
 
-// Rendering
+// KCL
 QList<KCL::ElementType> beamTypes();
 QList<KCL::ElementType> panelTypes();
 QList<KCL::ElementType> aeroPanelsTypes();
 QList<KCL::ElementType> massTypes();
 QList<KCL::ElementType> springTypes();
+
+// Rendering
+QList<int> jarvisMarch(QList<Point> const& points);
+void setLastDepth(Matrix42d const& coords, Eigen::Vector4d& depths);
 vtkSmartPointer<vtkActor> createHelixActor(Eigen::Vector3d const& startPosition, Eigen::Vector3d const& endPosition, double radius, int numTurns,
                                            int resolution);
 vtkSmartPointer<vtkActor> createPointsActor(QList<Eigen::Vector3d> const& positions, double radius);
 vtkSmartPointer<vtkActor> createCylinderActor(Eigen::Vector3d const& startPosition, Eigen::Vector3d const& endPosition, double radius,
                                               int resolution);
+vtkSmartPointer<vtkActor> createShellActor(Transformation const& transform, Matrix42d const& coords, Eigen::Vector4d const& depths,
+                                           double thickness);
 }
 
 #endif // UIUTILITY_H

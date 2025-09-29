@@ -1,7 +1,6 @@
 #ifndef MODELVIEW_H
 #define MODELVIEW_H
 
-#include <Eigen/Geometry>
 #include <vtkColor.h>
 #include <vtkPolyDataMapper.h>
 #include <QWidget>
@@ -9,6 +8,7 @@
 #include <kcl/element.h>
 
 #include "iview.h"
+#include "uialiasdata.h"
 
 namespace KCL
 {
@@ -21,15 +21,6 @@ class vtkTexture;
 
 namespace Frontend
 {
-
-using Transformation = Eigen::Transform<double, 3, Eigen::Affine>;
-
-enum Axis
-{
-    kX,
-    kY,
-    kZ,
-};
 
 struct ModelViewOptions
 {
@@ -80,7 +71,8 @@ private:
     void drawModel();
     void drawBeams2D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
     void drawBeams3D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
-    void drawPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
+    void drawPanels2D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
+    void drawPanels3D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
     void drawAeroPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
     void drawMasses(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements);
     void drawSprings(std::vector<KCL::AbstractElement const*> const& elements, bool isReflect, vtkColor3d color);
