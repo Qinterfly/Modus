@@ -5,7 +5,11 @@
 #include <vtkCallbackCommand.h>
 #include <vtkCamera.h>
 #include <vtkCellArray.h>
+#include <vtkCellData.h>
+#include <vtkCellPicker.h>
+#include <vtkDataSetMapper.h>
 #include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkPNGReader.h>
 #include <vtkPlaneSource.h>
@@ -16,12 +20,14 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkTexture.h>
+#include <vtkUnstructuredGrid.h>
 #include <QVTKOpenGLNativeWidget.h>
 
 #include <kcl/model.h>
 #include <magicenum/magic_enum.hpp>
 
 #include "modelview.h"
+#include "selectionset.h"
 #include "uiconstants.h"
 #include "uiutility.h"
 
@@ -29,13 +35,16 @@ using namespace Frontend;
 using namespace Eigen;
 using namespace Constants::Colors;
 
+// Constants
 constexpr auto skAllTypes = magic_enum::enum_values<KCL::ElementType>();
 auto const skBeamTypes = Utility::beamTypes();
 auto const skPanelTypes = Utility::panelTypes();
 auto const skAeroPanelTypes = Utility::aeroPanelsTypes();
 auto const skMassTypes = Utility::massTypes();
 auto const skSpringTypes = Utility::springTypes();
+constexpr auto skPointersName = "Pointers";
 
+// Helper functions
 Transformation computeTransformation(KCL::Vec3 const& coords, double dihedralAngle, double sweepAngle, double zAngle);
 Transformation reflectTransformation(Transformation const& transform);
 vtkSmartPointer<vtkTexture> readTexture(QString const& pathFile);
@@ -44,10 +53,7 @@ vtkSmartPointer<vtkTexture> readTexture(QString const& pathFile);
 class PlaneFollowerCallback : public vtkCallbackCommand
 {
 public:
-    static PlaneFollowerCallback* New()
-    {
-        return new PlaneFollowerCallback;
-    }
+    static PlaneFollowerCallback* New();
 
     void Execute(vtkObject* caller, unsigned long evId, void*) override
     {
@@ -88,6 +94,49 @@ public:
     QList<vtkSmartPointer<vtkPlaneSource>> sources;
     vtkCamera* camera;
 };
+vtkStandardNewMacro(PlaneFollowerCallback);
+
+//! Catch mouse events
+class MouseInteractorStyle : public vtkInteractorStyleTrackballCamera
+{
+public:
+    static MouseInteractorStyle* New();
+
+    virtual void OnLeftButtonDown() override
+    {
+        // Get the location of the click (in window coordinates)
+        int* pPosition = GetInteractor()->GetEventPosition();
+
+        // Construct the picker
+        vtkNew<vtkCellPicker> picker;
+        picker->SetTolerance(0.01);
+
+        // Pick from this location
+        picker->Pick(pPosition[0], pPosition[1], 0, GetDefaultRenderer());
+        vtkIdType cellID = picker->GetCellId();
+        qDebug() << "CellID = " << cellID;
+        if (cellID != -1)
+        {
+            vtkActor* actor = picker->GetActor();
+            vtkMapper* mapper = actor->GetMapper();
+            vtkCellData* data = mapper->GetInput()->GetCellData();
+            qDebug() << data->GetNumberOfArrays();
+            vtkIntArray* array = vtkIntArray::SafeDownCast(data->GetAbstractArray(skPointersName));
+            if (array)
+            {
+                Backend::Core::Selection selection;
+                selection.iSurface = array->GetTypedComponent(cellID, 0);
+                selection.type = (KCL::ElementType) array->GetTypedComponent(cellID, 1);
+                selection.iElement = array->GetTypedComponent(cellID, 2);
+                qDebug() << QString("ISurface = %1, Type = %2, IElement = %3").arg(selection.iSurface).arg(selection.type).arg(selection.iElement);
+            }
+        }
+
+        // Forward events
+        vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
+    }
+};
+vtkStandardNewMacro(MouseInteractorStyle);
 
 ModelViewOptions::ModelViewOptions()
 {
@@ -108,7 +157,8 @@ ModelViewOptions::ModelViewOptions()
 
     // Elements
     for (auto type : skAllTypes)
-        maskElements[type] = true;
+        maskElements[type] = false;
+    maskElements[KCL::BI] = true;
 
     // Dimensions
     edgeOpacity = 0.5;
@@ -120,7 +170,7 @@ ModelViewOptions::ModelViewOptions()
     beamScale = 0.003;
 
     // Flags
-    showThickness = false;
+    showThickness = true;
     showWireframe = false;
 }
 
@@ -239,83 +289,85 @@ void ModelView::drawModel()
         // Draw the aero panels
         for (auto type : skAeroPanelTypes)
         {
-            auto elements = surface.elements(type);
-            auto color = mOptions.elementColors[type];
-            drawAeroPanels(aeroTransform, elements, color);
+            drawAeroPanels(aeroTransform, iSurface, type);
             if (isSymmetry)
-                drawAeroPanels(reflectAeroTransform, elements, color);
+                drawAeroPanels(reflectAeroTransform, iSurface, type);
         }
 
         // Draw the panels
         for (auto type : skPanelTypes)
         {
-            auto elements = surface.elements(type);
-            auto color = mOptions.elementColors[type];
             if (mOptions.showThickness)
             {
-                drawPanels3D(transform, elements, color);
+                drawPanels3D(transform, iSurface, type);
                 if (isSymmetry)
-                    drawPanels3D(reflectTransform, elements, color);
+                    drawPanels3D(reflectTransform, iSurface, type);
             }
             else
             {
-                drawPanels2D(transform, elements, color);
+                drawPanels2D(transform, iSurface, type);
                 if (isSymmetry)
-                    drawPanels2D(reflectTransform, elements, color);
+                    drawPanels2D(reflectTransform, iSurface, type);
             }
         }
 
         // Draw the beams
         for (auto type : skBeamTypes)
         {
-            auto elements = surface.elements(type);
-            auto color = mOptions.elementColors[type];
             if (mOptions.showThickness)
             {
-                drawBeams3D(transform, elements, color);
+                drawBeams3D(transform, iSurface, type);
                 if (isSymmetry)
-                    drawBeams3D(reflectTransform, elements, color);
+                    drawBeams3D(reflectTransform, iSurface, type);
             }
             else
             {
-                drawBeams2D(transform, elements, color);
+                drawBeams2D(transform, iSurface, type);
                 if (isSymmetry)
-                    drawBeams2D(reflectTransform, elements, color);
+                    drawBeams2D(reflectTransform, iSurface, type);
             }
         }
 
         // Draw the masses
         for (auto type : skMassTypes)
         {
-            auto elements = surface.elements(type);
-            drawMasses(transform, elements);
+            drawMasses(transform, iSurface, type);
             if (isSymmetry)
-                drawMasses(reflectTransform, elements);
+                drawMasses(reflectTransform, iSurface, type);
         }
     }
 
     // Process the special surface
     for (auto type : skSpringTypes)
     {
-        auto elements = mModel.specialSurface.elements(type);
-        auto color = mOptions.elementColors[type];
-        drawSprings(elements, false, color);
-        drawSprings(elements, true, color);
+        drawSprings(false, type);
+        drawSprings(true, type);
     }
+
+    // Set the custom stype to use for interaction
+    auto interactor = mRenderWindow->GetInteractor();
+    vtkNew<MouseInteractorStyle> style;
+    style->SetDefaultRenderer(mRenderer);
+    interactor->SetInteractorStyle(style);
 }
 
 //! Render beam elements as lines
-void ModelView::drawBeams2D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
+void ModelView::drawBeams2D(Transformation const& transform, int iSurface, KCL::ElementType type)
 {
     int const kNumCellPoints = 2;
 
-    // Check if there are any elements to render
-    if (elements.empty())
+    // Slice the elements for rendering
+    std::vector<KCL::AbstractElement const*> elements = mModel.surfaces[iSurface].elements(type);
+    if (elements.empty() || !mOptions.maskElements[type])
         return;
+    vtkColor3d color = mOptions.elementColors[type];
 
     // Allocate the points and their connectivity list
     vtkNew<vtkPoints> points;
     vtkNew<vtkCellArray> indices;
+    vtkNew<vtkIntArray> pointers;
+    pointers->SetName(skPointersName);
+    pointers->SetNumberOfComponents(3);
 
     // Process all the elements
     int iPoint = 0;
@@ -323,8 +375,6 @@ void ModelView::drawBeams2D(Transformation const& transform, std::vector<KCL::Ab
     for (int iElement = 0; iElement != numElements; ++iElement)
     {
         KCL::AbstractElement const* pElement = elements[iElement];
-        if (!mOptions.maskElements[pElement->type()])
-            continue;
 
         // Slice element coordinates
         KCL::VecN elementData = pElement->get();
@@ -340,22 +390,26 @@ void ModelView::drawBeams2D(Transformation const& transform, std::vector<KCL::Ab
         points->InsertNextPoint(endPosition[0], endPosition[1], endPosition[2]);
 
         // Set the connectivity indices
-        indices->InsertNextCell(kNumCellPoints);
+        vtkIdType cellID = indices->InsertNextCell(kNumCellPoints);
         indices->InsertCellPoint(iPoint);
         indices->InsertCellPoint(iPoint + 1);
+
+        // Set the pointer to the model element
+        pointers->InsertTuple3(cellID, iSurface, pElement->type(), iElement);
 
         // Increase the counter
         iPoint += kNumCellPoints;
     }
 
     // Create the polygons
-    vtkNew<vtkPolyData> data;
-    data->SetPoints(points);
-    data->SetLines(indices);
+    vtkNew<vtkPolyData> polyData;
+    polyData->SetPoints(points);
+    polyData->SetLines(indices);
+    polyData->GetCellData()->AddArray(pointers);
 
     // Build the mapper
     vtkNew<vtkPolyDataMapper> mapper;
-    mapper->SetInputData(data);
+    mapper->SetInputData(polyData);
 
     // Create the actor and add to the scene
     vtkNew<vtkActor> actor;
@@ -368,14 +422,16 @@ void ModelView::drawBeams2D(Transformation const& transform, std::vector<KCL::Ab
 }
 
 //! Draw beams as cylinders
-void ModelView::drawBeams3D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
+void ModelView::drawBeams3D(Transformation const& transform, int iSurface, KCL::ElementType type)
 {
     // Constants
     int kResolution = 8;
 
-    // Check if there are any elements to render
-    if (elements.empty())
+    // Slice the elements for rendering
+    std::vector<KCL::AbstractElement const*> elements = mModel.surfaces[iSurface].elements(type);
+    if (elements.empty() || !mOptions.maskElements[type])
         return;
+    vtkColor3d color = mOptions.elementColors[type];
 
     // Compute the cyliner radius
     double radius = mOptions.beamScale * getMaximumDimension();
@@ -385,8 +441,6 @@ void ModelView::drawBeams3D(Transformation const& transform, std::vector<KCL::Ab
     for (int iElement = 0; iElement != numElements; ++iElement)
     {
         KCL::AbstractElement const* pElement = elements[iElement];
-        if (!mOptions.maskElements[pElement->type()])
-            continue;
 
         // Slice element coordinates
         KCL::VecN elementData = pElement->get();
@@ -403,19 +457,34 @@ void ModelView::drawBeams3D(Transformation const& transform, std::vector<KCL::Ab
         if (mOptions.showWireframe)
             actor->GetProperty()->SetRepresentationToWireframe();
 
+        // Set the pointer to the model element
+        // vtkMapper* mapper = actor->GetMapper();
+        // mapper->Update();
+        // vtkPolyData* polyData = vtkPolyData::SafeDownCast(mapper->GetInput());
+        // vtkCellData* cellData = polyData->GetCellData();
+        // vtkNew<vtkIntArray> pointers;
+        // pointers->SetName(skPointersName);
+        // pointers->SetNumberOfComponents(3);
+        // int numCells = polyData->GetNumberOfCells();
+        // for (vtkIdType iCell = 0; iCell != numCells; ++iCell)
+        //     pointers->InsertTuple3(iCell, iSurface, type, iElement);
+        // cellData->AddArray(pointers);
+
         // Add the actor to the scene
         mRenderer->AddActor(actor);
     }
 }
 
 //! Render panel elements as planes
-void ModelView::drawPanels2D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
+void ModelView::drawPanels2D(Transformation const& transform, int iSurface, KCL::ElementType type)
 {
     int const kNumCellPoints = 4;
 
-    // Check if there are any elements to render
-    if (elements.empty())
+    // Slice the elements for rendering
+    std::vector<KCL::AbstractElement const*> elements = mModel.surfaces[iSurface].elements(type);
+    if (elements.empty() || !mOptions.maskElements[type])
         return;
+    vtkColor3d color = mOptions.elementColors[type];
 
     // Allocate the points and their connectivity list
     vtkNew<vtkPoints> points;
@@ -427,8 +496,6 @@ void ModelView::drawPanels2D(Transformation const& transform, std::vector<KCL::A
     for (int iElement = 0; iElement != numElements; ++iElement)
     {
         KCL::AbstractElement const* pElement = elements[iElement];
-        if (!mOptions.maskElements[pElement->type()])
-            continue;
 
         // Slice element coordinates
         KCL::VecN elementData = pElement->get();
@@ -471,22 +538,21 @@ void ModelView::drawPanels2D(Transformation const& transform, std::vector<KCL::A
 }
 
 //! Render panel elements as hexahedrons
-void ModelView::drawPanels3D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
+void ModelView::drawPanels3D(Transformation const& transform, int iSurface, KCL::ElementType type)
 {
     int const kNumVertices = 4;
 
-    // Check if there are any elements to render
-    if (elements.empty())
+    // Slice the elements for rendering
+    std::vector<KCL::AbstractElement const*> elements = mModel.surfaces[iSurface].elements(type);
+    if (elements.empty() || !mOptions.maskElements[type])
         return;
+    vtkColor3d color = mOptions.elementColors[type];
 
     // Process all the elements
     int numElements = elements.size();
     for (int iElement = 0; iElement != numElements; ++iElement)
     {
         KCL::AbstractElement const* pElement = elements[iElement];
-        auto type = pElement->type();
-        if (!mOptions.maskElements[type])
-            continue;
 
         // Get element data
         KCL::VecN elementData = pElement->get();
@@ -530,26 +596,26 @@ void ModelView::drawPanels3D(Transformation const& transform, std::vector<KCL::A
 }
 
 //! Render aerodynamic panel elements
-void ModelView::drawAeroPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color)
+void ModelView::drawAeroPanels(Transformation const& transform, int iSurface, KCL::ElementType type)
 {
     double const kOpacity = 0.5;
     double const kPolyOffset = 0.01;
     double const kPolyUnits = 10;
 
-    // Check if there are any elements to render
-    if (elements.empty())
+    // Slice the elements for rendering
+    std::vector<KCL::AbstractElement const*> elements = mModel.surfaces[iSurface].elements(type);
+    if (elements.empty() || !mOptions.maskElements[type])
         return;
+    vtkColor3d color = mOptions.elementColors[type];
 
     // Process all the elements
     int numElements = elements.size();
+    bool isVertical = type == KCL::ElementType::DA;
     for (int i = 0; i != numElements; ++i)
     {
         KCL::AbstractElement const* pElement = elements[i];
-        if (!mOptions.maskElements[pElement->type()])
-            continue;
         if (pElement->subType() == KCL::ElementSubType::AE1)
             continue;
-        bool isVertical = pElement->type() == KCL::ElementType::DA;
 
         // Slice element parameters
         KCL::VecN data = pElement->get();
@@ -626,15 +692,17 @@ void ModelView::drawAeroPanels(Transformation const& transform, std::vector<KCL:
 }
 
 //! Represent point masses
-void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements)
+void ModelView::drawMasses(Transformation const& transform, int iSurface, KCL::ElementType type)
 {
     double const kPolyOffset = -1;
     double const kPolyUnits = -66000;
     vtkColor3d kRodColor = vtkColors->GetColor3d("red");
 
-    // Check if there are any elements to render
-    if (elements.empty())
+    // Slice the elements for rendering
+    std::vector<KCL::AbstractElement const*> elements = mModel.surfaces[iSurface].elements(type);
+    if (elements.empty() || !mOptions.maskElements[type])
         return;
+    vtkColor3d color = mOptions.elementColors[type];
 
     // Get the visualization texture
     vtkSmartPointer<vtkTexture> texture = mTextures["mass"];
@@ -646,8 +714,6 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
     for (int i = 0; i != numElements; ++i)
     {
         KCL::AbstractElement const* pBaseElement = elements[i];
-        if (!mOptions.maskElements[pBaseElement->type()])
-            continue;
 
         // Slice element coordinates
         Vector3d startPosition;
@@ -753,14 +819,16 @@ void ModelView::drawMasses(Transformation const& transform, std::vector<KCL::Abs
 }
 
 //! Represent springs
-void ModelView::drawSprings(std::vector<KCL::AbstractElement const*> const& elements, bool isReflect, vtkColor3d color)
+void ModelView::drawSprings(bool isReflect, KCL::ElementType type)
 {
     int const kNumTurns = 6;
     int const kResolution = 30;
 
-    // Check if there are any elements to render
-    if (elements.empty())
+    // Slice the elements for rendering
+    std::vector<KCL::AbstractElement const*> elements = mModel.specialSurface.elements(type);
+    if (elements.empty() || !mOptions.maskElements[type])
         return;
+    vtkColor3d color = mOptions.elementColors[type];
 
     // Retrieve the scene parameters
     double maxDimension = getMaximumDimension();

@@ -343,10 +343,12 @@ vtkSmartPointer<vtkActor> createCylinderActor(Eigen::Vector3d const& startPositi
     filter->SetTransform(sourceTransform);
     filter->SetInputConnection(source->GetOutputPort());
 
-    // Create a mapper and actor for the cylinder
+    // Create the mapper
     vtkNew<vtkPolyDataMapper> mapper;
-    vtkNew<vtkActor> actor;
     mapper->SetInputConnection(filter->GetOutputPort());
+
+    // Construct the actor
+    vtkNew<vtkActor> actor;
     actor->SetMapper(mapper);
 
     return actor;

@@ -69,13 +69,13 @@ private:
     void createContent();
     void drawAxes();
     void drawModel();
-    void drawBeams2D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
-    void drawBeams3D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
-    void drawPanels2D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
-    void drawPanels3D(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
-    void drawAeroPanels(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements, vtkColor3d color);
-    void drawMasses(Transformation const& transform, std::vector<KCL::AbstractElement const*> const& elements);
-    void drawSprings(std::vector<KCL::AbstractElement const*> const& elements, bool isReflect, vtkColor3d color);
+    void drawBeams2D(Transformation const& transform, int iSurface, KCL::ElementType type);
+    void drawBeams3D(Transformation const& transform, int iSurface, KCL::ElementType type);
+    void drawPanels2D(Transformation const& transform, int iSurface, KCL::ElementType type);
+    void drawPanels3D(Transformation const& transform, int iSurface, KCL::ElementType type);
+    void drawAeroPanels(Transformation const& transform, int iSurface, KCL::ElementType type);
+    void drawMasses(Transformation const& transform, int iSurface, KCL::ElementType type);
+    void drawSprings(bool isReflect, KCL::ElementType type);
     double getMaximumDimension();
 
 private:
