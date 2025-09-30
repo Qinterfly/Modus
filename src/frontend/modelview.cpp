@@ -1,8 +1,10 @@
 #include <QFile>
 #include <QHBoxLayout>
+#include <QListWidget>
 
 #include <vtkAxesActor.h>
 #include <vtkCamera.h>
+#include <vtkCameraOrientationWidget.h>
 #include <vtkCellPicker.h>
 #include <vtkDataSetMapper.h>
 #include <vtkGenericOpenGLRenderWindow.h>
@@ -81,6 +83,7 @@ ModelViewOptions::ModelViewOptions()
     // Flags
     showThickness = false;
     showWireframe = false;
+    showSymmetry = false;
 
     // Tolerance
     pickTolerance = 0.005;
@@ -109,7 +112,6 @@ void ModelView::clear()
 void ModelView::refresh()
 {
     clear();
-    drawAxes();
     drawModel();
     mRenderer->ResetCamera();
     mRenderWindow->Render();
@@ -127,7 +129,8 @@ ModelViewSelector& ModelView::selector()
 
 void ModelView::initialize()
 {
-    mOrientationWidget = vtkOrientationMarkerWidget::New();
+    // Load the textures
+    loadTextures();
 
     // Set up the scence
     mRenderer = vtkRenderer::New();
@@ -140,8 +143,20 @@ void ModelView::initialize()
     mRenderWindow->AddRenderer(mRenderer);
     mRenderWidget->setRenderWindow(mRenderWindow);
 
-    // Load the textures
-    loadTextures();
+    // Create the orientation widget
+    mOrientationWidget = vtkCameraOrientationWidget::New();
+    mOrientationWidget->SetParentRenderer(mRenderer);
+    mOrientationWidget->On();
+    mOrientationWidget->SetAnimatorTotalFrames(15);
+
+    // Set the custom style to use for interaction
+    auto interactor = mRenderWindow->GetInteractor();
+    vtkNew<InteractorStyle> style;
+    style->SetDefaultRenderer(mRenderer);
+    style->renderWidget = mRenderWidget;
+    style->selector = &mSelector;
+    style->pickTolerance = mOptions.pickTolerance;
+    interactor->SetInteractorStyle(style);
 }
 
 void ModelView::loadTextures()
@@ -160,21 +175,6 @@ void ModelView::createContent()
     // Combine the widgets
     pLayout->addWidget(mRenderWidget);
     setLayout(pLayout);
-}
-
-//! Represent the coordinate system
-void ModelView::drawAxes()
-{
-    vtkNew<vtkAxesActor> axes;
-
-    double rgba[4]{0.0, 0.0, 0.0, 0.0};
-    vtkColors->GetColor("Carrot", rgba);
-    mOrientationWidget->SetOutlineColor(rgba[0], rgba[1], rgba[2]);
-    mOrientationWidget->SetOrientationMarker(axes);
-    mOrientationWidget->SetInteractor(mRenderWindow->GetInteractor());
-    mOrientationWidget->SetViewport(0.8, 0.6, 1.0, 1.0);
-    mOrientationWidget->SetEnabled(1);
-    mOrientationWidget->InteractiveOn();
 }
 
 //! Represent the model entities
@@ -208,7 +208,7 @@ void ModelView::drawModel()
         for (auto type : skAeroPanelTypes)
         {
             drawAeroPanels(aeroTransform, iSurface, type);
-            if (isSymmetry)
+            if (isSymmetry && mOptions.showSymmetry)
                 drawAeroPanels(reflectAeroTransform, iSurface, type);
         }
 
@@ -218,13 +218,13 @@ void ModelView::drawModel()
             if (mOptions.showThickness)
             {
                 drawPanels3D(transform, iSurface, type);
-                if (isSymmetry)
+                if (isSymmetry && mOptions.showSymmetry)
                     drawPanels3D(reflectTransform, iSurface, type);
             }
             else
             {
                 drawPanels2D(transform, iSurface, type);
-                if (isSymmetry)
+                if (isSymmetry && mOptions.showSymmetry)
                     drawPanels2D(reflectTransform, iSurface, type);
             }
         }
@@ -235,13 +235,13 @@ void ModelView::drawModel()
             if (mOptions.showThickness)
             {
                 drawBeams3D(transform, iSurface, type);
-                if (isSymmetry)
+                if (isSymmetry && mOptions.showSymmetry)
                     drawBeams3D(reflectTransform, iSurface, type);
             }
             else
             {
                 drawBeams2D(transform, iSurface, type);
-                if (isSymmetry)
+                if (isSymmetry && mOptions.showSymmetry)
                     drawBeams2D(reflectTransform, iSurface, type);
             }
         }
@@ -250,7 +250,7 @@ void ModelView::drawModel()
         for (auto type : skMassTypes)
         {
             drawMasses(transform, iSurface, type);
-            if (isSymmetry)
+            if (isSymmetry && mOptions.showSymmetry)
                 drawMasses(reflectTransform, iSurface, type);
         }
     }
@@ -259,16 +259,9 @@ void ModelView::drawModel()
     for (auto type : skSpringTypes)
     {
         drawSprings(false, type);
-        drawSprings(true, type);
+        if (mOptions.showSymmetry)
+            drawSprings(true, type);
     }
-
-    // Set the custom stype to use for interaction
-    auto interactor = mRenderWindow->GetInteractor();
-    vtkNew<InteractorStyle> style;
-    style->SetDefaultRenderer(mRenderer);
-    style->selector = &mSelector;
-    style->pickTolerance = mOptions.pickTolerance;
-    interactor->SetInteractorStyle(style);
 }
 
 //! Render beam elements as lines
@@ -799,6 +792,7 @@ void ModelView::drawSprings(bool isReflect, KCL::ElementType type)
 
         // Register the actor
         mSelector.registerActor(Core::Selection(type, iElement), actorHelix);
+        mSelector.registerActor(Core::Selection(type, iElement), actorPoints);
 
         // Add the actors to the scene
         mRenderer->AddActor(actorPoints);
@@ -928,7 +922,7 @@ void ModelViewSelector::deselect(vtkActor* actor)
 //! Select all the actors associated with a model entity
 void ModelViewSelector::select(Backend::Core::Selection key)
 {
-    if (mActors.contains(key))
+    if (!mActors.contains(key))
         return;
     QList<vtkActor*> values = mActors[key];
     int numValues = values.size();
@@ -939,7 +933,7 @@ void ModelViewSelector::select(Backend::Core::Selection key)
 //! Deselect all the actors associated with a model entity
 void ModelViewSelector::deselect(Backend::Core::Selection key)
 {
-    if (mActors.contains(key))
+    if (!mActors.contains(key))
         return;
     QList<vtkActor*> values = mActors[key];
     int numValues = values.size();
@@ -1024,12 +1018,21 @@ void PlaneFollowerCallback::Execute(vtkObject* caller, unsigned long evId, void*
 }
 
 InteractorStyle::InteractorStyle()
-    : selector(nullptr)
+    : renderWidget(nullptr)
+    , selector(nullptr)
+    , mSelectionWidget(nullptr)
 {
 }
 
 void InteractorStyle::OnLeftButtonDown()
 {
+    // Free the selection widget, if necessary
+    if (mSelectionWidget)
+    {
+        mSelectionWidget->close();
+        mSelectionWidget = nullptr;
+    }
+
     // Get the window interactor
     vtkRenderWindowInteractor* interactor = GetInteractor();
 
@@ -1041,12 +1044,15 @@ void InteractorStyle::OnLeftButtonDown()
     picker->SetTolerance(pickTolerance);
 
     // Pick from this location
-    picker->Pick(position[0], position[1], 0, GetDefaultRenderer());
+    picker->Pick(position[0], position[1], 0.0, GetDefaultRenderer());
 
     // Highlight the last actor
     vtkActorCollection* actors = picker->GetActors();
     actors->InitTraversal();
-    if (actors->GetNumberOfItems() > 0)
+    int numActors = actors->GetNumberOfItems();
+    if (numActors > 1)
+        createSelectionWidget(actors);
+    else if (numActors == 1)
         selector->select(actors->GetLastActor());
     else
         selector->deselectAll();
@@ -1086,6 +1092,50 @@ void InteractorStyle::updateSelectorState()
         else
             selector->state = ModelViewSelector::State(ModelViewSelector::kSingleSelection);
     }
+}
+
+//! Create the widget to select actors once ray intersect them
+void InteractorStyle::createSelectionWidget(vtkActorCollection* actors)
+{
+    // Create the list widget
+    mSelectionWidget = new QListWidget(renderWidget);
+    mSelectionWidget->setAttribute(Qt::WA_DeleteOnClose, true);
+
+    // Loop through all the actors
+    int numActors = actors->GetNumberOfItems();
+    for (int i = 0; i != numActors; ++i)
+    {
+        // Retrieve the pointers to model entities
+        vtkActor* actor = actors->GetNextActor();
+        Core::Selection selection = selector->find(actor);
+        if (!selection.isValid())
+            continue;
+
+        // Create the item
+        QString typeName = magic_enum::enum_name(selection.type).data();
+        QString label = QString("%1:%2 ES:%3").arg(typeName).arg(selection.iElement + 1).arg(selection.iSurface + 1);
+        QListWidgetItem* item = new QListWidgetItem(label);
+        item->setData(Qt::UserRole, QVariant::fromValue(selection));
+
+        // Add the item to the widget
+        mSelectionWidget->addItem(item);
+    }
+
+    // Set the handler for the item selection event
+    connect(mSelectionWidget, &QListWidget::itemSelectionChanged, this,
+            [this]()
+            {
+                auto selection = mSelectionWidget->currentItem()->data(Qt::UserRole).value<Core::Selection>();
+                selector->select(selection);
+                mSelectionWidget->hide();
+                GetInteractor()->Render();
+            });
+
+    // Set the widget geometry and show it
+    mSelectionWidget->move(renderWidget->mapFromGlobal(QCursor::pos()));
+    mSelectionWidget->setFixedSize(mSelectionWidget->sizeHintForColumn(0) + mSelectionWidget->frameWidth() * 2,
+                                   mSelectionWidget->sizeHintForRow(0) * mSelectionWidget->count() + 2 * mSelectionWidget->frameWidth());
+    mSelectionWidget->show();
 }
 
 //! Helper function to build up the transformation for the elastic surface using its local coordinate

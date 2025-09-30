@@ -14,6 +14,8 @@
 #include "iview.h"
 #include "uialiasdata.h"
 
+QT_FORWARD_DECLARE_CLASS(QListWidget)
+
 namespace KCL
 {
 struct Model;
@@ -25,11 +27,12 @@ struct Selection;
 }
 
 class QVTKOpenGLNativeWidget;
-class vtkOrientationMarkerWidget;
+class vtkCameraOrientationWidget;
 class vtkTexture;
 class vtkProperty;
 class vtkPlaneSource;
 class vtkCamera;
+class vtkActorCollection;
 
 namespace Frontend
 {
@@ -60,12 +63,10 @@ public:
     void deselectAll();
     void clear();
     void registerActor(Backend::Core::Selection const& key, vtkActor* value);
+    Backend::Core::Selection find(vtkActor* actor) const;
 
 public:
     State state;
-
-private:
-    Backend::Core::Selection find(vtkActor* actor) const;
 
 private:
     QMap<vtkActor*, vtkSmartPointer<vtkProperty>> mSelection;
@@ -100,6 +101,7 @@ struct ModelViewOptions
     // Flags
     bool showThickness;
     bool showWireframe;
+    bool showSymmetry;
 
     // Tolerance
     double pickTolerance;
@@ -124,7 +126,6 @@ private:
     void initialize();
     void loadTextures();
     void createContent();
-    void drawAxes();
     void drawModel();
     void drawBeams2D(Transformation const& transform, int iSurface, KCL::ElementType type);
     void drawBeams3D(Transformation const& transform, int iSurface, KCL::ElementType type);
@@ -141,7 +142,7 @@ private:
     QVTKOpenGLNativeWidget* mRenderWidget;
     vtkSmartPointer<vtkRenderWindow> mRenderWindow;
     vtkSmartPointer<vtkRenderer> mRenderer;
-    vtkSmartPointer<vtkOrientationMarkerWidget> mOrientationWidget;
+    vtkSmartPointer<vtkCameraOrientationWidget> mOrientationWidget;
     QMap<QString, vtkSmartPointer<vtkTexture>> mTextures;
     ModelViewSelector mSelector;
 };
@@ -159,8 +160,10 @@ public:
 };
 
 //! Class to process mouse and key events
-class InteractorStyle : public vtkInteractorStyleTrackballCamera
+class InteractorStyle : public QObject, public vtkInteractorStyleTrackballCamera
 {
+    Q_OBJECT
+
 public:
     static InteractorStyle* New();
     InteractorStyle();
@@ -168,11 +171,16 @@ public:
     virtual void OnKeyPress() override;
     virtual void OnKeyUp() override;
 
+    QVTKOpenGLNativeWidget* renderWidget;
     ModelViewSelector* selector;
     double pickTolerance;
 
 private:
     void updateSelectorState();
+    void createSelectionWidget(vtkActorCollection* actors);
+
+private:
+    QListWidget* mSelectionWidget;
 };
 
 }
