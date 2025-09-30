@@ -214,13 +214,27 @@ Selection::Selection()
 {
 }
 
+Selection::Selection(KCL::ElementType aType, int aIElement)
+    : iSurface(-1)
+    , type(aType)
+    , iElement(aIElement)
+{
+}
+
+Selection::Selection(int aISurface, KCL::ElementType aType, int aIElement)
+    : iSurface(aISurface)
+    , type(aType)
+    , iElement(aIElement)
+{
+}
+
 Selection::~Selection()
 {
 }
 
 bool Selection::isValid() const
 {
-    return iSurface >= 0 && iElement >= 0;
+    return iElement >= 0;
 }
 
 bool Selection::operator==(Selection const& another) const

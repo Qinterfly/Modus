@@ -2,14 +2,10 @@
 #include <QHBoxLayout>
 
 #include <vtkAxesActor.h>
-#include <vtkCallbackCommand.h>
 #include <vtkCamera.h>
-#include <vtkCellArray.h>
-#include <vtkCellData.h>
 #include <vtkCellPicker.h>
 #include <vtkDataSetMapper.h>
 #include <vtkGenericOpenGLRenderWindow.h>
-#include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkPNGReader.h>
 #include <vtkPlaneSource.h>
@@ -20,7 +16,6 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkTexture.h>
-#include <vtkUnstructuredGrid.h>
 #include <QVTKOpenGLNativeWidget.h>
 
 #include <kcl/model.h>
@@ -33,7 +28,12 @@
 
 using namespace Frontend;
 using namespace Eigen;
+using namespace Backend;
 using namespace Constants::Colors;
+
+// Macros
+vtkStandardNewMacro(PlaneFollowerCallback);
+vtkStandardNewMacro(InteractorStyle);
 
 // Constants
 constexpr auto skAllTypes = magic_enum::enum_values<KCL::ElementType>();
@@ -42,101 +42,11 @@ auto const skPanelTypes = Utility::panelTypes();
 auto const skAeroPanelTypes = Utility::aeroPanelsTypes();
 auto const skMassTypes = Utility::massTypes();
 auto const skSpringTypes = Utility::springTypes();
-constexpr auto skPointersName = "Pointers";
 
 // Helper functions
 Transformation computeTransformation(KCL::Vec3 const& coords, double dihedralAngle, double sweepAngle, double zAngle);
 Transformation reflectTransformation(Transformation const& transform);
 vtkSmartPointer<vtkTexture> readTexture(QString const& pathFile);
-
-//! Helper class to update plane textures, so that they point to the camera
-class PlaneFollowerCallback : public vtkCallbackCommand
-{
-public:
-    static PlaneFollowerCallback* New();
-
-    void Execute(vtkObject* caller, unsigned long evId, void*) override
-    {
-        // Retrieve the view vectors
-        double normal[3];
-        double up[3];
-        double right[3];
-        camera->GetViewPlaneNormal(normal);
-        camera->GetViewUp(up);
-        vtkMath::Normalize(normal);
-        vtkMath::Normalize(up);
-        vtkMath::Cross(normal, up, right);
-
-        // Process all the sources
-        double origin[3];
-        double point[3];
-        int numSources = sources.size();
-        for (int i = 0; i != numSources; ++i)
-        {
-            auto source = sources[i];
-            source->GetOrigin(origin);
-
-            // Set the point along width
-            vtkMath::Assign(right, point);
-            vtkMath::MultiplyScalar(point, scale);
-            vtkMath::Add(origin, point, point);
-            source->SetPoint1(point);
-
-            // Set the point along height
-            vtkMath::Assign(up, point);
-            vtkMath::MultiplyScalar(point, scale);
-            vtkMath::Add(origin, point, point);
-            source->SetPoint2(point);
-        }
-    }
-
-    double scale;
-    QList<vtkSmartPointer<vtkPlaneSource>> sources;
-    vtkCamera* camera;
-};
-vtkStandardNewMacro(PlaneFollowerCallback);
-
-//! Catch mouse events
-class MouseInteractorStyle : public vtkInteractorStyleTrackballCamera
-{
-public:
-    static MouseInteractorStyle* New();
-
-    virtual void OnLeftButtonDown() override
-    {
-        // Get the location of the click (in window coordinates)
-        int* pPosition = GetInteractor()->GetEventPosition();
-
-        // Construct the picker
-        vtkNew<vtkCellPicker> picker;
-        picker->SetTolerance(0.01);
-
-        // Pick from this location
-        picker->Pick(pPosition[0], pPosition[1], 0, GetDefaultRenderer());
-        vtkIdType cellID = picker->GetCellId();
-        qDebug() << "CellID = " << cellID;
-        if (cellID != -1)
-        {
-            vtkActor* actor = picker->GetActor();
-            vtkMapper* mapper = actor->GetMapper();
-            vtkCellData* data = mapper->GetInput()->GetCellData();
-            qDebug() << data->GetNumberOfArrays();
-            vtkIntArray* array = vtkIntArray::SafeDownCast(data->GetAbstractArray(skPointersName));
-            if (array)
-            {
-                Backend::Core::Selection selection;
-                selection.iSurface = array->GetTypedComponent(cellID, 0);
-                selection.type = (KCL::ElementType) array->GetTypedComponent(cellID, 1);
-                selection.iElement = array->GetTypedComponent(cellID, 2);
-                qDebug() << QString("ISurface = %1, Type = %2, IElement = %3").arg(selection.iSurface).arg(selection.type).arg(selection.iElement);
-            }
-        }
-
-        // Forward events
-        vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
-    }
-};
-vtkStandardNewMacro(MouseInteractorStyle);
 
 ModelViewOptions::ModelViewOptions()
 {
@@ -153,12 +63,11 @@ ModelViewOptions::ModelViewOptions()
     for (auto type : skAeroPanelTypes)
         elementColors[type] = vtkColors->GetColor3d("purple");
     for (auto type : skSpringTypes)
-        elementColors[type] = vtkColors->GetColor3d("red");
+        elementColors[type] = vtkColors->GetColor3d("chocolate");
 
     // Elements
     for (auto type : skAllTypes)
-        maskElements[type] = false;
-    maskElements[KCL::BI] = true;
+        maskElements[type] = true;
 
     // Dimensions
     edgeOpacity = 0.5;
@@ -170,8 +79,11 @@ ModelViewOptions::ModelViewOptions()
     beamScale = 0.003;
 
     // Flags
-    showThickness = true;
+    showThickness = false;
     showWireframe = false;
+
+    // Tolerance
+    pickTolerance = 0.005;
 }
 
 ModelView::ModelView(KCL::Model const& model, ModelViewOptions const& options)
@@ -188,6 +100,7 @@ ModelView::~ModelView()
 
 void ModelView::clear()
 {
+    mSelector.clear();
     auto actors = mRenderer->GetActors();
     while (actors->GetLastActor())
         mRenderer->RemoveActor(actors->GetLastActor());
@@ -205,6 +118,11 @@ void ModelView::refresh()
 IView::Type ModelView::type() const
 {
     return IView::kModel;
+}
+
+ModelViewSelector& ModelView::selector()
+{
+    return mSelector;
 }
 
 void ModelView::initialize()
@@ -254,7 +172,7 @@ void ModelView::drawAxes()
     mOrientationWidget->SetOutlineColor(rgba[0], rgba[1], rgba[2]);
     mOrientationWidget->SetOrientationMarker(axes);
     mOrientationWidget->SetInteractor(mRenderWindow->GetInteractor());
-    mOrientationWidget->SetViewport(0.8, 0.0, 1.0, 0.4);
+    mOrientationWidget->SetViewport(0.8, 0.6, 1.0, 1.0);
     mOrientationWidget->SetEnabled(1);
     mOrientationWidget->InteractiveOn();
 }
@@ -346,8 +264,10 @@ void ModelView::drawModel()
 
     // Set the custom stype to use for interaction
     auto interactor = mRenderWindow->GetInteractor();
-    vtkNew<MouseInteractorStyle> style;
+    vtkNew<InteractorStyle> style;
     style->SetDefaultRenderer(mRenderer);
+    style->selector = &mSelector;
+    style->pickTolerance = mOptions.pickTolerance;
     interactor->SetInteractorStyle(style);
 }
 
@@ -362,15 +282,7 @@ void ModelView::drawBeams2D(Transformation const& transform, int iSurface, KCL::
         return;
     vtkColor3d color = mOptions.elementColors[type];
 
-    // Allocate the points and their connectivity list
-    vtkNew<vtkPoints> points;
-    vtkNew<vtkCellArray> indices;
-    vtkNew<vtkIntArray> pointers;
-    pointers->SetName(skPointersName);
-    pointers->SetNumberOfComponents(3);
-
     // Process all the elements
-    int iPoint = 0;
     int numElements = elements.size();
     for (int iElement = 0; iElement != numElements; ++iElement)
     {
@@ -386,39 +298,37 @@ void ModelView::drawBeams2D(Transformation const& transform, int iSurface, KCL::
         auto endPosition = transform * Vector3d(endCoords[0], 0.0, endCoords[1]);
 
         // Set the points
+        vtkNew<vtkPoints> points;
         points->InsertNextPoint(startPosition[0], startPosition[1], startPosition[2]);
         points->InsertNextPoint(endPosition[0], endPosition[1], endPosition[2]);
 
         // Set the connectivity indices
-        vtkIdType cellID = indices->InsertNextCell(kNumCellPoints);
-        indices->InsertCellPoint(iPoint);
-        indices->InsertCellPoint(iPoint + 1);
+        vtkNew<vtkCellArray> indices;
+        indices->InsertNextCell(kNumCellPoints);
+        indices->InsertCellPoint(0);
+        indices->InsertCellPoint(1);
 
-        // Set the pointer to the model element
-        pointers->InsertTuple3(cellID, iSurface, pElement->type(), iElement);
+        // Create the polygons
+        vtkNew<vtkPolyData> polyData;
+        polyData->SetPoints(points);
+        polyData->SetLines(indices);
 
-        // Increase the counter
-        iPoint += kNumCellPoints;
+        // Build the mapper
+        vtkNew<vtkPolyDataMapper> mapper;
+        mapper->SetInputData(polyData);
+
+        // Create the actor and add to the scene
+        vtkNew<vtkActor> actor;
+        actor->SetMapper(mapper);
+        actor->GetProperty()->SetColor(color.GetData());
+        actor->GetProperty()->SetLineWidth(mOptions.beamLineWidth);
+
+        // Register the actor
+        mSelector.registerActor(Core::Selection(iSurface, type, iElement), actor);
+
+        // Add the actor to the scene
+        mRenderer->AddActor(actor);
     }
-
-    // Create the polygons
-    vtkNew<vtkPolyData> polyData;
-    polyData->SetPoints(points);
-    polyData->SetLines(indices);
-    polyData->GetCellData()->AddArray(pointers);
-
-    // Build the mapper
-    vtkNew<vtkPolyDataMapper> mapper;
-    mapper->SetInputData(polyData);
-
-    // Create the actor and add to the scene
-    vtkNew<vtkActor> actor;
-    actor->SetMapper(mapper);
-    actor->GetProperty()->SetColor(color.GetData());
-    actor->GetProperty()->SetLineWidth(mOptions.beamLineWidth);
-
-    // Add the actor to the scene
-    mRenderer->AddActor(actor);
 }
 
 //! Draw beams as cylinders
@@ -457,18 +367,8 @@ void ModelView::drawBeams3D(Transformation const& transform, int iSurface, KCL::
         if (mOptions.showWireframe)
             actor->GetProperty()->SetRepresentationToWireframe();
 
-        // Set the pointer to the model element
-        // vtkMapper* mapper = actor->GetMapper();
-        // mapper->Update();
-        // vtkPolyData* polyData = vtkPolyData::SafeDownCast(mapper->GetInput());
-        // vtkCellData* cellData = polyData->GetCellData();
-        // vtkNew<vtkIntArray> pointers;
-        // pointers->SetName(skPointersName);
-        // pointers->SetNumberOfComponents(3);
-        // int numCells = polyData->GetNumberOfCells();
-        // for (vtkIdType iCell = 0; iCell != numCells; ++iCell)
-        //     pointers->InsertTuple3(iCell, iSurface, type, iElement);
-        // cellData->AddArray(pointers);
+        // Register the actor
+        mSelector.registerActor(Core::Selection(iSurface, type, iElement), actor);
 
         // Add the actor to the scene
         mRenderer->AddActor(actor);
@@ -486,12 +386,7 @@ void ModelView::drawPanels2D(Transformation const& transform, int iSurface, KCL:
         return;
     vtkColor3d color = mOptions.elementColors[type];
 
-    // Allocate the points and their connectivity list
-    vtkNew<vtkPoints> points;
-    vtkNew<vtkCellArray> polygons;
-
     // Process all the elements
-    int iPoint = 0;
     int numElements = elements.size();
     for (int iElement = 0; iElement != numElements; ++iElement)
     {
@@ -502,39 +397,43 @@ void ModelView::drawPanels2D(Transformation const& transform, int iSurface, KCL:
 
         // Set points and connections between them
         int iData = 1;
+        vtkNew<vtkPoints> points;
         vtkNew<vtkPolygon> polygon;
+        vtkNew<vtkCellArray> polygons;
         for (int iPosition = 0; iPosition != kNumCellPoints; ++iPosition)
         {
             auto position = transform * Vector3d(elementData[iData], 0.0, elementData[iData + 1]);
             points->InsertNextPoint(position[0], position[1], position[2]);
-            polygon->GetPointIds()->InsertNextId(iPoint);
-            ++iPoint;
+            polygon->GetPointIds()->InsertNextId(iPosition);
             iData += 2;
         }
         polygons->InsertNextCell(polygon);
+
+        // Create the polygon objects
+        vtkNew<vtkPolyData> polyData;
+        polyData->SetPoints(points);
+        polyData->SetPolys(polygons);
+
+        // Build the mapper
+        vtkNew<vtkPolyDataMapper> mapper;
+        mapper->SetInputData(polyData);
+
+        // Create the actor and add to the scene
+        vtkNew<vtkActor> actor;
+        actor->SetMapper(mapper);
+        actor->GetProperty()->SetColor(color.GetData());
+        actor->GetProperty()->SetEdgeColor(mOptions.edgeColor.GetData());
+        actor->GetProperty()->SetEdgeOpacity(mOptions.edgeOpacity);
+        actor->GetProperty()->EdgeVisibilityOn();
+        if (mOptions.showWireframe)
+            actor->GetProperty()->SetRepresentationToWireframe();
+
+        // Register the actor
+        mSelector.registerActor(Core::Selection(iSurface, type, iElement), actor);
+
+        // Add the actor to the scene
+        mRenderer->AddActor(actor);
     }
-
-    // Create the polygon objects
-    vtkNew<vtkPolyData> data;
-    data->SetPoints(points);
-    data->SetPolys(polygons);
-
-    // Build the mapper
-    vtkNew<vtkPolyDataMapper> mapper;
-    mapper->SetInputData(data);
-
-    // Create the actor and add to the scene
-    vtkNew<vtkActor> actor;
-    actor->SetMapper(mapper);
-    actor->GetProperty()->SetColor(color.GetData());
-    actor->GetProperty()->SetEdgeColor(mOptions.edgeColor.GetData());
-    actor->GetProperty()->SetEdgeOpacity(mOptions.edgeOpacity);
-    actor->GetProperty()->EdgeVisibilityOn();
-    if (mOptions.showWireframe)
-        actor->GetProperty()->SetRepresentationToWireframe();
-
-    // Add the actor to the scene
-    mRenderer->AddActor(actor);
 }
 
 //! Render panel elements as hexahedrons
@@ -590,6 +489,9 @@ void ModelView::drawPanels3D(Transformation const& transform, int iSurface, KCL:
         if (mOptions.showWireframe)
             actor->GetProperty()->SetRepresentationToWireframe();
 
+        // Register the actor
+        mSelector.registerActor(Core::Selection(iSurface, type, iElement), actor);
+
         // Add the actor to the scene
         mRenderer->AddActor(actor);
     }
@@ -611,9 +513,9 @@ void ModelView::drawAeroPanels(Transformation const& transform, int iSurface, KC
     // Process all the elements
     int numElements = elements.size();
     bool isVertical = type == KCL::ElementType::DA;
-    for (int i = 0; i != numElements; ++i)
+    for (int iElement = 0; iElement != numElements; ++iElement)
     {
-        KCL::AbstractElement const* pElement = elements[i];
+        KCL::AbstractElement const* pElement = elements[iElement];
         if (pElement->subType() == KCL::ElementSubType::AE1)
             continue;
 
@@ -686,6 +588,9 @@ void ModelView::drawAeroPanels(Transformation const& transform, int iSurface, KC
         if (mOptions.showWireframe)
             actor->GetProperty()->SetRepresentationToWireframe();
 
+        // Register the actor
+        mSelector.registerActor(Core::Selection(iSurface, type, iElement), actor);
+
         // Add the actor to the scene
         mRenderer->AddActor(actor);
     }
@@ -710,10 +615,10 @@ void ModelView::drawMasses(Transformation const& transform, int iSurface, KCL::E
 
     // Process all the elements
     int numElements = elements.size();
-    QList<vtkSmartPointer<vtkPlaneSource>> sources;
-    for (int i = 0; i != numElements; ++i)
+    QList<vtkPlaneSource*> sources;
+    for (int iElement = 0; iElement != numElements; ++iElement)
     {
-        KCL::AbstractElement const* pBaseElement = elements[i];
+        KCL::AbstractElement const* pBaseElement = elements[iElement];
 
         // Slice element coordinates
         Vector3d startPosition;
@@ -801,9 +706,14 @@ void ModelView::drawMasses(Transformation const& transform, int iSurface, KCL::E
         actor->SetMapper(mapper);
         actor->SetTexture(texture);
 
+        // Register the actor
+        mSelector.registerActor(Core::Selection(iSurface, type, iElement), actor);
+
         // Add the actor to the scene
         mRenderer->AddActor(actor);
     }
+
+    // Set the callback functions
     if (!sources.empty())
     {
         // Create the plane follower event
@@ -835,9 +745,9 @@ void ModelView::drawSprings(bool isReflect, KCL::ElementType type)
 
     // Process all the elements
     int numElements = elements.size();
-    for (int i = 0; i != numElements; ++i)
+    for (int iElement = 0; iElement != numElements; ++iElement)
     {
-        KCL::AbstractElement const* pBaseElement = elements[i];
+        KCL::AbstractElement const* pBaseElement = elements[iElement];
         if (!mOptions.maskElements[pBaseElement->type()])
             continue;
         if (pBaseElement->type() != KCL::PR)
@@ -887,6 +797,9 @@ void ModelView::drawSprings(bool isReflect, KCL::ElementType type)
         auto actorPoints = Utility::createPointsActor({firstPosition, secondPosition}, radiusPoints);
         actorPoints->GetProperty()->SetColor(color.GetData());
 
+        // Register the actor
+        mSelector.registerActor(Core::Selection(type, iElement), actorHelix);
+
         // Add the actors to the scene
         mRenderer->AddActor(actorPoints);
         mRenderer->AddActor(actorHelix);
@@ -930,6 +843,249 @@ double ModelView::getMaximumDimension()
     result = std::max(result, std::abs(dimensions[3] - dimensions[2]));
     result = std::max(result, std::abs(dimensions[5] - dimensions[4]));
     return result;
+}
+
+ModelViewSelector::ModelViewSelector(State aState)
+    : state(aState)
+{
+}
+
+int ModelViewSelector::numSelected() const
+{
+    return mSelection.count();
+}
+
+bool ModelViewSelector::isEmpty() const
+{
+    return numSelected() == 0;
+}
+
+bool ModelViewSelector::isSelected(vtkActor* actor) const
+{
+    return mSelection.contains(actor);
+}
+
+//! Add the actor to the selection set
+void ModelViewSelector::select(vtkActor* actor)
+{
+    // Check if the selection is enabled
+    if (state.testFlag(kNone) || !actor)
+        return;
+
+    // Deselect the actor on the second click
+    if (isSelected(actor))
+    {
+        deselect(actor);
+        return;
+    }
+
+    // Deselect all actors for the single selection mode
+    if (state.testFlag(kSingleSelection))
+        deselectAll();
+
+    // Change the visual representation of the actor
+    vtkNew<vtkProperty> property;
+    property->DeepCopy(actor->GetProperty());
+    actor->GetProperty()->SetColor(vtkColors->GetColor3d("Red").GetData());
+    actor->GetProperty()->SetDiffuse(1.0);
+    actor->GetProperty()->SetSpecular(0.0);
+    actor->GetProperty()->EdgeVisibilityOn();
+
+    // Save the original property
+    mSelection[actor] = property;
+
+    // Display the information
+    if (state.testFlag(kVerbose))
+    {
+        Core::Selection selection = find(actor);
+        QString typeName = magic_enum::enum_name(selection.type).data();
+        qInfo() << QObject::tr("Element %1:%2 on ES:%3 was selected").arg(typeName).arg(1 + selection.iElement).arg(1 + selection.iSurface);
+    }
+}
+
+//! Remove the actor from the selection set
+void ModelViewSelector::deselect(vtkActor* actor)
+{
+    // Check if there is such actor on the scene
+    if (!mSelection.contains(actor))
+        return;
+
+    // Set the original properties
+    actor->GetProperty()->DeepCopy(mSelection[actor]);
+
+    // Display the information
+    if (state.testFlag(kVerbose))
+    {
+        Core::Selection selection = find(actor);
+        QString typeName = magic_enum::enum_name(selection.type).data();
+        qInfo() << QObject::tr("Element %1:%2 on ES:%3 was deselected").arg(typeName).arg(1 + selection.iElement).arg(1 + selection.iSurface);
+    }
+
+    // Remove the actor from the selection
+    mSelection.remove(actor);
+}
+
+//! Select all the actors associated with a model entity
+void ModelViewSelector::select(Backend::Core::Selection key)
+{
+    if (mActors.contains(key))
+        return;
+    QList<vtkActor*> values = mActors[key];
+    int numValues = values.size();
+    for (int i = 0; i != numValues; ++i)
+        select(values[i]);
+}
+
+//! Deselect all the actors associated with a model entity
+void ModelViewSelector::deselect(Backend::Core::Selection key)
+{
+    if (mActors.contains(key))
+        return;
+    QList<vtkActor*> values = mActors[key];
+    int numValues = values.size();
+    for (int i = 0; i != numValues; ++i)
+        deselect(values[i]);
+}
+
+//! Remove all the actors from the selection set
+void ModelViewSelector::deselectAll()
+{
+    if (isEmpty())
+        return;
+    QList<Core::Selection> const keys = mActors.keys();
+    int numKeys = keys.size();
+    for (int iKey = 0; iKey != numKeys; ++iKey)
+    {
+        QList<vtkActor*> values = mActors[keys[iKey]];
+        int numValues = values.size();
+        for (int iValue = 0; iValue != numValues; ++iValue)
+            deselect(values[iValue]);
+    }
+}
+
+//! Construct the reference from the model selection to the actor on the scene
+void ModelViewSelector::registerActor(Backend::Core::Selection const& key, vtkActor* value)
+{
+    mActors[key].push_back(value);
+}
+
+//! Find a selection by actor
+Core::Selection ModelViewSelector::find(vtkActor* actor) const
+{
+    Core::Selection result;
+    for (auto const [key, values] : mActors.asKeyValueRange())
+    {
+        int iFound = values.indexOf(actor);
+        if (iFound >= 0)
+            result = key;
+    }
+    return result;
+}
+
+//! Drop all the actor pointers
+void ModelViewSelector::clear()
+{
+    mActors.clear();
+}
+
+void PlaneFollowerCallback::Execute(vtkObject* caller, unsigned long evId, void*)
+{
+    // Retrieve the view vectors
+    double normal[3];
+    double up[3];
+    double right[3];
+    camera->GetViewPlaneNormal(normal);
+    camera->GetViewUp(up);
+    vtkMath::Normalize(normal);
+    vtkMath::Normalize(up);
+    vtkMath::Cross(normal, up, right);
+
+    // Process all the sources
+    double origin[3];
+    double point[3];
+    int numSources = sources.size();
+    for (int i = 0; i != numSources; ++i)
+    {
+        auto source = sources[i];
+        source->GetOrigin(origin);
+
+        // Set the point along width
+        vtkMath::Assign(right, point);
+        vtkMath::MultiplyScalar(point, scale);
+        vtkMath::Add(origin, point, point);
+        source->SetPoint1(point);
+
+        // Set the point along height
+        vtkMath::Assign(up, point);
+        vtkMath::MultiplyScalar(point, scale);
+        vtkMath::Add(origin, point, point);
+        source->SetPoint2(point);
+    }
+}
+
+InteractorStyle::InteractorStyle()
+    : selector(nullptr)
+{
+}
+
+void InteractorStyle::OnLeftButtonDown()
+{
+    // Get the window interactor
+    vtkRenderWindowInteractor* interactor = GetInteractor();
+
+    // Get the location of the click (in window coordinates)
+    int* position = interactor->GetEventPosition();
+
+    // Construct the picker
+    vtkNew<vtkCellPicker> picker;
+    picker->SetTolerance(pickTolerance);
+
+    // Pick from this location
+    picker->Pick(position[0], position[1], 0, GetDefaultRenderer());
+
+    // Highlight the last actor
+    vtkActorCollection* actors = picker->GetActors();
+    actors->InitTraversal();
+    if (actors->GetNumberOfItems() > 0)
+        selector->select(actors->GetLastActor());
+    else
+        selector->deselectAll();
+
+    // Forward events
+    vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
+}
+
+void InteractorStyle::OnKeyPress()
+{
+    // Get the pressed key
+    std::string key = GetInteractor()->GetKeySym();
+
+    // Process the press
+    if (key == "Escape")
+        selector->deselectAll();
+
+    // Update the selector state
+    updateSelectorState();
+
+    // Forward events
+    vtkInteractorStyleTrackballCamera::OnKeyPress();
+}
+
+void InteractorStyle::OnKeyUp()
+{
+    updateSelectorState();
+    vtkInteractorStyleTrackballCamera::OnKeyUp();
+}
+
+void InteractorStyle::updateSelectorState()
+{
+    if (!selector->state.testFlag(ModelViewSelector::kNone))
+    {
+        if (GetInteractor()->GetControlKey())
+            selector->state = ModelViewSelector::State(ModelViewSelector::kMultipleSelection);
+        else
+            selector->state = ModelViewSelector::State(ModelViewSelector::kSingleSelection);
+    }
 }
 
 //! Helper function to build up the transformation for the elastic surface using its local coordinate

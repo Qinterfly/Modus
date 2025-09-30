@@ -107,7 +107,9 @@ void ModelHierarchyItem::appendChildren()
     int numSurfaces = mModel.surfaces.size();
     for (int i = 0; i != numSurfaces; ++i)
     {
-        QString name = QObject::tr("Elastic surface: %1").arg(1 + i);
+        QString name = mModel.surfaces[i].name.data();
+        if (name.isEmpty())
+            name = QObject::tr("Elastic surface: %1").arg(1 + i);
         appendRow(new SurfaceHierarchyItem(mModel.surfaces[i], icon, name));
     }
 
@@ -125,6 +127,7 @@ SurfaceHierarchyItem::SurfaceHierarchyItem(KCL::ElasticSurface& surface, QIcon c
     : HierarchyItem(kSurface, icon, name)
     , mSurface(surface)
 {
+    setEditable(true);
     appendChildren();
 }
 

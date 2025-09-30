@@ -41,6 +41,9 @@ void ProjectHierarchyModel::processItemChange(QStandardItem* pItem)
     case HierarchyItem::kSubproject:
         static_cast<SubprojectHierarchyItem*>(pItem)->subproject().name() = text;
         break;
+    case HierarchyItem::kSurface:
+        static_cast<SurfaceHierarchyItem*>(pItem)->surface().name = text.toStdString();
+        break;
     case HierarchyItem::kModalSolver:
         static_cast<ModalSolverHierarchyItem*>(pItem)->solver()->name = text;
         break;
