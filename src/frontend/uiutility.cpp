@@ -6,6 +6,7 @@
 #include <QWidget>
 
 #include <Eigen/Geometry>
+#include <magicenum/magic_enum.hpp>
 #include <vtkCylinderSource.h>
 #include <vtkDataSetMapper.h>
 #include <vtkGlyph3DMapper.h>
@@ -20,9 +21,13 @@
 #include <vtkTransformPolyDataFilter.h>
 #include <vtkUnstructuredGrid.h>
 
+#include "hierarchyitem.h"
+#include "isolver.h"
+#include "selectionset.h"
 #include "uiutility.h"
 
 using namespace Eigen;
+using namespace Backend;
 
 namespace Frontend::Utility
 {
@@ -92,6 +97,16 @@ QString errorColorName(double value, double acceptThreshold, double criticalThre
         result = "green";
     else if (qAbs(value) > criticalThreshold)
         result = "red";
+    return result;
+}
+
+//! Retrieve a selection label to display
+QString getLabel(Core::Selection selection)
+{
+    QString typeName = magic_enum::enum_name(selection.type).data();
+    QString result = QString("%1:%2").arg(typeName).arg(selection.iElement + 1);
+    if (selection.iSurface >= 0)
+        result += QString(" ES:%1").arg(selection.iSurface + 1);
     return result;
 }
 
@@ -441,5 +456,79 @@ vtkSmartPointer<vtkActor> createShellActor(Transformation const& transform, Matr
     actor->SetMapper(mapper);
 
     return actor;
+}
+
+//! Retrieve an icon associated with an element by pointer
+QIcon getIcon(KCL::AbstractElement const* pElement)
+{
+    if (!pElement)
+        return QIcon();
+    return getIcon(pElement->type());
+}
+
+//! Retrieve an icon associated with an element by type
+QIcon getIcon(KCL::ElementType type)
+{
+    switch (type)
+    {
+    case KCL::OD:
+        return QIcon(":/icons/configuration.png");
+    case KCL::SM:
+        return QIcon(":/icons/mass.png");
+    case KCL::BI:
+        return QIcon(":/icons/beam-bending.png");
+    case KCL::PN:
+        return QIcon(":/icons/panel.png");
+    case KCL::EL:
+        return QIcon(":/icons/aileron.png");
+    case KCL::DE:
+        return QIcon(":/icons/aileron.png");
+    case KCL::M3:
+        return QIcon(":/icons/mass.png");
+    case KCL::OP:
+        return QIcon(":/icons/layer.png");
+    case KCL::BK:
+        return QIcon(":/icons/beam-torsion.png");
+    case KCL::AE:
+        return QIcon(":/icons/trapezium.png");
+    case KCL::DQ:
+        return QIcon(":/icons/function.png");
+    case KCL::DA:
+        return QIcon(":/icons/trapezium.png");
+    case KCL::DB:
+        return QIcon(":/icons/beam-bending.png");
+    case KCL::PK:
+        return QIcon(":/icons/function.png");
+    case KCL::QK:
+        return QIcon(":/icons/function.png");
+    case KCL::WP:
+        return QIcon(":/icons/setup.png");
+    case KCL::PR:
+        return QIcon(":/icons/spring.png");
+    case KCL::TE:
+        return QIcon(":/icons/damper.png");
+    case KCL::CO:
+        return QIcon(":/icons/constants.png");
+    default:
+        break;
+    }
+    return QIcon();
+}
+
+//! Retrieve an icon associated with a solver
+QIcon getIcon(Core::ISolver const* pSolver)
+{
+    if (!pSolver)
+        return QIcon();
+    switch (pSolver->type())
+    {
+    case Core::ISolver::kModal:
+        return QIcon(":/icons/spectrum.png");
+    case Core::ISolver::kFlutter:
+        return QIcon(":/icons/flutter.png");
+    case Core::ISolver::kOptim:
+        return QIcon(":/icons/optimization.png");
+    }
+    return QIcon();
 }
 }

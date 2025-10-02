@@ -11,9 +11,6 @@
 using namespace Backend;
 using namespace Frontend;
 
-QIcon getIcon(KCL::AbstractElement const* pElement);
-QIcon getIcon(Core::ISolver const* pSolver);
-
 HierarchyItem::HierarchyItem(Type itemType)
     : mkType(itemType)
 {
@@ -170,7 +167,7 @@ ElementHierarchyItem::ElementHierarchyItem(KCL::AbstractElement* pElement, QStri
     : HierarchyItem(kElement, name)
     , mpElement(pElement)
 {
-    setIcon(getIcon(mpElement));
+    setIcon(Utility::getIcon(mpElement));
 }
 
 KCL::AbstractElement* ElementHierarchyItem::element()
@@ -184,7 +181,7 @@ ModalSolverHierarchyItem::ModalSolverHierarchyItem(Core::ModalSolver* pSolver, Q
 {
     setEditable(true);
     setText(mpSolver->name.isEmpty() ? defaultName : mpSolver->name);
-    setIcon(getIcon(mpSolver));
+    setIcon(Utility::getIcon(mpSolver));
     appendChildren();
 }
 
@@ -275,7 +272,7 @@ FlutterSolverHierarchyItem::FlutterSolverHierarchyItem(Core::FlutterSolver* pSol
 {
     setEditable(true);
     setText(mpSolver->name.isEmpty() ? defaultName : mpSolver->name);
-    setIcon(getIcon(mpSolver));
+    setIcon(Utility::getIcon(mpSolver));
     appendChildren();
 }
 
@@ -393,7 +390,7 @@ OptimSolverHierarchyItem::OptimSolverHierarchyItem(Core::OptimSolver* pSolver, Q
 {
     setEditable(true);
     setText(mpSolver->name.isEmpty() ? defaultName : mpSolver->name);
-    setIcon(getIcon(mpSolver));
+    setIcon(Utility::getIcon(mpSolver));
     appendChildren();
 }
 
@@ -506,66 +503,4 @@ void OptimSolutionHierarchyItem::appendChildren()
 {
     appendRow(new ModelHierarchyItem(mSolution.model));
     appendRow(new ModalSolutionHierarchyItem(mSolution.modalSolution));
-}
-
-QIcon getIcon(KCL::AbstractElement const* pElement)
-{
-    switch (pElement->type())
-    {
-    case KCL::OD:
-        return QIcon(":/icons/configuration.png");
-    case KCL::SM:
-        return QIcon(":/icons/mass.png");
-    case KCL::BI:
-        return QIcon(":/icons/beam-bending.png");
-    case KCL::PN:
-        return QIcon(":/icons/panel.png");
-    case KCL::EL:
-        return QIcon(":/icons/aileron.png");
-    case KCL::DE:
-        return QIcon(":/icons/aileron.png");
-    case KCL::M3:
-        return QIcon(":/icons/mass.png");
-    case KCL::OP:
-        return QIcon(":/icons/layer.png");
-    case KCL::BK:
-        return QIcon(":/icons/beam-torsion.png");
-    case KCL::AE:
-        return QIcon(":/icons/trapezium.png");
-    case KCL::DQ:
-        return QIcon(":/icons/function.png");
-    case KCL::DA:
-        return QIcon(":/icons/trapezium.png");
-    case KCL::DB:
-        return QIcon(":/icons/beam-bending.png");
-    case KCL::PK:
-        return QIcon(":/icons/function.png");
-    case KCL::QK:
-        return QIcon(":/icons/function.png");
-    case KCL::WP:
-        return QIcon(":/icons/setup.png");
-    case KCL::PR:
-        return QIcon(":/icons/spring.png");
-    case KCL::TE:
-        return QIcon(":/icons/damper.png");
-    case KCL::CO:
-        return QIcon(":/icons/constants.png");
-    default:
-        break;
-    }
-    return QIcon();
-}
-
-QIcon getIcon(Core::ISolver const* pSolver)
-{
-    switch (pSolver->type())
-    {
-    case Core::ISolver::kModal:
-        return QIcon(":/icons/spectrum.png");
-    case Core::ISolver::kFlutter:
-        return QIcon(":/icons/flutter.png");
-    case Core::ISolver::kOptim:
-        return QIcon(":/icons/optimization.png");
-    }
-    return QIcon();
 }

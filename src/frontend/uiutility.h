@@ -4,16 +4,24 @@
 
 #include <QtGlobal>
 
-#include "uialiasdata.h"
 #include <kcl/element.h>
 #include <vtkNew.h>
+
+#include "isolver.h"
+#include "uialiasdata.h"
 
 QT_FORWARD_DECLARE_CLASS(QWidget);
 QT_FORWARD_DECLARE_CLASS(QToolBar);
 QT_FORWARD_DECLARE_CLASS(QColor);
 QT_FORWARD_DECLARE_CLASS(QPalette);
+QT_FORWARD_DECLARE_CLASS(QIcon)
 
 class vtkActor;
+
+namespace Backend::Core
+{
+struct Selection;
+}
 
 namespace Frontend::Utility
 {
@@ -27,6 +35,7 @@ int showSaveDialog(QWidget* pWidget, QString const& title, QString const& messag
 void fullScreenResize(QWidget* pWidget);
 void setShortcutHints(QToolBar* pToolBar);
 QString errorColorName(double value, double acceptThreshold, double criticalThreshold);
+QString getLabel(Backend::Core::Selection selection);
 
 // File
 void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix);
@@ -48,6 +57,11 @@ vtkSmartPointer<vtkActor> createCylinderActor(Eigen::Vector3d const& startPositi
                                               int resolution);
 vtkSmartPointer<vtkActor> createShellActor(Transformation const& transform, Matrix42d const& coords, Eigen::Vector4d const& depths,
                                            double thickness);
+
+// Icons
+QIcon getIcon(KCL::AbstractElement const* pElement);
+QIcon getIcon(KCL::ElementType type);
+QIcon getIcon(Backend::Core::ISolver const* pSolver);
 }
 
 #endif // UIUTILITY_H

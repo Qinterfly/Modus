@@ -14,8 +14,6 @@
 #include "iview.h"
 #include "uialiasdata.h"
 
-QT_FORWARD_DECLARE_CLASS(QListWidget)
-
 namespace KCL
 {
 struct Model;
@@ -33,6 +31,7 @@ class vtkProperty;
 class vtkPlaneSource;
 class vtkCamera;
 class vtkActorCollection;
+class vtkPolyDataSilhouette;
 
 namespace Frontend
 {
@@ -43,29 +42,32 @@ class ModelViewSelector
 public:
     enum Flag
     {
-        kNone,
-        kSingleSelection,
-        kMultipleSelection,
-        kVerbose
+        kNone = 0x0,
+        kSingleSelection = 0x1,
+        kMultipleSelection = 0x2,
+        kVerbose = 0x4
     };
     Q_DECLARE_FLAGS(State, Flag);
 
-    ModelViewSelector(State aState = kSingleSelection);
+    ModelViewSelector(State aState = State(kSingleSelection));
     ~ModelViewSelector() = default;
 
     bool isEmpty() const;
     bool isSelected(vtkActor* actor) const;
     int numSelected() const;
+    QList<Backend::Core::Selection> selected() const;
+
     void select(vtkActor* actor);
-    void deselect(vtkActor* actor);
     void select(Backend::Core::Selection key);
+    void deselect(vtkActor* actor);
     void deselect(Backend::Core::Selection key);
     void deselectAll();
     void clear();
+
     void registerActor(Backend::Core::Selection const& key, vtkActor* value);
     Backend::Core::Selection find(vtkActor* actor) const;
+    QList<vtkActor*> find(Backend::Core::Selection selection);
 
-public:
     State state;
 
 private:
@@ -117,6 +119,8 @@ public:
     void clear() override;
     void refresh() override;
     IView::Type type() const override;
+    KCL::Model const& model();
+    ModelViewOptions& options();
     ModelViewSelector& selector();
 
     void setIsometricView();
@@ -139,12 +143,12 @@ private:
 private:
     KCL::Model const& mModel;
     ModelViewOptions mOptions;
+    ModelViewSelector mSelector;
     QVTKOpenGLNativeWidget* mRenderWidget;
     vtkSmartPointer<vtkRenderWindow> mRenderWindow;
     vtkSmartPointer<vtkRenderer> mRenderer;
     vtkSmartPointer<vtkCameraOrientationWidget> mOrientationWidget;
     QMap<QString, vtkSmartPointer<vtkTexture>> mTextures;
-    ModelViewSelector mSelector;
 };
 
 //! Class to rotate planes, so that they point to the camera
@@ -169,18 +173,19 @@ public:
     InteractorStyle();
     virtual void OnLeftButtonDown() override;
     virtual void OnKeyPress() override;
-    virtual void OnKeyUp() override;
 
-    QVTKOpenGLNativeWidget* renderWidget;
     ModelViewSelector* selector;
     double pickTolerance;
 
 private:
     void updateSelectorState();
     void createSelectionWidget(vtkActorCollection* actors);
+    void highlight(Backend::Core::Selection selection);
+    void removeHighlights();
 
 private:
-    QListWidget* mSelectionWidget;
+    QMenu* mSelectionWidget;
+    QList<vtkSmartPointer<vtkActor>> mHighlightActors;
 };
 
 }

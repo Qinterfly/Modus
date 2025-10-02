@@ -1,6 +1,6 @@
 #include <QFile>
 #include <QHBoxLayout>
-#include <QListWidget>
+#include <QMenu>
 
 #include <vtkAxesActor.h>
 #include <vtkCamera.h>
@@ -13,6 +13,7 @@
 #include <vtkPlaneSource.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
+#include <vtkPolyDataSilhouette.h>
 #include <vtkPolygon.h>
 #include <vtkProperty.h>
 #include <vtkRenderWindowInteractor.h>
@@ -83,7 +84,7 @@ ModelViewOptions::ModelViewOptions()
     // Flags
     showThickness = false;
     showWireframe = false;
-    showSymmetry = false;
+    showSymmetry = true;
 
     // Tolerance
     pickTolerance = 0.005;
@@ -113,13 +114,17 @@ void ModelView::refresh()
 {
     clear();
     drawModel();
-    mRenderer->ResetCamera();
     mRenderWindow->Render();
 }
 
 IView::Type ModelView::type() const
 {
     return IView::kModel;
+}
+
+ModelViewOptions& ModelView::options()
+{
+    return mOptions;
 }
 
 ModelViewSelector& ModelView::selector()
@@ -129,6 +134,8 @@ ModelViewSelector& ModelView::selector()
 
 void ModelView::initialize()
 {
+    int const kNumAnimationFrames = 15;
+
     // Load the textures
     loadTextures();
 
@@ -137,6 +144,7 @@ void ModelView::initialize()
     mRenderer->SetBackground(mOptions.sceneColor.GetData());
     mRenderer->SetBackground2(mOptions.sceneColor2.GetData());
     mRenderer->GradientBackgroundOn();
+    mRenderer->ResetCamera();
 
     // Create the window
     mRenderWindow = vtkGenericOpenGLRenderWindow::New();
@@ -147,13 +155,12 @@ void ModelView::initialize()
     mOrientationWidget = vtkCameraOrientationWidget::New();
     mOrientationWidget->SetParentRenderer(mRenderer);
     mOrientationWidget->On();
-    mOrientationWidget->SetAnimatorTotalFrames(15);
+    mOrientationWidget->SetAnimatorTotalFrames(kNumAnimationFrames);
 
     // Set the custom style to use for interaction
     auto interactor = mRenderWindow->GetInteractor();
     vtkNew<InteractorStyle> style;
     style->SetDefaultRenderer(mRenderer);
-    style->renderWidget = mRenderWidget;
     style->selector = &mSelector;
     style->pickTolerance = mOptions.pickTolerance;
     interactor->SetInteractorStyle(style);
@@ -844,16 +851,34 @@ ModelViewSelector::ModelViewSelector(State aState)
 {
 }
 
+//! Get number of selected model entities
 int ModelViewSelector::numSelected() const
 {
     return mSelection.count();
 }
 
+//! Retrieve selected model entities
+QList<Backend::Core::Selection> ModelViewSelector::selected() const
+{
+    QList<Core::Selection> result;
+    QList<vtkActor*> actors = mSelection.keys();
+    int numActors = actors.size();
+    for (int i = 0; i != numActors; ++i)
+    {
+        Core::Selection selection = find(actors[i]);
+        if (selection.isValid())
+            result.push_back(selection);
+    }
+    return result;
+}
+
+//! Check if there are any elements selected
 bool ModelViewSelector::isEmpty() const
 {
     return numSelected() == 0;
 }
 
+//! Check if the actor has been selected
 bool ModelViewSelector::isSelected(vtkActor* actor) const
 {
     return mSelection.contains(actor);
@@ -892,9 +917,32 @@ void ModelViewSelector::select(vtkActor* actor)
     if (state.testFlag(kVerbose))
     {
         Core::Selection selection = find(actor);
-        QString typeName = magic_enum::enum_name(selection.type).data();
-        qInfo() << QObject::tr("Element %1:%2 on ES:%3 was selected").arg(typeName).arg(1 + selection.iElement).arg(1 + selection.iSurface);
+        qInfo() << QObject::tr("Element %1 was selected").arg(Utility::getLabel(selection));
     }
+}
+
+//! Select all the actors associated with a model entity
+void ModelViewSelector::select(Backend::Core::Selection key)
+{
+    // Check if there are any actors to select
+    if (!mActors.contains(key))
+        return;
+
+    // Set the state to select multiple actors associated with one key
+    State oldState = state;
+    if (state.testFlag(kSingleSelection))
+        deselectAll();
+    state.setFlag(kSingleSelection, false);
+    state.setFlag(kMultipleSelection, true);
+
+    // Select the actors associated with the selection
+    QList<vtkActor*> values = mActors[key];
+    int numValues = values.size();
+    for (int i = 0; i != numValues; ++i)
+        select(values[i]);
+
+    // Set back the state
+    state = oldState;
 }
 
 //! Remove the actor from the selection set
@@ -911,23 +959,11 @@ void ModelViewSelector::deselect(vtkActor* actor)
     if (state.testFlag(kVerbose))
     {
         Core::Selection selection = find(actor);
-        QString typeName = magic_enum::enum_name(selection.type).data();
-        qInfo() << QObject::tr("Element %1:%2 on ES:%3 was deselected").arg(typeName).arg(1 + selection.iElement).arg(1 + selection.iSurface);
+        qInfo() << QObject::tr("Element %1 was deselected").arg(Utility::getLabel(selection));
     }
 
     // Remove the actor from the selection
     mSelection.remove(actor);
-}
-
-//! Select all the actors associated with a model entity
-void ModelViewSelector::select(Backend::Core::Selection key)
-{
-    if (!mActors.contains(key))
-        return;
-    QList<vtkActor*> values = mActors[key];
-    int numValues = values.size();
-    for (int i = 0; i != numValues; ++i)
-        select(values[i]);
 }
 
 //! Deselect all the actors associated with a model entity
@@ -976,6 +1012,15 @@ Core::Selection ModelViewSelector::find(vtkActor* actor) const
     return result;
 }
 
+//! Find a list of actors by selection
+QList<vtkActor*> ModelViewSelector::find(Backend::Core::Selection selection)
+{
+    if (mActors.contains(selection))
+        return mActors[selection];
+    else
+        return QList<vtkActor*>();
+}
+
 //! Drop all the actor pointers
 void ModelViewSelector::clear()
 {
@@ -1018,18 +1063,21 @@ void PlaneFollowerCallback::Execute(vtkObject* caller, unsigned long evId, void*
 }
 
 InteractorStyle::InteractorStyle()
-    : renderWidget(nullptr)
-    , selector(nullptr)
+    : selector(nullptr)
     , mSelectionWidget(nullptr)
 {
 }
 
+//! Process left button click
 void InteractorStyle::OnLeftButtonDown()
 {
+    // Remove silhouette actors
+    removeHighlights();
+
     // Free the selection widget, if necessary
     if (mSelectionWidget)
     {
-        mSelectionWidget->close();
+        mSelectionWidget->deleteLater();
         mSelectionWidget = nullptr;
     }
 
@@ -1046,60 +1094,67 @@ void InteractorStyle::OnLeftButtonDown()
     // Pick from this location
     picker->Pick(position[0], position[1], 0.0, GetDefaultRenderer());
 
+    // Update the selector state
+    updateSelectorState();
+
     // Highlight the last actor
     vtkActorCollection* actors = picker->GetActors();
     actors->InitTraversal();
     int numActors = actors->GetNumberOfItems();
     if (numActors > 1)
+    {
         createSelectionWidget(actors);
+        return;
+    }
     else if (numActors == 1)
-        selector->select(actors->GetLastActor());
-    else
-        selector->deselectAll();
+    {
+        selector->select(selector->find(actors->GetLastActor()));
+    }
 
     // Forward events
     vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
 }
 
+//! Process key press events
 void InteractorStyle::OnKeyPress()
 {
+    // Retrieve the window interactor
+    vtkRenderWindowInteractor* interactor = GetInteractor();
+
     // Get the pressed key
-    std::string key = GetInteractor()->GetKeySym();
+    std::string key = interactor->GetKeySym();
 
     // Process the press
-    if (key == "Escape")
+    if (key == "Escape" || key == "BackSpace" || key == "Delete")
+    {
+        removeHighlights();
         selector->deselectAll();
-
-    // Update the selector state
-    updateSelectorState();
+        interactor->Render();
+    }
 
     // Forward events
     vtkInteractorStyleTrackballCamera::OnKeyPress();
 }
 
-void InteractorStyle::OnKeyUp()
-{
-    updateSelectorState();
-    vtkInteractorStyleTrackballCamera::OnKeyUp();
-}
-
+//! Set the flags of the selector
 void InteractorStyle::updateSelectorState()
 {
     if (!selector->state.testFlag(ModelViewSelector::kNone))
     {
+        selector->state.setFlag(ModelViewSelector::kSingleSelection, false);
+        selector->state.setFlag(ModelViewSelector::kMultipleSelection, false);
         if (GetInteractor()->GetControlKey())
-            selector->state = ModelViewSelector::State(ModelViewSelector::kMultipleSelection);
+            selector->state.setFlag(ModelViewSelector::kMultipleSelection);
         else
-            selector->state = ModelViewSelector::State(ModelViewSelector::kSingleSelection);
+            selector->state.setFlag(ModelViewSelector::kSingleSelection);
     }
 }
 
 //! Create the widget to select actors once ray intersect them
 void InteractorStyle::createSelectionWidget(vtkActorCollection* actors)
 {
-    // Create the list widget
-    mSelectionWidget = new QListWidget(renderWidget);
-    mSelectionWidget->setAttribute(Qt::WA_DeleteOnClose, true);
+    // Create the menu widget
+    mSelectionWidget = new QMenu;
 
     // Loop through all the actors
     int numActors = actors->GetNumberOfItems();
@@ -1111,31 +1166,96 @@ void InteractorStyle::createSelectionWidget(vtkActorCollection* actors)
         if (!selection.isValid())
             continue;
 
-        // Create the item
-        QString typeName = magic_enum::enum_name(selection.type).data();
-        QString label = QString("%1:%2 ES:%3").arg(typeName).arg(selection.iElement + 1).arg(selection.iSurface + 1);
-        QListWidgetItem* item = new QListWidgetItem(label);
-        item->setData(Qt::UserRole, QVariant::fromValue(selection));
+        // Create the action
+        QString label = Utility::getLabel(selection);
+        QIcon icon = Utility::getIcon(selection.type);
+        QAction* action = new QAction(icon, label);
+        action->setData(QVariant::fromValue(selection));
 
-        // Add the item to the widget
-        mSelectionWidget->addItem(item);
+        // Add the action to the widget
+        mSelectionWidget->addAction(action);
     }
 
-    // Set the handler for the item selection event
-    connect(mSelectionWidget, &QListWidget::itemSelectionChanged, this,
-            [this]()
+    // Set the connections
+    connect(mSelectionWidget, &QMenu::hovered, this,
+            [this](QAction* action)
             {
-                auto selection = mSelectionWidget->currentItem()->data(Qt::UserRole).value<Core::Selection>();
+                if (action)
+                {
+                    auto selection = action->data().value<Core::Selection>();
+                    highlight(selection);
+                }
+                else
+                {
+                    removeHighlights();
+                }
+                GetInteractor()->Render();
+            });
+    connect(mSelectionWidget, &QMenu::triggered, this,
+            [this](QAction* action)
+            {
+                auto selection = action->data().value<Core::Selection>();
+                removeHighlights();
                 selector->select(selection);
                 mSelectionWidget->hide();
                 GetInteractor()->Render();
             });
 
-    // Set the widget geometry and show it
-    mSelectionWidget->move(renderWidget->mapFromGlobal(QCursor::pos()));
-    mSelectionWidget->setFixedSize(mSelectionWidget->sizeHintForColumn(0) + mSelectionWidget->frameWidth() * 2,
-                                   mSelectionWidget->sizeHintForRow(0) * mSelectionWidget->count() + 2 * mSelectionWidget->frameWidth());
-    mSelectionWidget->show();
+    // Display the widget
+    mSelectionWidget->popup(QCursor::pos());
+}
+
+//! Highlight the actor by adding a silhouette around it
+void InteractorStyle::highlight(Core::Selection selection)
+{
+    // Constants
+    vtkColor3d kColor = vtkColors->GetColor3d("Red");
+    int const kLineWidth = 5;
+
+    // Remove the silhouette actors from the scene
+    removeHighlights();
+
+    // Loop through all the actors asscoiated with the given selection
+    QList<vtkActor*> actors = selector->find(selection);
+    int numActors = actors.size();
+    for (int i = 0; i != numActors; ++i)
+    {
+        // Slice the polygon data
+        vtkPolyData* polyData = vtkPolyData::SafeDownCast(actors[i]->GetMapper()->GetInput());
+
+        // Set the mapper data
+        vtkNew<vtkPolyDataMapper> silhouetteMapper;
+        if (polyData->GetNumberOfLines() > 0)
+        {
+            silhouetteMapper->SetInputData(polyData);
+        }
+        else
+        {
+            vtkNew<vtkPolyDataSilhouette> silhouette;
+            silhouette->SetCamera(GetDefaultRenderer()->GetActiveCamera());
+            silhouette->SetInputData(polyData);
+            silhouetteMapper->SetInputConnection(silhouette->GetOutputPort());
+        }
+
+        // Construct the silhouette actor
+        vtkNew<vtkActor> silhouetteActor;
+        silhouetteActor->SetMapper(silhouetteMapper);
+        silhouetteActor->GetProperty()->SetColor(kColor.GetData());
+        silhouetteActor->GetProperty()->SetLineWidth(kLineWidth);
+        mHighlightActors.push_back(silhouetteActor);
+
+        // Add the actor to the scene
+        GetDefaultRenderer()->AddActor(silhouetteActor);
+    }
+}
+
+//! Remove highlighted actors from the scene
+void InteractorStyle::removeHighlights()
+{
+    int numActors = mHighlightActors.size();
+    for (int i = 0; i != numActors; ++i)
+        GetDefaultRenderer()->RemoveActor(mHighlightActors[i]);
+    mHighlightActors.clear();
 }
 
 //! Helper function to build up the transformation for the elastic surface using its local coordinate
