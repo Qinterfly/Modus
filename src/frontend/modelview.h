@@ -76,6 +76,45 @@ private:
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(ModelViewSelector::State)
 
+//! Class to rotate planes, so that they point to the camera
+class PlaneFollowerCallback : public vtkCallbackCommand
+{
+public:
+    static PlaneFollowerCallback* New();
+    void Execute(vtkObject* caller, unsigned long evId, void*) override;
+
+    double scale;
+    QList<vtkPlaneSource*> sources;
+    vtkCamera* camera;
+};
+
+//! Class to process mouse and key events
+class InteractorStyle : public QObject, public vtkInteractorStyleTrackballCamera
+{
+    Q_OBJECT
+
+public:
+    static InteractorStyle* New();
+    InteractorStyle();
+    virtual void OnLeftButtonDown() override;
+    virtual void OnKeyPress() override;
+    void clear();
+
+public:
+    ModelViewSelector* selector;
+    double pickTolerance;
+
+private:
+    void updateSelectorState();
+    void createSelectionWidget(vtkActorCollection* actors);
+    void highlight(Backend::Core::Selection selection);
+    void removeHighlights();
+
+private:
+    QMenu* mSelectionWidget;
+    QList<vtkSmartPointer<vtkActor>> mHighlightActors;
+};
+
 //! Rendering options
 struct ModelViewOptions
 {
@@ -110,7 +149,7 @@ struct ModelViewOptions
 };
 
 //! Model plotter
-class ModelView : public QWidget, public IView
+class ModelView : public IView
 {
 public:
     ModelView(KCL::Model const& model, ModelViewOptions const& options = ModelViewOptions());
@@ -149,45 +188,8 @@ private:
     vtkSmartPointer<vtkRenderer> mRenderer;
     vtkSmartPointer<vtkCameraOrientationWidget> mOrientationWidget;
     QMap<QString, vtkSmartPointer<vtkTexture>> mTextures;
+    vtkSmartPointer<InteractorStyle> mStyle;
 };
-
-//! Class to rotate planes, so that they point to the camera
-class PlaneFollowerCallback : public vtkCallbackCommand
-{
-public:
-    static PlaneFollowerCallback* New();
-    void Execute(vtkObject* caller, unsigned long evId, void*) override;
-
-    double scale;
-    QList<vtkPlaneSource*> sources;
-    vtkCamera* camera;
-};
-
-//! Class to process mouse and key events
-class InteractorStyle : public QObject, public vtkInteractorStyleTrackballCamera
-{
-    Q_OBJECT
-
-public:
-    static InteractorStyle* New();
-    InteractorStyle();
-    virtual void OnLeftButtonDown() override;
-    virtual void OnKeyPress() override;
-
-    ModelViewSelector* selector;
-    double pickTolerance;
-
-private:
-    void updateSelectorState();
-    void createSelectionWidget(vtkActorCollection* actors);
-    void highlight(Backend::Core::Selection selection);
-    void removeHighlights();
-
-private:
-    QMenu* mSelectionWidget;
-    QList<vtkSmartPointer<vtkActor>> mHighlightActors;
-};
-
 }
 
 #endif // MODELVIEW_H

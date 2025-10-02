@@ -102,14 +102,17 @@ ModelView::~ModelView()
 {
 }
 
+//! Clear all the items from the scene
 void ModelView::clear()
 {
     mSelector.clear();
+    mStyle->clear();
     auto actors = mRenderer->GetActors();
     while (actors->GetLastActor())
         mRenderer->RemoveActor(actors->GetLastActor());
 }
 
+//! Redraw the scene
 void ModelView::refresh()
 {
     clear();
@@ -117,16 +120,25 @@ void ModelView::refresh()
     mRenderWindow->Render();
 }
 
+//! Get the view type
 IView::Type ModelView::type() const
 {
     return IView::kModel;
 }
 
+//! Retrieve the model instance
+KCL::Model const& ModelView::model()
+{
+    return mModel;
+}
+
+//! Get the view options
 ModelViewOptions& ModelView::options()
 {
     return mOptions;
 }
 
+//! Retrieve the selector instance
 ModelViewSelector& ModelView::selector()
 {
     return mSelector;
@@ -159,13 +171,14 @@ void ModelView::initialize()
 
     // Set the custom style to use for interaction
     auto interactor = mRenderWindow->GetInteractor();
-    vtkNew<InteractorStyle> style;
-    style->SetDefaultRenderer(mRenderer);
-    style->selector = &mSelector;
-    style->pickTolerance = mOptions.pickTolerance;
-    interactor->SetInteractorStyle(style);
+    mStyle = InteractorStyle::New();
+    mStyle->SetDefaultRenderer(mRenderer);
+    mStyle->selector = &mSelector;
+    mStyle->pickTolerance = mOptions.pickTolerance;
+    interactor->SetInteractorStyle(mStyle);
 }
 
+//! Load the textures from the resource file
 void ModelView::loadTextures()
 {
     mTextures["mass"] = readTexture(":/textures/mass.png");
@@ -1071,15 +1084,8 @@ InteractorStyle::InteractorStyle()
 //! Process left button click
 void InteractorStyle::OnLeftButtonDown()
 {
-    // Remove silhouette actors
-    removeHighlights();
-
-    // Free the selection widget, if necessary
-    if (mSelectionWidget)
-    {
-        mSelectionWidget->deleteLater();
-        mSelectionWidget = nullptr;
-    }
+    // Clear the created items
+    clear();
 
     // Get the window interactor
     vtkRenderWindowInteractor* interactor = GetInteractor();
@@ -1127,13 +1133,27 @@ void InteractorStyle::OnKeyPress()
     // Process the press
     if (key == "Escape" || key == "BackSpace" || key == "Delete")
     {
-        removeHighlights();
+        clear();
         selector->deselectAll();
         interactor->Render();
     }
 
     // Forward events
     vtkInteractorStyleTrackballCamera::OnKeyPress();
+}
+
+//! Remove all the items created via interaction
+void InteractorStyle::clear()
+{
+    // Remove silhouette actors
+    removeHighlights();
+
+    // Free the selection widget, if necessary
+    if (mSelectionWidget)
+    {
+        mSelectionWidget->deleteLater();
+        mSelectionWidget = nullptr;
+    }
 }
 
 //! Set the flags of the selector
@@ -1180,24 +1200,17 @@ void InteractorStyle::createSelectionWidget(vtkActorCollection* actors)
     connect(mSelectionWidget, &QMenu::hovered, this,
             [this](QAction* action)
             {
-                if (action)
-                {
-                    auto selection = action->data().value<Core::Selection>();
-                    highlight(selection);
-                }
-                else
-                {
-                    removeHighlights();
-                }
+                auto selection = action->data().value<Core::Selection>();
+                highlight(selection);
                 GetInteractor()->Render();
             });
     connect(mSelectionWidget, &QMenu::triggered, this,
             [this](QAction* action)
             {
                 auto selection = action->data().value<Core::Selection>();
-                removeHighlights();
                 selector->select(selection);
                 mSelectionWidget->hide();
+                removeHighlights();
                 GetInteractor()->Render();
             });
 

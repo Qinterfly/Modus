@@ -26,7 +26,6 @@ void TestFrontend::testOpenProject()
 void TestFrontend::testViewModel()
 {
     KCL::Model& model = mpMainWindow->project().subprojects()[1].model();
-    mpMainWindow->viewManager()->clear();
     mpMainWindow->viewManager()->createView(model);
 }
 

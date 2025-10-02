@@ -1,3 +1,4 @@
+#include <QTabBar>
 #include <QTabWidget>
 #include <QVBoxLayout>
 #include <QVTKOpenGLNativeWidget.h>
@@ -15,8 +16,7 @@ ViewManager::ViewManager(QSettings& settings, QWidget* pParent)
     , mSettings(settings)
 {
     createContent();
-    setVTKFormat();
-    createView(KCL::Model());
+    initialize();
 }
 
 ViewManager::~ViewManager()
@@ -27,14 +27,6 @@ ViewManager::~ViewManager()
 QSize ViewManager::sizeHint() const
 {
     return QSize(800, 600);
-}
-
-//! Retrieve the current view
-IView* ViewManager::currentView()
-{
-    if (numViews() > 0)
-        return (IView*) mpTabWidget->currentWidget();
-    return nullptr;
 }
 
 //! Get the view located at the specified position
@@ -48,9 +40,9 @@ IView* ViewManager::view(int iView)
 //! Retrieve all the views
 QList<IView*> ViewManager::views()
 {
-    int numItems = numViews();
-    QList<IView*> result(numItems);
-    for (int i = 0; i != numItems; ++i)
+    int count = numViews();
+    QList<IView*> result(count);
+    for (int i = 0; i != count; ++i)
         result[i] = view(i);
     return result;
 }
@@ -67,15 +59,54 @@ bool ViewManager::isEmpty() const
     return numViews() == 0;
 }
 
+//! Find the view associated with the current model
+IView* ViewManager::findView(KCL::Model const& model)
+{
+    int count = numViews();
+    for (int i = 0; i != count; ++i)
+    {
+        IView* pView = view(i);
+        if (pView->type() == IView::kModel && &static_cast<ModelView*>(pView)->model() == &model)
+            return pView;
+    }
+    return nullptr;
+}
+
+//! Retrieve the current view
+IView* ViewManager::currentView()
+{
+    if (numViews() > 0)
+        return (IView*) mpTabWidget->currentWidget();
+    return nullptr;
+}
+
+//! Create the view associated with a KCL model
+IView* ViewManager::createView(KCL::Model const& model)
+{
+    // Set the view as the current one if it has been already created
+    IView* pView = findView(model);
+    if (pView)
+    {
+        mpTabWidget->setCurrentWidget(pView);
+        return pView;
+    }
+
+    // Create the model view otherwise
+    ModelView* pModelView = new ModelView(model);
+    pModelView->refresh();
+    pModelView->setIsometricView();
+    mpTabWidget->addTab(pModelView, newViewName());
+    mpTabWidget->setCurrentWidget(pModelView);
+
+    return pModelView;
+}
+
 //! Create views associated with project hierarchy items
 void ViewManager::processItems(QList<HierarchyItem*> const& items)
 {
     // Check if there are any items to view
     if (items.isEmpty())
         return;
-
-    // Destroy previously created views
-    clear();
 
     // Map the items
     QMap<HierarchyItem::Type, QList<HierarchyItem*>> mapItems;
@@ -104,20 +135,11 @@ void ViewManager::processItems(QList<HierarchyItem*> const& items)
     }
 }
 
-//! Create the view associated with a KCL model
-IView* ViewManager::createView(KCL::Model const& model)
-{
-    ModelView* pView = new ModelView(model);
-    pView->refresh();
-    pView->setIsometricView();
-    mpTabWidget->addTab(pView, newViewName());
-    return pView;
-}
-
 //! Update all the views
 void ViewManager::refresh()
 {
-    for (int i = 0; i != numViews(); ++i)
+    int count = numViews();
+    for (int i = 0; i != count; ++i)
         view(i)->refresh();
 }
 
@@ -133,6 +155,8 @@ void ViewManager::createContent()
     // Create the central widget
     mpTabWidget = new QTabWidget;
     mpTabWidget->setContentsMargins(0, 0, 0, 0);
+    mpTabWidget->setTabsClosable(true);
+    connect(mpTabWidget->tabBar(), &QTabBar::tabCloseRequested, this, [this](int index) { mpTabWidget->removeTab(index); });
 
     // Insert the widgets into the main layout
     QHBoxLayout* pLayout = new QHBoxLayout();
@@ -141,11 +165,16 @@ void ViewManager::createContent()
     setLayout(pLayout);
 }
 
-//! Specify the format for the VTK library
-void ViewManager::setVTKFormat()
+//! Set the manager initial state
+void ViewManager::initialize()
 {
+    // Specify the format for the VTK library
     QSurfaceFormat::setDefaultFormat(QVTKOpenGLNativeWidget::defaultFormat());
     vtkObject::GlobalWarningDisplayOff();
+
+    // Heat up the renderer
+    createView(KCL::Model());
+    mpTabWidget->removeTab(0);
 }
 
 //! Generate a name for a new view

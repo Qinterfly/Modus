@@ -1,7 +1,9 @@
 #ifndef IVIEW_H
 #define IVIEW_H
 
-class IView
+#include <QWidget>
+
+class IView : public QWidget
 {
 public:
     enum Type

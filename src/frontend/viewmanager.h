@@ -28,20 +28,21 @@ public:
 
     QSize sizeHint() const override;
 
-    IView* currentView();
     IView* view(int iView);
     QList<IView*> views();
+    IView* currentView();
     int numViews() const;
     bool isEmpty() const;
+    IView* findView(KCL::Model const& model);
 
-    void processItems(QList<HierarchyItem*> const& items);
     IView* createView(KCL::Model const& model);
+    void processItems(QList<HierarchyItem*> const& items);
     void refresh();
     void clear();
 
 private:
     void createContent();
-    void setVTKFormat();
+    void initialize();
     QString newViewName();
 
 private:

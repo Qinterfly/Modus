@@ -339,6 +339,18 @@ QTabBar::tab:selected, QTabBar::tab:last:selected, QTabBar::tab:hover {
     background: palette(highlight);
 }
 
+QTabBar::close-button {
+    image: url(:/icons/close-button-focused.svg)
+}
+
+QTabBar::close-button:hover {
+    background: rgba(255, 255, 255, 48);
+}
+
+QTabBar::close-button:pressed {
+    background: rgba(255, 255, 255, 92);
+}
+
 /* QRadioButton */
 
 QRadioButton::indicator {
