@@ -5,6 +5,8 @@
 #include <QTreeView>
 #include <QVBoxLayout>
 
+#include <kcl/model.h>
+
 #include "hierarchyitem.h"
 #include "project.h"
 #include "projectbrowser.h"
@@ -47,6 +49,45 @@ void ProjectBrowser::update()
 
     // Specify the connections between the model and view widget
     connect(mpView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &ProjectBrowser::processSelection);
+}
+
+//! Select model items
+void ProjectBrowser::selectItems(KCL::Model const& model, QList<Backend::Core::Selection> const& selections)
+{
+    if (mpSourceModel && !selections.isEmpty())
+    {
+        // Select the items according to the set
+        mpView->collapseAll();
+        {
+            QItemSelectionModel* pSelectionModel = mpView->selectionModel();
+            QSignalBlocker blocker(pSelectionModel);
+            pSelectionModel->clearSelection();
+            mpSourceModel->selectItems(model, selections);
+        }
+
+        // Process the selection
+        QList<HierarchyItem*> items = selectedItems();
+        int numItems = items.size();
+        if (!items.isEmpty())
+        {
+            // Expand all the branches
+            for (int i = 0; i != numItems; ++i)
+            {
+                QStandardItem* pItem = items[i]->parent();
+                while (pItem)
+                {
+                    if (pItem == mpSourceModel->invisibleRootItem())
+                        break;
+                    mpView->expand(mpFilterModel->mapFromSource(pItem->index()));
+                    pItem = pItem->parent();
+                }
+            }
+
+            // Scroll to the last selected item
+            QModelIndex itemIndex = mpFilterModel->mapFromSource(items.last()->index());
+            mpView->scrollTo(itemIndex);
+        }
+    }
 }
 
 //! Create all the widgets and corresponding actions

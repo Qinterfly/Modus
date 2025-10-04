@@ -96,6 +96,7 @@ ModelView::ModelView(KCL::Model const& model, ModelViewOptions const& options)
 {
     createContent();
     initialize();
+    createConnections();
 }
 
 ModelView::~ModelView()
@@ -195,6 +196,12 @@ void ModelView::createContent()
     // Combine the widgets
     pLayout->addWidget(mRenderWidget);
     setLayout(pLayout);
+}
+
+//! Set the signals & slots
+void ModelView::createConnections()
+{
+    connect(mStyle, &InteractorStyle::selectItemsRequested, this, &ModelView::selectItemsRequested);
 }
 
 //! Represent the model entities
@@ -831,23 +838,6 @@ void ModelView::setIsometricView()
     mRenderWindow->Render();
 }
 
-//! Set view perpendicular to one of the planes
-void ModelView::setPlaneView(Axis axis, bool isReverse)
-{
-    int const kNumDirections = 3;
-    vtkSmartPointer<vtkCamera> camera = mRenderer->GetActiveCamera();
-    double position[kNumDirections];
-    for (int i = 0; i != kNumDirections; ++i)
-        position[i] = 0.0;
-    int sign = isReverse ? -1 : 1;
-    position[(int) axis] = 1.0 * sign;
-    camera->SetPosition(position);
-    camera->SetFocalPoint(0, 0, 0);
-    camera->SetViewUp(0, -1, 0);
-    mRenderer->ResetCamera();
-    mRenderWindow->Render();
-}
-
 //! Get maximum view dimension based on already rendered objects
 double ModelView::getMaximumDimension()
 {
@@ -1077,7 +1067,6 @@ void PlaneFollowerCallback::Execute(vtkObject* caller, unsigned long evId, void*
 
 InteractorStyle::InteractorStyle()
     : selector(nullptr)
-    , mSelectionWidget(nullptr)
 {
 }
 
@@ -1121,6 +1110,28 @@ void InteractorStyle::OnLeftButtonDown()
     vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
 }
 
+//! Process right button click
+void InteractorStyle::OnRightButtonDown()
+{
+    // Create the menu
+    QMenu* pMenu = new QMenu;
+
+    // Create the actions
+    QAction* pSelectItemsAction = new QAction(tr("Go to corresponding tree items"));
+
+    // Set the actions signals & slots
+    connect(pSelectItemsAction, &QAction::triggered, this, [this]() { emit selectItemsRequested(selector->selected()); });
+
+    // Add the actions to the menu
+    pMenu->addAction(pSelectItemsAction);
+
+    // Save the menu pointer
+    mMenus.push_back(pMenu);
+
+    // Display the widget
+    pMenu->popup(QCursor::pos());
+}
+
 //! Process key press events
 void InteractorStyle::OnKeyPress()
 {
@@ -1148,11 +1159,13 @@ void InteractorStyle::clear()
     // Remove silhouette actors
     removeHighlights();
 
-    // Free the selection widget, if necessary
-    if (mSelectionWidget)
+    // Free the menus, if necessary
+    if (!mMenus.empty())
     {
-        mSelectionWidget->deleteLater();
-        mSelectionWidget = nullptr;
+        int numMenus = mMenus.size();
+        for (int i = 0; i != numMenus; ++i)
+            mMenus[i]->deleteLater();
+        mMenus.clear();
     }
 }
 
@@ -1174,7 +1187,7 @@ void InteractorStyle::updateSelectorState()
 void InteractorStyle::createSelectionWidget(vtkActorCollection* actors)
 {
     // Create the menu widget
-    mSelectionWidget = new QMenu;
+    QMenu* pMenu = new QMenu;
 
     // Loop through all the actors
     int numActors = actors->GetNumberOfItems();
@@ -1193,29 +1206,31 @@ void InteractorStyle::createSelectionWidget(vtkActorCollection* actors)
         action->setData(QVariant::fromValue(selection));
 
         // Add the action to the widget
-        mSelectionWidget->addAction(action);
+        pMenu->addAction(action);
     }
 
     // Set the connections
-    connect(mSelectionWidget, &QMenu::hovered, this,
+    connect(pMenu, &QMenu::hovered, this,
             [this](QAction* action)
             {
                 auto selection = action->data().value<Core::Selection>();
                 highlight(selection);
                 GetInteractor()->Render();
             });
-    connect(mSelectionWidget, &QMenu::triggered, this,
+    connect(pMenu, &QMenu::triggered, this,
             [this](QAction* action)
             {
                 auto selection = action->data().value<Core::Selection>();
                 selector->select(selection);
-                mSelectionWidget->hide();
                 removeHighlights();
                 GetInteractor()->Render();
             });
 
+    // Save the menu pointer
+    mMenus.push_back(pMenu);
+
     // Display the widget
-    mSelectionWidget->popup(QCursor::pos());
+    pMenu->popup(QCursor::pos());
 }
 
 //! Highlight the actor by adding a silhouette around it
@@ -1294,10 +1309,13 @@ Transformation reflectTransformation(Transformation const& transform)
 vtkSmartPointer<vtkTexture> readTexture(QString const& pathFile)
 {
     // Open the file for reading
+    QByteArray data;
     QFile file(pathFile);
-    file.open(QIODevice::ReadOnly);
-    QByteArray data = file.readAll();
-    file.close();
+    if (file.open(QIODevice::ReadOnly))
+    {
+        data = file.readAll();
+        file.close();
+    }
 
     // Set the image reader
     vtkNew<vtkPNGReader> reader;

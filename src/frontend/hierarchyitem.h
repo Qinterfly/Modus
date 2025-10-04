@@ -34,6 +34,7 @@ struct OptimOptions;
 struct OptimSolution;
 class Selector;
 class Constraints;
+struct Selection;
 }
 
 namespace Frontend
@@ -76,6 +77,8 @@ public:
     virtual QUuid id() const;
 
     int type() const override final;
+    void setExpanded(bool flag = true);
+    void setSelected(bool flag = true);
 
 protected:
     Type const mkType;
@@ -90,6 +93,8 @@ public:
     QUuid id() const override;
     Backend::Core::Subproject& subproject();
 
+    void selectItems(KCL::Model const& kclModel, QList<Backend::Core::Selection> const& selections);
+
 private:
     void appendChildren();
 
@@ -102,7 +107,9 @@ public:
     ModelHierarchyItem(KCL::Model& model);
     ~ModelHierarchyItem() = default;
 
-    KCL::Model& model();
+    KCL::Model& kclModel();
+
+    void selectItems(QList<Backend::Core::Selection> const& selections);
 
 private:
     void appendChildren();
@@ -113,26 +120,33 @@ private:
 class SurfaceHierarchyItem : public HierarchyItem
 {
 public:
-    SurfaceHierarchyItem(KCL::ElasticSurface& surface, QIcon const& icon, QString const& name);
+    SurfaceHierarchyItem(int iSurface, KCL::ElasticSurface& surface, QIcon const& icon, QString const& name);
     ~SurfaceHierarchyItem() = default;
 
+    int iSurface() const;
     KCL::ElasticSurface& surface();
+
+    void selectItems(QList<Backend::Core::Selection> const& selections);
+    void selectItem(HierarchyItem* pBaseItem, QMap<Backend::Core::Selection, bool> const& maskSelections);
 
 private:
     void appendChildren();
 
+    int const mkISurface;
     KCL::ElasticSurface& mSurface;
 };
 
 class ElementHierarchyItem : public HierarchyItem
 {
 public:
-    ElementHierarchyItem(KCL::AbstractElement* pElement, QString const& name);
+    ElementHierarchyItem(int iElement, KCL::AbstractElement* pElement, QString const& name);
     ~ElementHierarchyItem() = default;
 
+    int iElement() const;
     KCL::AbstractElement* element();
 
 private:
+    int const mkIElement;
     KCL::AbstractElement* mpElement;
 };
 

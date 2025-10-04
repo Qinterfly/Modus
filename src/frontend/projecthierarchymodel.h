@@ -3,9 +3,15 @@
 
 #include <QStandardItemModel>
 
+namespace KCL
+{
+struct Model;
+}
+
 namespace Backend::Core
 {
 class Project;
+struct Selection;
 }
 
 namespace Frontend
@@ -17,7 +23,9 @@ class ProjectHierarchyModel : public QStandardItemModel
 
 public:
     ProjectHierarchyModel(Backend::Core::Project& project, QObject* pParent = nullptr);
-    ~ProjectHierarchyModel();
+    ~ProjectHierarchyModel() = default;
+
+    void selectItems(KCL::Model const& model, QList<Backend::Core::Selection> const& selections);
 
 private:
     void appendChildren();

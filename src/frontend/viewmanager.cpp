@@ -7,8 +7,10 @@
 
 #include "hierarchyitem.h"
 #include "modelview.h"
+#include "selectionset.h"
 #include "viewmanager.h"
 
+using namespace Backend;
 using namespace Frontend;
 
 ViewManager::ViewManager(QSettings& settings, QWidget* pParent)
@@ -95,6 +97,12 @@ IView* ViewManager::createView(KCL::Model const& model)
     ModelView* pModelView = new ModelView(model);
     pModelView->refresh();
     pModelView->setIsometricView();
+
+    // Set the connections
+    connect(pModelView, &ModelView::selectItemsRequested, this,
+            [pModelView, this](QList<Core::Selection> selections) { emit selectItemsRequested(pModelView->model(), selections); });
+
+    // Add it to the tab
     mpTabWidget->addTab(pModelView, newViewName());
     mpTabWidget->setCurrentWidget(pModelView);
 
@@ -126,7 +134,7 @@ void ViewManager::processItems(QList<HierarchyItem*> const& items)
             switch (type)
             {
             case HierarchyItem::kModel:
-                createView(static_cast<ModelHierarchyItem*>(pItem)->model());
+                createView(static_cast<ModelHierarchyItem*>(pItem)->kclModel());
                 break;
             default:
                 break;

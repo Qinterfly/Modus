@@ -10,9 +10,15 @@ QT_FORWARD_DECLARE_CLASS(QStandardItem)
 QT_FORWARD_DECLARE_CLASS(QSortFilterProxyModel)
 QT_FORWARD_DECLARE_CLASS(QItemSelection)
 
+namespace KCL
+{
+struct Model;
+}
+
 namespace Backend::Core
 {
 class Project;
+struct Selection;
 }
 
 namespace Frontend
@@ -32,6 +38,8 @@ public:
     QSize sizeHint() const override;
 
     void update();
+
+    void selectItems(KCL::Model const& model, QList<Backend::Core::Selection> const& selections);
 
 signals:
     void selectionChanged(QList<HierarchyItem*>);

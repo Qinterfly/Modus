@@ -7,6 +7,7 @@
 #include <kcl/element.h>
 #include <vtkNew.h>
 
+#include "hierarchyitem.h"
 #include "isolver.h"
 #include "uialiasdata.h"
 
@@ -36,6 +37,7 @@ void fullScreenResize(QWidget* pWidget);
 void setShortcutHints(QToolBar* pToolBar);
 QString errorColorName(double value, double acceptThreshold, double criticalThreshold);
 QString getLabel(Backend::Core::Selection selection);
+QList<HierarchyItem*> findItems(HierarchyItem* pRootItem, HierarchyItem::Type type);
 
 // File
 void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix);

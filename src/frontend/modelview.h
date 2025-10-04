@@ -97,8 +97,12 @@ public:
     static InteractorStyle* New();
     InteractorStyle();
     virtual void OnLeftButtonDown() override;
+    virtual void OnRightButtonDown() override;
     virtual void OnKeyPress() override;
     void clear();
+
+signals:
+    void selectItemsRequested(QList<Backend::Core::Selection> selections);
 
 public:
     ModelViewSelector* selector;
@@ -111,7 +115,7 @@ private:
     void removeHighlights();
 
 private:
-    QMenu* mSelectionWidget;
+    QList<QMenu*> mMenus;
     QList<vtkSmartPointer<vtkActor>> mHighlightActors;
 };
 
@@ -151,6 +155,8 @@ struct ModelViewOptions
 //! Model plotter
 class ModelView : public IView
 {
+    Q_OBJECT
+
 public:
     ModelView(KCL::Model const& model, ModelViewOptions const& options = ModelViewOptions());
     virtual ~ModelView();
@@ -163,12 +169,15 @@ public:
     ModelViewSelector& selector();
 
     void setIsometricView();
-    void setPlaneView(Axis axis, bool isReverse = false);
+
+signals:
+    void selectItemsRequested(QList<Backend::Core::Selection> selections);
 
 private:
     void initialize();
     void loadTextures();
     void createContent();
+    void createConnections();
     void drawModel();
     void drawBeams2D(Transformation const& transform, int iSurface, KCL::ElementType type);
     void drawBeams3D(Transformation const& transform, int iSurface, KCL::ElementType type);

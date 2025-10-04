@@ -13,6 +13,11 @@ namespace KCL
 struct Model;
 }
 
+namespace Backend::Core
+{
+struct Selection;
+}
+
 namespace Frontend
 {
 
@@ -39,6 +44,9 @@ public:
     void processItems(QList<HierarchyItem*> const& items);
     void refresh();
     void clear();
+
+signals:
+    void selectItemsRequested(KCL::Model const& model, QList<Backend::Core::Selection> selections);
 
 private:
     void createContent();

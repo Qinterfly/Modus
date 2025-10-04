@@ -1,3 +1,6 @@
+#include <QSortFilterProxyModel>
+#include <QTreeView>
+
 #include <kcl/model.h>
 #include <magicenum/magic_enum.hpp>
 
@@ -37,6 +40,49 @@ QUuid HierarchyItem::id() const
 int HierarchyItem::type() const
 {
     return mkType;
+}
+
+//! Set the expanded state of the hierarchy item
+void HierarchyItem::setExpanded(bool flag)
+{
+    // Retrieve the parent widget
+    if (!model()->parent())
+        return;
+    QTreeView* pView = (QTreeView*) model()->parent();
+
+    // Get the item model
+    QSortFilterProxyModel* pProxyModel = qobject_cast<QSortFilterProxyModel*>(pView->model());
+    if (!pProxyModel)
+        return;
+
+    // Set the expanded state
+    auto proxyIndex = pProxyModel->mapFromSource(index());
+    if (flag)
+        pView->expand(proxyIndex);
+    else
+        pView->collapse(proxyIndex);
+}
+
+//! Set the selected state of the hierarchy item
+void HierarchyItem::setSelected(bool flag)
+{
+    // Retrieve the parent widget
+    if (!model()->parent())
+        return;
+    QTreeView* pView = (QTreeView*) model()->parent();
+
+    // Get the item models
+    QSortFilterProxyModel* pProxyModel = qobject_cast<QSortFilterProxyModel*>(pView->model());
+    if (!pProxyModel)
+        return;
+    QItemSelectionModel* pSelectionModel = pView->selectionModel();
+
+    // Set the selected state
+    auto proxyIndex = pProxyModel->mapFromSource(index());
+    if (flag)
+        pSelectionModel->select(proxyIndex, QItemSelectionModel::Select);
+    else
+        pSelectionModel->select(proxyIndex, QItemSelectionModel::Deselect);
 }
 
 SubprojectHierarchyItem::SubprojectHierarchyItem(Backend::Core::Subproject& subproject)
@@ -90,6 +136,18 @@ Core::Subproject& SubprojectHierarchyItem::subproject()
     return mSubproject;
 }
 
+//! Select items associated with the model
+void SubprojectHierarchyItem::selectItems(KCL::Model const& kclModel, QList<Core::Selection> const& selections)
+{
+    QList<HierarchyItem*> foundItems = Utility::findItems(this, HierarchyItem::kModel);
+    if (!foundItems.empty())
+    {
+        ModelHierarchyItem* pModelItem = (ModelHierarchyItem*) foundItems.first();
+        if (&pModelItem->kclModel() == &kclModel)
+            pModelItem->selectItems(selections);
+    }
+}
+
 ModelHierarchyItem::ModelHierarchyItem(KCL::Model& model)
     : HierarchyItem(kModel, QIcon(":/icons/model.svg"), QObject::tr("Model"))
     , mModel(model)
@@ -107,21 +165,37 @@ void ModelHierarchyItem::appendChildren()
         QString name = mModel.surfaces[i].name.data();
         if (name.isEmpty())
             name = QObject::tr("Elastic surface: %1").arg(1 + i);
-        appendRow(new SurfaceHierarchyItem(mModel.surfaces[i], icon, name));
+        appendRow(new SurfaceHierarchyItem(i, mModel.surfaces[i], icon, name));
     }
 
     // Special surface
     icon = QIcon(":/icons/surface-special.svg");
-    appendRow(new SurfaceHierarchyItem(mModel.specialSurface, icon, QObject::tr("Special surface")));
+    appendRow(new SurfaceHierarchyItem(-1, mModel.specialSurface, icon, QObject::tr("Special surface")));
 }
 
-KCL::Model& ModelHierarchyItem::model()
+KCL::Model& ModelHierarchyItem::kclModel()
 {
     return mModel;
 }
 
-SurfaceHierarchyItem::SurfaceHierarchyItem(KCL::ElasticSurface& surface, QIcon const& icon, QString const& name)
+//! Select model elements associated with surfaces
+void ModelHierarchyItem::selectItems(QList<Core::Selection> const& selections)
+{
+    int numChildren = rowCount();
+    for (int i = 0; i != numChildren; ++i)
+    {
+        HierarchyItem* pBaseItem = (HierarchyItem*) child(i);
+        if (pBaseItem->type() == HierarchyItem::kSurface)
+        {
+            SurfaceHierarchyItem* pItem = (SurfaceHierarchyItem*) pBaseItem;
+            pItem->selectItems(selections);
+        }
+    }
+}
+
+SurfaceHierarchyItem::SurfaceHierarchyItem(int iSurface, KCL::ElasticSurface& surface, QIcon const& icon, QString const& name)
     : HierarchyItem(kSurface, icon, name)
+    , mkISurface(iSurface)
     , mSurface(surface)
 {
     setEditable(true);
@@ -144,7 +218,7 @@ void SurfaceHierarchyItem::appendChildren()
             for (int iElement = 0; iElement != numElements; ++iElement)
             {
                 QString name = QObject::tr("%1: %2").arg(typeName).arg(1 + iElement);
-                ElementHierarchyItem* pElementItem = new ElementHierarchyItem(mSurface.element(type, iElement), name);
+                ElementHierarchyItem* pElementItem = new ElementHierarchyItem(iElement, mSurface.element(type, iElement), name);
                 pGroupItem->appendRow(pElementItem);
                 if (pGroupItem->icon().isNull())
                     pGroupItem->setIcon(pElementItem->icon());
@@ -153,9 +227,14 @@ void SurfaceHierarchyItem::appendChildren()
         }
         else if (numElements == 1)
         {
-            appendRow(new ElementHierarchyItem(mSurface.element(type), typeName));
+            appendRow(new ElementHierarchyItem(0, mSurface.element(type), typeName));
         }
     }
+}
+
+int SurfaceHierarchyItem::iSurface() const
+{
+    return mkISurface;
 }
 
 KCL::ElasticSurface& SurfaceHierarchyItem::surface()
@@ -163,11 +242,49 @@ KCL::ElasticSurface& SurfaceHierarchyItem::surface()
     return mSurface;
 }
 
-ElementHierarchyItem::ElementHierarchyItem(KCL::AbstractElement* pElement, QString const& name)
+void SurfaceHierarchyItem::selectItems(QList<Core::Selection> const& selections)
+{
+    // Create the mask of the selected elements
+    int numSelections = selections.size();
+    QMap<Core::Selection, bool> maskSelections;
+    for (int i = 0; i != numSelections; ++i)
+        maskSelections[selections[i]] = true;
+
+    // Loop through all the elements associated with the surface
+    int numChildren = rowCount();
+    for (int i = 0; i != numChildren; ++i)
+        selectItem((HierarchyItem*) child(i), maskSelections);
+}
+
+//! Select model elements by mask
+void SurfaceHierarchyItem::selectItem(HierarchyItem* pBaseItem, QMap<Core::Selection, bool> const& maskSelections)
+{
+    if (pBaseItem->type() == HierarchyItem::kElement)
+    {
+        ElementHierarchyItem* pItem = (ElementHierarchyItem*) pBaseItem;
+        Core::Selection key(mkISurface, pItem->element()->type(), pItem->iElement());
+        if (maskSelections.contains(key) && maskSelections[key])
+            pItem->setSelected();
+    }
+    else if (pBaseItem->type() == HierarchyItem::kGroupElements)
+    {
+        int numChildren = pBaseItem->rowCount();
+        for (int i = 0; i != numChildren; ++i)
+            selectItem((HierarchyItem*) pBaseItem->child(i), maskSelections);
+    }
+}
+
+ElementHierarchyItem::ElementHierarchyItem(int iElement, KCL::AbstractElement* pElement, QString const& name)
     : HierarchyItem(kElement, name)
+    , mkIElement(iElement)
     , mpElement(pElement)
 {
     setIcon(Utility::getIcon(mpElement));
+}
+
+int ElementHierarchyItem::iElement() const
+{
+    return mkIElement;
 }
 
 KCL::AbstractElement* ElementHierarchyItem::element()

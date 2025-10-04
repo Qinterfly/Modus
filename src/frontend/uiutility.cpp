@@ -21,13 +21,13 @@
 #include <vtkTransformPolyDataFilter.h>
 #include <vtkUnstructuredGrid.h>
 
-#include "hierarchyitem.h"
 #include "isolver.h"
 #include "selectionset.h"
 #include "uiutility.h"
 
 using namespace Eigen;
 using namespace Backend;
+using namespace Frontend;
 
 namespace Frontend::Utility
 {
@@ -107,6 +107,22 @@ QString getLabel(Core::Selection selection)
     QString result = QString("%1:%2").arg(typeName).arg(selection.iElement + 1);
     if (selection.iSurface >= 0)
         result += QString(" ES:%1").arg(selection.iSurface + 1);
+    return result;
+}
+
+//! Search for hierarchy items of the specified type
+QList<HierarchyItem*> findItems(HierarchyItem* pRootItem, HierarchyItem::Type type)
+{
+    QList<HierarchyItem*> result;
+    if (!pRootItem->hasChildren())
+        return result;
+    int numChildren = pRootItem->rowCount();
+    for (int i = 0; i != numChildren; ++i)
+    {
+        HierarchyItem* pItem = (HierarchyItem*) pRootItem->child(i);
+        if (pItem->type() == type)
+            result.push_back(pItem);
+    }
     return result;
 }
 

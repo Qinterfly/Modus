@@ -1,12 +1,17 @@
 #include <QMimeData>
 
+#include <kcl/model.h>
+
 #include "fluttersolver.h"
 #include "hierarchyitem.h"
 #include "modalsolver.h"
 #include "optimsolver.h"
 #include "project.h"
 #include "projecthierarchymodel.h"
+#include "selectionset.h"
+#include "uiutility.h"
 
+using namespace Backend;
 using namespace Frontend;
 
 ProjectHierarchyModel::ProjectHierarchyModel(Backend::Core::Project& project, QObject* pParent)
@@ -17,9 +22,20 @@ ProjectHierarchyModel::ProjectHierarchyModel(Backend::Core::Project& project, QO
     connect(this, &ProjectHierarchyModel::itemChanged, this, &ProjectHierarchyModel::processItemChange);
 }
 
-ProjectHierarchyModel::~ProjectHierarchyModel()
+//! Select model elements
+void ProjectHierarchyModel::selectItems(KCL::Model const& model, QList<Backend::Core::Selection> const& selections)
 {
-
+    QStandardItem* pRootItem = invisibleRootItem();
+    int numItems = pRootItem->rowCount();
+    for (int i = 0; i != numItems; ++i)
+    {
+        HierarchyItem* pBaseItem = (HierarchyItem*) pRootItem->child(i);
+        if (pBaseItem->type() == HierarchyItem::kSubproject)
+        {
+            SubprojectHierarchyItem* pSubprojectItem = (SubprojectHierarchyItem*) pBaseItem;
+            pSubprojectItem->selectItems(model, selections);
+        }
+    }
 }
 
 //! Create all the items associated with the project
