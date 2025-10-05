@@ -282,6 +282,18 @@ ElementHierarchyItem::ElementHierarchyItem(int iElement, KCL::AbstractElement* p
     setIcon(Utility::getIcon(mpElement));
 }
 
+int ElementHierarchyItem::iSurface() const
+{
+    QStandardItem* pItem = parent();
+    while (pItem)
+    {
+        if (pItem->type() == HierarchyItem::kSurface)
+            return static_cast<ElementHierarchyItem*>(pItem)->iSurface();
+        pItem = pItem->parent();
+    }
+    return std::numeric_limits<int>::min();
+}
+
 int ElementHierarchyItem::iElement() const
 {
     return mkIElement;
@@ -290,6 +302,18 @@ int ElementHierarchyItem::iElement() const
 KCL::AbstractElement* ElementHierarchyItem::element()
 {
     return mpElement;
+}
+
+KCL::Model* ElementHierarchyItem::kclModel()
+{
+    QStandardItem* pItem = parent();
+    while (pItem)
+    {
+        if (pItem->type() == HierarchyItem::kModel)
+            return &static_cast<ModelHierarchyItem*>(pItem)->kclModel();
+        pItem = pItem->parent();
+    }
+    return nullptr;
 }
 
 ModalSolverHierarchyItem::ModalSolverHierarchyItem(Core::ModalSolver* pSolver, QString const& defaultName)
@@ -529,7 +553,7 @@ void OptimSolverHierarchyItem::appendChildren()
         HierarchyItem* pGroupSolutions = new HierarchyItem(kGroupOptimSolutions, QIcon(":/icons/iterations.svg"),
                                                            QObject::tr("Optim Iterations"));
         for (int i = 0; i != numSolutions; ++i)
-            pGroupSolutions->appendRow(new OptimSolutionHierarchyItem(mpSolver->solutions[i]));
+            pGroupSolutions->appendRow(new OptimSolutionHierarchyItem(i, mpSolver->solutions[i]));
         appendRow(pGroupSolutions);
     }
 }
@@ -597,8 +621,9 @@ Core::Constraints& OptimConstraintsHierarchyItem::constraints()
     return mConstraints;
 }
 
-OptimSolutionHierarchyItem::OptimSolutionHierarchyItem(Core::OptimSolution& solution)
+OptimSolutionHierarchyItem::OptimSolutionHierarchyItem(int iSolution, Core::OptimSolution& solution)
     : HierarchyItem(kOptimSolution)
+    , mkISolution(iSolution)
     , mSolution(solution)
 {
     const double kAcceptThreshold = 0.01;
@@ -609,6 +634,11 @@ OptimSolutionHierarchyItem::OptimSolutionHierarchyItem(Core::OptimSolution& solu
     setText(name);
     setIcon(icon);
     appendChildren();
+}
+
+int OptimSolutionHierarchyItem::iSolution() const
+{
+    return mkISolution;
 }
 
 Core::OptimSolution const& OptimSolutionHierarchyItem::solution() const

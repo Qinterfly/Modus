@@ -142,8 +142,10 @@ public:
     ElementHierarchyItem(int iElement, KCL::AbstractElement* pElement, QString const& name);
     ~ElementHierarchyItem() = default;
 
+    int iSurface() const;
     int iElement() const;
     KCL::AbstractElement* element();
+    KCL::Model* kclModel();
 
 private:
     int const mkIElement;
@@ -359,14 +361,16 @@ private:
 class OptimSolutionHierarchyItem : public HierarchyItem
 {
 public:
-    OptimSolutionHierarchyItem(Backend::Core::OptimSolution& solution);
+    OptimSolutionHierarchyItem(int iSolution, Backend::Core::OptimSolution& solution);
     ~OptimSolutionHierarchyItem() = default;
 
+    int iSolution() const;
     Backend::Core::OptimSolution const& solution() const;
 
 private:
     void appendChildren();
 
+    int const mkISolution;
     Backend::Core::OptimSolution& mSolution;
 };
 }

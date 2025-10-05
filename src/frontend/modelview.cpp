@@ -849,8 +849,8 @@ double ModelView::getMaximumDimension()
     return result;
 }
 
-ModelViewSelector::ModelViewSelector(State aState)
-    : state(aState)
+ModelViewSelector::ModelViewSelector()
+    : mIsVerbose(false)
 {
 }
 
@@ -875,6 +875,18 @@ QList<Backend::Core::Selection> ModelViewSelector::selected() const
     return result;
 }
 
+//! Set the verbosity mode
+void ModelViewSelector::setVerbose(bool value)
+{
+    mIsVerbose = value;
+}
+
+//! Check if the verbosity is activated
+bool ModelViewSelector::isVerbose() const
+{
+    return mIsVerbose;
+}
+
 //! Check if there are any elements selected
 bool ModelViewSelector::isEmpty() const
 {
@@ -887,11 +899,25 @@ bool ModelViewSelector::isSelected(vtkActor* actor) const
     return mSelection.contains(actor);
 }
 
+//! Select all the actors on the scene
+void ModelViewSelector::selectAll()
+{
+    QList<Core::Selection> const keys = mActors.keys();
+    int numKeys = keys.size();
+    for (int iKey = 0; iKey != numKeys; ++iKey)
+    {
+        QList<vtkActor*> values = mActors[keys[iKey]];
+        int numValues = values.size();
+        for (int iValue = 0; iValue != numValues; ++iValue)
+            select(values[iValue], kMultipleSelection);
+    }
+}
+
 //! Add the actor to the selection set
-void ModelViewSelector::select(vtkActor* actor)
+void ModelViewSelector::select(vtkActor* actor, Flags flags)
 {
     // Check if the selection is enabled
-    if (state.testFlag(kNone) || !actor)
+    if (flags.testFlag(kNone) || !actor)
         return;
 
     // Deselect the actor on the second click
@@ -902,7 +928,7 @@ void ModelViewSelector::select(vtkActor* actor)
     }
 
     // Deselect all actors for the single selection mode
-    if (state.testFlag(kSingleSelection))
+    if (flags.testFlag(kSingleSelection))
         deselectAll();
 
     // Change the visual representation of the actor
@@ -917,7 +943,7 @@ void ModelViewSelector::select(vtkActor* actor)
     mSelection[actor] = property;
 
     // Display the information
-    if (state.testFlag(kVerbose))
+    if (mIsVerbose)
     {
         Core::Selection selection = find(actor);
         qInfo() << QObject::tr("Element %1 was selected").arg(Utility::getLabel(selection));
@@ -925,27 +951,17 @@ void ModelViewSelector::select(vtkActor* actor)
 }
 
 //! Select all the actors associated with a model entity
-void ModelViewSelector::select(Backend::Core::Selection key)
+void ModelViewSelector::select(Backend::Core::Selection key, Flags flags)
 {
     // Check if there are any actors to select
     if (!mActors.contains(key))
         return;
 
-    // Set the state to select multiple actors associated with one key
-    State oldState = state;
-    if (state.testFlag(kSingleSelection))
-        deselectAll();
-    state.setFlag(kSingleSelection, false);
-    state.setFlag(kMultipleSelection, true);
-
     // Select the actors associated with the selection
     QList<vtkActor*> values = mActors[key];
     int numValues = values.size();
     for (int i = 0; i != numValues; ++i)
-        select(values[i]);
-
-    // Set back the state
-    state = oldState;
+        select(values[i], flags);
 }
 
 //! Remove the actor from the selection set
@@ -959,7 +975,7 @@ void ModelViewSelector::deselect(vtkActor* actor)
     actor->GetProperty()->DeepCopy(mSelection[actor]);
 
     // Display the information
-    if (state.testFlag(kVerbose))
+    if (mIsVerbose)
     {
         Core::Selection selection = find(actor);
         qInfo() << QObject::tr("Element %1 was deselected").arg(Utility::getLabel(selection));
@@ -983,8 +999,6 @@ void ModelViewSelector::deselect(Backend::Core::Selection key)
 //! Remove all the actors from the selection set
 void ModelViewSelector::deselectAll()
 {
-    if (isEmpty())
-        return;
     QList<Core::Selection> const keys = mActors.keys();
     int numKeys = keys.size();
     for (int iKey = 0; iKey != numKeys; ++iKey)
@@ -1089,8 +1103,8 @@ void InteractorStyle::OnLeftButtonDown()
     // Pick from this location
     picker->Pick(position[0], position[1], 0.0, GetDefaultRenderer());
 
-    // Update the selector state
-    updateSelectorState();
+    // Get the selector state
+    ModelViewSelector::Flags flags = getSelectorFlags();
 
     // Highlight the last actor
     vtkActorCollection* actors = picker->GetActors();
@@ -1103,7 +1117,7 @@ void InteractorStyle::OnLeftButtonDown()
     }
     else if (numActors == 1)
     {
-        selector->select(selector->find(actors->GetLastActor()));
+        selector->select(selector->find(actors->GetLastActor()), flags);
     }
 
     // Forward events
@@ -1113,6 +1127,10 @@ void InteractorStyle::OnLeftButtonDown()
 //! Process right button click
 void InteractorStyle::OnRightButtonDown()
 {
+    // Check if there are any items to process
+    if (selector->isEmpty())
+        return;
+
     // Create the menu
     QMenu* pMenu = new QMenu;
 
@@ -1148,6 +1166,12 @@ void InteractorStyle::OnKeyPress()
         selector->deselectAll();
         interactor->Render();
     }
+    else if (GetInteractor()->GetControlKey() && key == "a")
+    {
+        clear();
+        selector->selectAll();
+        interactor->Render();
+    }
 
     // Forward events
     vtkInteractorStyleTrackballCamera::OnKeyPress();
@@ -1169,18 +1193,12 @@ void InteractorStyle::clear()
     }
 }
 
-//! Set the flags of the selector
-void InteractorStyle::updateSelectorState()
+ModelViewSelector::Flags InteractorStyle::getSelectorFlags()
 {
-    if (!selector->state.testFlag(ModelViewSelector::kNone))
-    {
-        selector->state.setFlag(ModelViewSelector::kSingleSelection, false);
-        selector->state.setFlag(ModelViewSelector::kMultipleSelection, false);
-        if (GetInteractor()->GetControlKey())
-            selector->state.setFlag(ModelViewSelector::kMultipleSelection);
-        else
-            selector->state.setFlag(ModelViewSelector::kSingleSelection);
-    }
+    ModelViewSelector::Flags flags = ModelViewSelector::kSingleSelection;
+    if (GetInteractor()->GetControlKey())
+        flags = ModelViewSelector::kMultipleSelection;
+    return flags;
 }
 
 //! Create the widget to select actors once ray intersect them
@@ -1209,6 +1227,9 @@ void InteractorStyle::createSelectionWidget(vtkActorCollection* actors)
         pMenu->addAction(action);
     }
 
+    // Get the selector state
+    ModelViewSelector::Flags flags = getSelectorFlags();
+
     // Set the connections
     connect(pMenu, &QMenu::hovered, this,
             [this](QAction* action)
@@ -1218,10 +1239,10 @@ void InteractorStyle::createSelectionWidget(vtkActorCollection* actors)
                 GetInteractor()->Render();
             });
     connect(pMenu, &QMenu::triggered, this,
-            [this](QAction* action)
+            [this, flags](QAction* action)
             {
                 auto selection = action->data().value<Core::Selection>();
-                selector->select(selection);
+                selector->select(selection, flags);
                 removeHighlights();
                 GetInteractor()->Render();
             });

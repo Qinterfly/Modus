@@ -109,6 +109,15 @@ IView* ViewManager::createView(KCL::Model const& model)
     return pModelView;
 }
 
+//! Select entities on the view
+void ViewManager::selectOnView(KCL::Model const& model, Backend::Core::Selection const& selection)
+{
+    // Slice the view widget
+    ModelView* pView = (ModelView*) createView(model);
+
+    // TODO
+}
+
 //! Create views associated with project hierarchy items
 void ViewManager::processItems(QList<HierarchyItem*> const& items)
 {
@@ -129,13 +138,36 @@ void ViewManager::processItems(QList<HierarchyItem*> const& items)
     for (HierarchyItem::Type type : types)
     {
         QList<HierarchyItem*> typeItems = mapItems[type];
-        for (HierarchyItem* pItem : typeItems)
+        for (HierarchyItem* pBaseItem : typeItems)
         {
             switch (type)
             {
             case HierarchyItem::kModel:
-                createView(static_cast<ModelHierarchyItem*>(pItem)->kclModel());
+            {
+                createView(static_cast<ModelHierarchyItem*>(pBaseItem)->kclModel());
                 break;
+            }
+            case HierarchyItem::kElement:
+            {
+                ElementHierarchyItem* pItem = (ElementHierarchyItem*) pBaseItem;
+
+                // Set the selection data
+                int iSurface = pItem->iSurface();
+                if (std::isnan(iSurface))
+                    continue;
+                KCL::ElementType type = pItem->element()->type();
+                int iElement = pItem->iElement();
+                Core::Selection selection(iSurface, type, iElement);
+
+                // Slice the model
+                KCL::Model* pModel = pItem->kclModel();
+                if (!pModel)
+                    continue;
+
+                // Add to the selection set
+                selectOnView(*pModel, selection);
+                break;
+            }
             default:
                 break;
             }

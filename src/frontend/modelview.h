@@ -44,21 +44,23 @@ public:
     {
         kNone = 0x0,
         kSingleSelection = 0x1,
-        kMultipleSelection = 0x2,
-        kVerbose = 0x4
+        kMultipleSelection = 0x2
     };
-    Q_DECLARE_FLAGS(State, Flag);
+    Q_DECLARE_FLAGS(Flags, Flag);
 
-    ModelViewSelector(State aState = State(kSingleSelection));
+    ModelViewSelector();
     ~ModelViewSelector() = default;
 
+    bool isVerbose() const;
     bool isEmpty() const;
     bool isSelected(vtkActor* actor) const;
     int numSelected() const;
     QList<Backend::Core::Selection> selected() const;
+    void setVerbose(bool value);
 
-    void select(vtkActor* actor);
-    void select(Backend::Core::Selection key);
+    void selectAll();
+    void select(vtkActor* actor, Flags flags);
+    void select(Backend::Core::Selection key, Flags flags);
     void deselect(vtkActor* actor);
     void deselect(Backend::Core::Selection key);
     void deselectAll();
@@ -68,13 +70,12 @@ public:
     Backend::Core::Selection find(vtkActor* actor) const;
     QList<vtkActor*> find(Backend::Core::Selection selection);
 
-    State state;
-
 private:
+    bool mIsVerbose;
     QMap<vtkActor*, vtkSmartPointer<vtkProperty>> mSelection;
     QMap<Backend::Core::Selection, QList<vtkActor*>> mActors;
 };
-Q_DECLARE_OPERATORS_FOR_FLAGS(ModelViewSelector::State)
+Q_DECLARE_OPERATORS_FOR_FLAGS(ModelViewSelector::Flags)
 
 //! Class to rotate planes, so that they point to the camera
 class PlaneFollowerCallback : public vtkCallbackCommand
@@ -109,7 +110,7 @@ public:
     double pickTolerance;
 
 private:
-    void updateSelectorState();
+    ModelViewSelector::Flags getSelectorFlags();
     void createSelectionWidget(vtkActorCollection* actors);
     void highlight(Backend::Core::Selection selection);
     void removeHighlights();
