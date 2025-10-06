@@ -91,6 +91,11 @@ private:
     QString mName;
     QMap<Selection, bool> mDataSet;
 };
+
+inline size_t qHash(const Selection& key, size_t seed)
+{
+    return qHashMulti(seed, key.iSurface, (int) key.type, key.iElement);
+}
 }
 
 #endif // SELECTIONSET_H

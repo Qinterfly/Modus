@@ -163,6 +163,7 @@ public:
     virtual ~ModelView();
 
     void clear() override;
+    void plot() override;
     void refresh() override;
     IView::Type type() const override;
     KCL::Model const& model();

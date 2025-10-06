@@ -42,6 +42,11 @@ QList<HierarchyItem*> findItems(HierarchyItem* pRootItem, HierarchyItem::Type ty
 // File
 void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix);
 
+// Hierarchy
+template<typename Item>
+QList<Item*> castHierarchyItems(QList<HierarchyItem*> const& items);
+QList<HierarchyItem*> childItems(HierarchyItem* pItem);
+
 // KCL
 QList<KCL::ElementType> beamTypes();
 QList<KCL::ElementType> panelTypes();

@@ -113,11 +113,17 @@ void ModelView::clear()
         mRenderer->RemoveActor(actors->GetLastActor());
 }
 
-//! Redraw the scene
-void ModelView::refresh()
+//! Draw the scene
+void ModelView::plot()
 {
     clear();
     drawModel();
+    mRenderWindow->Render();
+}
+
+//! Update the scene
+void ModelView::refresh()
+{
     mRenderWindow->Render();
 }
 
@@ -957,11 +963,15 @@ void ModelViewSelector::select(Backend::Core::Selection key, Flags flags)
     if (!mActors.contains(key))
         return;
 
+    // Deselect all actors for the single selection mode
+    if (flags.testFlag(kSingleSelection))
+        deselectAll();
+
     // Select the actors associated with the selection
     QList<vtkActor*> values = mActors[key];
     int numValues = values.size();
     for (int i = 0; i != numValues; ++i)
-        select(values[i], flags);
+        select(values[i], ModelViewSelector::kMultipleSelection);
 }
 
 //! Remove the actor from the selection set

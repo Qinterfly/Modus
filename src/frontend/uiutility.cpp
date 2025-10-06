@@ -137,6 +137,27 @@ void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix)
         pathFile.replace(currentSuffix, expectedSuffix);
 }
 
+//! Cast the container consisted of pointers to hierarchy items
+template<typename Item>
+QList<Item*> castHierarchyItems(QList<HierarchyItem*> const& items)
+{
+    QList<Item*> result;
+    result.reserve(items.size());
+    for (auto ptr : items)
+        result.emplace_back(reinterpret_cast<Item*>(ptr));
+    return result;
+}
+
+//! Retrieve children of a hierarchy item
+QList<HierarchyItem*> childItems(HierarchyItem* pItem)
+{
+    int numItems = pItem->rowCount();
+    QList<HierarchyItem*> result(numItems);
+    for (int k = 0; k != numItems; ++k)
+        result[k] = (HierarchyItem*) pItem->child(k);
+    return result;
+}
+
 //! Retrieve the KCL types which are associated with beam elements
 QList<KCL::ElementType> beamTypes()
 {

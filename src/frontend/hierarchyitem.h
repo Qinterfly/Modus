@@ -127,7 +127,7 @@ public:
     KCL::ElasticSurface& surface();
 
     void selectItems(QList<Backend::Core::Selection> const& selections);
-    void selectItem(HierarchyItem* pBaseItem, QMap<Backend::Core::Selection, bool> const& maskSelections);
+    void selectItem(HierarchyItem* pBaseItem, QSet<Backend::Core::Selection> const& selectionSet);
 
 private:
     void appendChildren();

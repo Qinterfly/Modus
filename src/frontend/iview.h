@@ -12,6 +12,7 @@ public:
     };
     virtual ~IView() = default;
     virtual void clear() = 0;
+    virtual void plot() = 0;
     virtual void refresh() = 0;
     virtual Type type() const = 0;
 };

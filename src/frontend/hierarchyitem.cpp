@@ -242,35 +242,36 @@ KCL::ElasticSurface& SurfaceHierarchyItem::surface()
     return mSurface;
 }
 
+//! Select items excluding duplicate entities
 void SurfaceHierarchyItem::selectItems(QList<Core::Selection> const& selections)
 {
     // Create the mask of the selected elements
     int numSelections = selections.size();
-    QMap<Core::Selection, bool> maskSelections;
+    QSet<Core::Selection> selectionSet;
     for (int i = 0; i != numSelections; ++i)
-        maskSelections[selections[i]] = true;
+        selectionSet.insert(selections[i]);
 
     // Loop through all the elements associated with the surface
     int numChildren = rowCount();
     for (int i = 0; i != numChildren; ++i)
-        selectItem((HierarchyItem*) child(i), maskSelections);
+        selectItem((HierarchyItem*) child(i), selectionSet);
 }
 
-//! Select model elements by mask
-void SurfaceHierarchyItem::selectItem(HierarchyItem* pBaseItem, QMap<Core::Selection, bool> const& maskSelections)
+//! Select model elements associated with the given item using the selection set
+void SurfaceHierarchyItem::selectItem(HierarchyItem* pBaseItem, QSet<Core::Selection> const& selectionSet)
 {
     if (pBaseItem->type() == HierarchyItem::kElement)
     {
         ElementHierarchyItem* pItem = (ElementHierarchyItem*) pBaseItem;
         Core::Selection key(mkISurface, pItem->element()->type(), pItem->iElement());
-        if (maskSelections.contains(key) && maskSelections[key])
+        if (selectionSet.contains(key))
             pItem->setSelected();
     }
     else if (pBaseItem->type() == HierarchyItem::kGroupElements)
     {
         int numChildren = pBaseItem->rowCount();
         for (int i = 0; i != numChildren; ++i)
-            selectItem((HierarchyItem*) pBaseItem->child(i), maskSelections);
+            selectItem((HierarchyItem*) pBaseItem->child(i), selectionSet);
     }
 }
 
@@ -288,7 +289,7 @@ int ElementHierarchyItem::iSurface() const
     while (pItem)
     {
         if (pItem->type() == HierarchyItem::kSurface)
-            return static_cast<ElementHierarchyItem*>(pItem)->iSurface();
+            return static_cast<SurfaceHierarchyItem*>(pItem)->iSurface();
         pItem = pItem->parent();
     }
     return std::numeric_limits<int>::min();

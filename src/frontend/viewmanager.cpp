@@ -8,6 +8,7 @@
 #include "hierarchyitem.h"
 #include "modelview.h"
 #include "selectionset.h"
+#include "uiutility.h"
 #include "viewmanager.h"
 
 using namespace Backend;
@@ -95,7 +96,7 @@ IView* ViewManager::createView(KCL::Model const& model)
 
     // Create the model view otherwise
     ModelView* pModelView = new ModelView(model);
-    pModelView->refresh();
+    pModelView->plot();
     pModelView->setIsometricView();
 
     // Set the connections
@@ -109,18 +110,13 @@ IView* ViewManager::createView(KCL::Model const& model)
     return pModelView;
 }
 
-//! Select entities on the view
-void ViewManager::selectOnView(KCL::Model const& model, Backend::Core::Selection const& selection)
-{
-    // Slice the view widget
-    ModelView* pView = (ModelView*) createView(model);
-
-    // TODO
-}
-
 //! Create views associated with project hierarchy items
 void ViewManager::processItems(QList<HierarchyItem*> const& items)
 {
+    // Constants
+    QSet<HierarchyItem::Type> kModelTypes = {HierarchyItem::kModel, HierarchyItem::kSurface, HierarchyItem::kGroupElements,
+                                             HierarchyItem::kElement};
+
     // Check if there are any items to view
     if (items.isEmpty())
         return;
@@ -135,43 +131,72 @@ void ViewManager::processItems(QList<HierarchyItem*> const& items)
 
     // Loop through all the types
     QList<HierarchyItem::Type> const types = mapItems.keys();
+    QSet<IView*> modifiedViews;
     for (HierarchyItem::Type type : types)
     {
         QList<HierarchyItem*> typeItems = mapItems[type];
-        for (HierarchyItem* pBaseItem : typeItems)
+        if (kModelTypes.contains(type))
+            processModelItems(typeItems, modifiedViews);
+    }
+
+    // Refresh the modified views
+    for (auto iter = modifiedViews.begin(); iter != modifiedViews.end(); ++iter)
+        (*iter)->refresh();
+}
+
+//! Process hierarchy items associated with the ModelView
+void ViewManager::processModelItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews)
+{
+    for (HierarchyItem* pBaseItem : items)
+    {
+        auto type = pBaseItem->type();
+        ModelView* pView = nullptr;
+        switch (type)
         {
-            switch (type)
-            {
-            case HierarchyItem::kModel:
-            {
-                createView(static_cast<ModelHierarchyItem*>(pBaseItem)->kclModel());
-                break;
-            }
-            case HierarchyItem::kElement:
-            {
-                ElementHierarchyItem* pItem = (ElementHierarchyItem*) pBaseItem;
+        case HierarchyItem::kModel:
+            pView = (ModelView*) createView(static_cast<ModelHierarchyItem*>(pBaseItem)->kclModel());
+            pView->selector().deselectAll();
+            modifiedViews.insert(pView);
+            break;
+        case HierarchyItem::kSurface:
+            processModelItems(Utility::childItems(pBaseItem), modifiedViews);
+            break;
+        case HierarchyItem::kGroupElements:
+            processModelItems(Utility::childItems(pBaseItem), modifiedViews);
+            break;
+        case HierarchyItem::kElement:
+        {
+            ElementHierarchyItem* pItem = (ElementHierarchyItem*) pBaseItem;
 
-                // Set the selection data
-                int iSurface = pItem->iSurface();
-                if (std::isnan(iSurface))
-                    continue;
-                KCL::ElementType type = pItem->element()->type();
-                int iElement = pItem->iElement();
-                Core::Selection selection(iSurface, type, iElement);
+            // Set the selection data
+            int iSurface = pItem->iSurface();
+            if (iSurface < -1)
+                continue;
+            KCL::ElementType type = pItem->element()->type();
+            int iElement = pItem->iElement();
+            Core::Selection selection(iSurface, type, iElement);
 
-                // Slice the model
-                KCL::Model* pModel = pItem->kclModel();
-                if (!pModel)
-                    continue;
+            // Slice the model
+            KCL::Model* pModel = pItem->kclModel();
+            if (!pModel)
+                continue;
 
-                // Add to the selection set
-                selectOnView(*pModel, selection);
-                break;
-            }
-            default:
-                break;
-            }
+            // Create the view, if necessary
+            pView = (ModelView*) createView(*pModel);
+            if (!modifiedViews.contains(pView))
+                pView->selector().deselectAll();
+
+            // Add the selection set to the view
+            pView->selector().select(selection, ModelViewSelector::kMultipleSelection);
+            break;
         }
+        default:
+            break;
+        }
+
+        // Add the view to the modified list
+        if (pView)
+            modifiedViews.insert(pView);
     }
 }
 

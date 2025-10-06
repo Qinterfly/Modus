@@ -22,6 +22,7 @@ namespace Frontend
 {
 
 class HierarchyItem;
+class ElementHierarchyItem;
 
 class ViewManager : public QWidget
 {
@@ -41,7 +42,6 @@ public:
     IView* findView(KCL::Model const& model);
 
     IView* createView(KCL::Model const& model);
-    void selectOnView(KCL::Model const& model, Backend::Core::Selection const& selection);
     void processItems(QList<HierarchyItem*> const& items);
     void refresh();
     void clear();
@@ -52,6 +52,7 @@ signals:
 private:
     void createContent();
     void initialize();
+    void processModelItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews);
     QString newViewName();
 
 private:
