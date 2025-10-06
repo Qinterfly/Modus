@@ -1,4 +1,7 @@
+#include <QColorDialog>
+#include <QDialog>
 #include <QFile>
+#include <QListWidget>
 #include <QMenu>
 #include <QToolBar>
 #include <QVBoxLayout>
@@ -226,12 +229,17 @@ void ModelView::createContent()
     QAction* pThicknessAction = createShowAction(QIcon(":/icons/thickness.png"), tr("Show element thickness"), mOptions.showThickness);
     QAction* pSymmetryAction = createShowAction(QIcon(":/icons/symmetry.png"), tr("Show symmetrical part of the model"), mOptions.showSymmetry);
     QAction* pWireframeAction = createShowAction(QIcon(":/icons/wireframe.png"), tr("Show wireframe representation"), mOptions.showWireframe);
+    QAction* pViewEditorAction = new QAction(QIcon(":/icons/edit-view.png"), tr("Edit view options"));
+
+    // Create the connections
+    connect(pViewEditorAction, &QAction::triggered, this, &ModelView::showViewEditor);
 
     // Create the toolbar
     QToolBar* pToolBar = new QToolBar;
     pToolBar->addAction(pThicknessAction);
     pToolBar->addAction(pSymmetryAction);
     pToolBar->addAction(pWireframeAction);
+    pToolBar->addAction(pViewEditorAction);
     Utility::setShortcutHints(pToolBar);
 
     // Combine the widgets
@@ -1356,6 +1364,88 @@ void InteractorStyle::removeHighlights()
     for (int i = 0; i != numActors; ++i)
         GetDefaultRenderer()->RemoveActor(mHighlightActors[i]);
     mHighlightActors.clear();
+}
+
+//! Represent a widget to change view properties
+void ModelView::showViewEditor()
+{
+    // Create the widget
+    QListWidget* pEditor = new QListWidget;
+
+    // Mark the element types which are presented in the model
+    QList<KCL::ElementType> const drawableTypes = Utility::drawableTypes();
+    QMap<KCL::ElementType, bool> maskTypes;
+    for (auto type : drawableTypes)
+        maskTypes[type] = false;
+    std::vector<KCL::ElementType> elementTypes;
+    for (KCL::ElasticSurface const& surface : mModel.surfaces)
+    {
+        elementTypes = surface.types();
+        for (KCL::ElementType type : elementTypes)
+            maskTypes[type] = true;
+    }
+    elementTypes = mModel.specialSurface.types();
+    for (KCL::ElementType type : elementTypes)
+        maskTypes[type] = true;
+
+    // Add the items
+    for (KCL::ElementType type : drawableTypes)
+    {
+        // Skip the element types which are not presented in the model
+        if (!maskTypes[type])
+            continue;
+
+        // Slice element data
+        QString label = tr("Element: %1").arg(magic_enum::enum_name(type).data());
+        QColor color = Utility::getColor(mOptions.elementColors[type]);
+        Qt::CheckState state = mOptions.maskElements[type] ? Qt::Checked : Qt::Unchecked;
+
+        // Create and initialize the item
+        QListWidgetItem* pItem = new QListWidgetItem(label);
+        pItem->setCheckState(state);
+        pItem->setData(Qt::DecorationRole, color);
+        pItem->setData(Qt::UserRole, type);
+
+        // Add it to the edtior
+        pEditor->addItem(pItem);
+    }
+
+    // Set the connections
+    connect(pEditor, &QListWidget::itemDoubleClicked, this,
+            [this](QListWidgetItem* pItem)
+            {
+                QColor color = pItem->data(Qt::DecorationRole).value<QColor>();
+                color = QColorDialog::getColor(color, this, tr("Set element color"));
+                pItem->setData(Qt::DecorationRole, color);
+            });
+    connect(pEditor, &QListWidget::itemChanged, this,
+            [this](QListWidgetItem* pItem)
+            {
+                bool isEnabled = pItem->checkState() == Qt::Checked;
+                QColor color = pItem->data(Qt::DecorationRole).value<QColor>();
+                KCL::ElementType type = pItem->data(Qt::UserRole).value<KCL::ElementType>();
+                mOptions.maskElements[type] = isEnabled;
+                mOptions.elementColors[type] = Utility::getColor(color);
+                plot();
+            });
+
+    // Create the dialog window
+    QDialog* pDialog = new QDialog(this);
+    pDialog->setWindowTitle(tr("View Editor"));
+
+    // Add the edtior to it
+    QVBoxLayout* pLayout = new QVBoxLayout;
+    pLayout->addWidget(pEditor);
+    pDialog->setLayout(pLayout);
+
+    // Show the dialog window
+    pDialog->show();
+    pDialog->raise();
+    pDialog->activateWindow();
+
+    // Position the dialog on the screen
+    QPoint center = mapToGlobal(rect().center());
+    pDialog->move(center.x() - pDialog->width() / 2, center.y() - pDialog->height() / 2);
 }
 
 //! Helper function to build up the transformation for the elastic surface using its local coordinate

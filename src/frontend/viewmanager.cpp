@@ -221,7 +221,13 @@ void ViewManager::createContent()
     mpTabWidget = new QTabWidget;
     mpTabWidget->setContentsMargins(0, 0, 0, 0);
     mpTabWidget->setTabsClosable(true);
-    connect(mpTabWidget->tabBar(), &QTabBar::tabCloseRequested, this, [this](int index) { mpTabWidget->removeTab(index); });
+    connect(mpTabWidget->tabBar(), &QTabBar::tabCloseRequested, this,
+            [this](int index)
+            {
+                QWidget* widget = mpTabWidget->widget(index);
+                mpTabWidget->removeTab(index);
+                widget->deleteLater();
+            });
 
     // Insert the widgets into the main layout
     QHBoxLayout* pLayout = new QHBoxLayout();

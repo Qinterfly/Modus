@@ -18,6 +18,7 @@ QT_FORWARD_DECLARE_CLASS(QPalette);
 QT_FORWARD_DECLARE_CLASS(QIcon)
 
 class vtkActor;
+class vtkColor3d;
 
 namespace Backend::Core
 {
@@ -32,6 +33,8 @@ QColor textColor(const QPalette& palette);
 void setTextColor(QWidget* pWidget, const QColor& color);
 
 // Ui
+QColor getColor(vtkColor3d color);
+vtkColor3d getColor(QColor color);
 int showSaveDialog(QWidget* pWidget, QString const& title, QString const& message);
 void fullScreenResize(QWidget* pWidget);
 void setShortcutHints(QToolBar* pToolBar);
@@ -48,6 +51,7 @@ QList<Item*> castHierarchyItems(QList<HierarchyItem*> const& items);
 QList<HierarchyItem*> childItems(HierarchyItem* pItem);
 
 // KCL
+QList<KCL::ElementType> drawableTypes();
 QList<KCL::ElementType> beamTypes();
 QList<KCL::ElementType> panelTypes();
 QList<KCL::ElementType> aeroPanelsTypes();

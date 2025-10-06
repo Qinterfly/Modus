@@ -7,6 +7,7 @@
 
 #include <Eigen/Geometry>
 #include <magicenum/magic_enum.hpp>
+#include <vtkColor.h>
 #include <vtkCylinderSource.h>
 #include <vtkDataSetMapper.h>
 #include <vtkGlyph3DMapper.h>
@@ -47,6 +48,18 @@ void setTextColor(QWidget* pWidget, const QColor& color)
         palette.setColor(QPalette::Active, QPalette::Text, color);
         pWidget->setPalette(palette);
     }
+}
+
+//! Convert a VTK color to Qt one
+QColor getColor(vtkColor3d color)
+{
+    return QColor::fromRgbF(color[0], color[1], color[2]);
+}
+
+//! Convert a Qt color to Vtk one
+vtkColor3d getColor(QColor color)
+{
+    return vtkColor3d(color.redF(), color.greenF(), color.blueF());
 }
 
 //! Show save dialog when closing a widget and process its output
@@ -155,6 +168,18 @@ QList<HierarchyItem*> childItems(HierarchyItem* pItem)
     QList<HierarchyItem*> result(numItems);
     for (int k = 0; k != numItems; ++k)
         result[k] = (HierarchyItem*) pItem->child(k);
+    return result;
+}
+
+//! Retrieve the KCL types which can be rendered
+QList<KCL::ElementType> drawableTypes()
+{
+    QList<KCL::ElementType> result;
+    result.append(beamTypes());
+    result.append(panelTypes());
+    result.append(aeroPanelsTypes());
+    result.append(massTypes());
+    result.append(springTypes());
     return result;
 }
 

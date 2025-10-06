@@ -178,8 +178,12 @@ signals:
 private:
     void initialize();
     void loadTextures();
+
+    // Content
     void createContent();
     void createConnections();
+
+    // Drawing
     void drawModel();
     void drawBeams2D(Transformation const& transform, int iSurface, KCL::ElementType type);
     void drawBeams3D(Transformation const& transform, int iSurface, KCL::ElementType type);
@@ -189,6 +193,9 @@ private:
     void drawMasses(Transformation const& transform, int iSurface, KCL::ElementType type);
     void drawSprings(bool isReflect, KCL::ElementType type);
     double getMaximumDimension();
+
+    // Widgets
+    void showViewEditor();
 
 private:
     KCL::Model const& mModel;
