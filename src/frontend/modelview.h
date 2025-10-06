@@ -146,8 +146,8 @@ struct ModelViewOptions
 
     // Flags
     bool showThickness;
-    bool showWireframe;
     bool showSymmetry;
+    bool showWireframe;
 
     // Tolerance
     double pickTolerance;
@@ -200,6 +200,7 @@ private:
     vtkSmartPointer<vtkCameraOrientationWidget> mOrientationWidget;
     QMap<QString, vtkSmartPointer<vtkTexture>> mTextures;
     vtkSmartPointer<InteractorStyle> mStyle;
+    QList<unsigned long> mCallbacks;
 };
 }
 

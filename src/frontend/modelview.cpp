@@ -1,6 +1,7 @@
 #include <QFile>
-#include <QHBoxLayout>
 #include <QMenu>
+#include <QToolBar>
+#include <QVBoxLayout>
 
 #include <vtkAxesActor.h>
 #include <vtkCamera.h>
@@ -8,6 +9,7 @@
 #include <vtkCellPicker.h>
 #include <vtkDataSetMapper.h>
 #include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkGeometryFilter.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkPNGReader.h>
 #include <vtkPlaneSource.h>
@@ -19,6 +21,7 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkTexture.h>
+#include <vtkUnstructuredGrid.h>
 #include <QVTKOpenGLNativeWidget.h>
 
 #include <kcl/model.h>
@@ -83,8 +86,8 @@ ModelViewOptions::ModelViewOptions()
 
     // Flags
     showThickness = false;
-    showWireframe = false;
     showSymmetry = true;
+    showWireframe = false;
 
     // Tolerance
     pickTolerance = 0.005;
@@ -106,6 +109,11 @@ ModelView::~ModelView()
 //! Clear all the items from the scene
 void ModelView::clear()
 {
+    auto interactor = mRenderWindow->GetInteractor();
+    int numCallbacks = mCallbacks.size();
+    for (int i = 0; i != numCallbacks; ++i)
+        interactor->RemoveObserver(mCallbacks[i]);
+    mCallbacks.clear();
     mSelector.clear();
     mStyle->clear();
     auto actors = mRenderer->GetActors();
@@ -194,12 +202,40 @@ void ModelView::loadTextures()
 //! Create all the widgets and corresponding actions
 void ModelView::createContent()
 {
-    QHBoxLayout* pLayout = new QHBoxLayout;
+    QVBoxLayout* pLayout = new QVBoxLayout;
 
     // Create the VTK widget
     mRenderWidget = new QVTKOpenGLNativeWidget;
 
+    // Create auxiliary function
+    auto createShowAction = [this](QIcon const& icon, QString const& name, bool& option)
+    {
+        QAction* pAction = new QAction(icon, name);
+        pAction->setCheckable(true);
+        pAction->setChecked(option);
+        connect(pAction, &QAction::triggered, this,
+                [this, &option](bool flag)
+                {
+                    option = flag;
+                    plot();
+                });
+        return pAction;
+    };
+
+    // Create the actions
+    QAction* pThicknessAction = createShowAction(QIcon(":/icons/thickness.png"), tr("Show element thickness"), mOptions.showThickness);
+    QAction* pSymmetryAction = createShowAction(QIcon(":/icons/symmetry.png"), tr("Show symmetrical part of the model"), mOptions.showSymmetry);
+    QAction* pWireframeAction = createShowAction(QIcon(":/icons/wireframe.png"), tr("Show wireframe representation"), mOptions.showWireframe);
+
+    // Create the toolbar
+    QToolBar* pToolBar = new QToolBar;
+    pToolBar->addAction(pThicknessAction);
+    pToolBar->addAction(pSymmetryAction);
+    pToolBar->addAction(pWireframeAction);
+    Utility::setShortcutHints(pToolBar);
+
     // Combine the widgets
+    pLayout->addWidget(pToolBar);
     pLayout->addWidget(mRenderWidget);
     setLayout(pLayout);
 }
@@ -750,7 +786,8 @@ void ModelView::drawMasses(Transformation const& transform, int iSurface, KCL::E
 
         // Attach the follower event to the interactor
         auto interactor = mRenderWindow->GetInteractor();
-        interactor->AddObserver(vtkCommand::EndInteractionEvent, callback);
+        unsigned long tag = interactor->AddObserver(vtkCommand::EndInteractionEvent, callback);
+        mCallbacks.push_back(tag);
     }
 }
 
@@ -1280,19 +1317,23 @@ void InteractorStyle::highlight(Core::Selection selection)
     for (int i = 0; i != numActors; ++i)
     {
         // Slice the polygon data
-        vtkPolyData* polyData = vtkPolyData::SafeDownCast(actors[i]->GetMapper()->GetInput());
+        vtkDataSet* dataSet = actors[i]->GetMapper()->GetInput();
+        vtkPolyData* polyData = vtkPolyData::SafeDownCast(dataSet);
 
         // Set the mapper data
         vtkNew<vtkPolyDataMapper> silhouetteMapper;
-        if (polyData->GetNumberOfLines() > 0)
+        if (polyData && polyData->GetNumberOfLines() > 0)
         {
             silhouetteMapper->SetInputData(polyData);
         }
         else
         {
+            vtkNew<vtkGeometryFilter> filter;
+            filter->SetInputData(dataSet);
+            filter->Update();
             vtkNew<vtkPolyDataSilhouette> silhouette;
             silhouette->SetCamera(GetDefaultRenderer()->GetActiveCamera());
-            silhouette->SetInputData(polyData);
+            silhouette->SetInputData(filter->GetOutput());
             silhouetteMapper->SetInputConnection(silhouette->GetOutputPort());
         }
 

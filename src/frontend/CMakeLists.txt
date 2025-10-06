@@ -10,6 +10,7 @@ find_package(VTK REQUIRED COMPONENTS
   CommonDataModel
   FiltersHybrid
   FiltersSources
+  FiltersGeometry
   InteractionStyle
   InteractionWidgets
   RenderingAnnotation

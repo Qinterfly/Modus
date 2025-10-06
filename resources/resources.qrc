@@ -38,6 +38,9 @@
 		<file>icons/constraints.png</file>
 		<file>icons/mode.png</file>
 		<file>icons/optimization.png</file>
+		<file>icons/thickness.png</file>
+		<file>icons/symmetry.png</file>
+		<file>icons/wireframe.png</file>
 		<file>icons/document-open.svg</file>
 		<file>icons/document-new.svg</file>
 		<file>icons/document-save.svg</file>

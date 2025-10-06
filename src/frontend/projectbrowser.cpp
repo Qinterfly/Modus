@@ -132,7 +132,7 @@ void ProjectBrowser::createContent()
     connect(mpFilterLineEdit, &QLineEdit::textChanged, this, &ProjectBrowser::filterContent);
 
     // Create the tool bar
-    QToolBar* pToolBar = new QToolBar();
+    QToolBar* pToolBar = new QToolBar;
     pToolBar->addAction(pExpandAction);
     pToolBar->addAction(pCollapseAction);
     pToolBar->addSeparator();
