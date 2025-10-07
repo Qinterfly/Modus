@@ -5,6 +5,8 @@
 #include <QToolBar>
 #include <QWidget>
 
+#include <kcl/model.h>
+
 #include <Eigen/Geometry>
 #include <magicenum/magic_enum.hpp>
 #include <vtkColor.h>
@@ -171,6 +173,23 @@ QList<HierarchyItem*> childItems(HierarchyItem* pItem)
     return result;
 }
 
+//! Check if the items have the same type
+bool isSameType(QList<HierarchyItem*> const& items)
+{
+    if (items.isEmpty())
+        return false;
+    int type = items.first()->type();
+    uint numItems = items.size();
+    bool isEqual;
+    for (uint i = 1; i != numItems; ++i)
+    {
+        isEqual = items[i]->type() == type;
+        if (!isEqual)
+            return false;
+    }
+    return true;
+}
+
 //! Retrieve the KCL types which can be rendered
 QList<KCL::ElementType> drawableTypes()
 {
@@ -211,6 +230,36 @@ QList<KCL::ElementType> massTypes()
 QList<KCL::ElementType> springTypes()
 {
     return {KCL::PR};
+}
+
+//! Build up the transformation for the elastic surface
+Transformation computeTransformation(KCL::ElasticSurface const& surface)
+{
+    Transformation result = Transformation::Identity();
+    if (!surface.containsElement(KCL::OD))
+        return result;
+    auto pData = (KCL::GeneralData const*) surface.element(KCL::OD);
+    result = computeTransformation(pData->coords, pData->dihedralAngle, pData->sweepAngle, pData->zAngle);
+    return result;
+}
+
+//! Build up the transformation for the elastic surface using its local coordinate
+Transformation computeTransformation(KCL::Vec3 const& coords, double dihedralAngle, double sweepAngle, double zAngle)
+{
+    Transformation result = Transformation::Identity();
+    result.translate(Vector3d(coords[0], coords[1], coords[2]));
+    result.rotate(AngleAxisd(-qDegreesToRadians(dihedralAngle), Vector3d::UnitX()));
+    result.rotate(AngleAxisd(qDegreesToRadians(sweepAngle), Vector3d::UnitY()));
+    result.rotate(AngleAxisd(qDegreesToRadians(zAngle), Vector3d::UnitZ()));
+    return result;
+}
+
+//! Reflect the current transformation about the XOY plane
+Transformation reflectTransformation(Transformation const& transform)
+{
+    Matrix4d matrix = Matrix4d::Identity();
+    matrix(2, 2) = -1.0;
+    return Transformation(matrix * transform.matrix());
 }
 
 //! Check whether three points are located clockwise or counterclockwise
@@ -593,4 +642,7 @@ QIcon getIcon(Core::ISolver const* pSolver)
     }
     return QIcon();
 }
+
+// Explicit template instantiation
+template QList<ElementHierarchyItem*> castHierarchyItems(QList<HierarchyItem*> const&);
 }

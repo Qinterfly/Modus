@@ -49,6 +49,7 @@ void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix);
 template<typename Item>
 QList<Item*> castHierarchyItems(QList<HierarchyItem*> const& items);
 QList<HierarchyItem*> childItems(HierarchyItem* pItem);
+bool isSameType(QList<HierarchyItem*> const& items);
 
 // KCL
 QList<KCL::ElementType> drawableTypes();
@@ -57,6 +58,9 @@ QList<KCL::ElementType> panelTypes();
 QList<KCL::ElementType> aeroPanelsTypes();
 QList<KCL::ElementType> massTypes();
 QList<KCL::ElementType> springTypes();
+Transformation computeTransformation(KCL::ElasticSurface const& surface);
+Transformation computeTransformation(KCL::Vec3 const& coords, double dihedralAngle, double sweepAngle, double zAngle);
+Transformation reflectTransformation(Transformation const& transform);
 
 // Rendering
 QList<int> jarvisMarch(QList<Point> const& points);

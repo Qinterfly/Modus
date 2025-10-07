@@ -7,6 +7,7 @@
 
 #include <kcl/model.h>
 
+#include "editormanager.h"
 #include "hierarchyitem.h"
 #include "project.h"
 #include "projectbrowser.h"
@@ -23,6 +24,7 @@ ProjectBrowser::ProjectBrowser(Core::Project& project, QSettings& settings, QWid
 {
     createContent();
     update();
+    mpEditorManager = new EditorManager(this);
 }
 
 ProjectBrowser::~ProjectBrowser()
@@ -32,6 +34,16 @@ ProjectBrowser::~ProjectBrowser()
 QSize ProjectBrowser::sizeHint() const
 {
     return QSize(150, 1000);
+}
+
+Backend::Core::Project& ProjectBrowser::project()
+{
+    return mProject;
+}
+
+EditorManager* ProjectBrowser::editorManager()
+{
+    return mpEditorManager;
 }
 
 //! Update the viewer content
@@ -175,10 +187,53 @@ void ProjectBrowser::processContextMenuRequest(QPoint const& point)
     QList<HierarchyItem*> items = selectedItems();
     if (items.isEmpty())
         return;
+    mpEditorManager->clear();
 
     // Create the context menu
     QMenu* pMenu = new QMenu(this);
     pMenu->setAttribute(Qt::WA_DeleteOnClose);
+
+    // Auxiliary functions
+    auto createElementEditor = [this](HierarchyItem* pBaseItem)
+    {
+        ElementHierarchyItem* pItem = (ElementHierarchyItem*) pBaseItem;
+        Core::Selection selection = Core::Selection(pItem->iSurface(), pItem->element()->type(), pItem->iElement());
+        KCL::Model* pModel = pItem->kclModel();
+        if (pModel)
+            mpEditorManager->createEditor(*pModel, selection);
+    };
+
+    // Fill up the context menu with the item related actions
+    int numItems = items.size();
+    for (int iItem = 0; iItem != numItems; ++iItem)
+    {
+        HierarchyItem* pBaseItem = items[iItem];
+        auto type = pBaseItem->type();
+        switch (type)
+        {
+        case HierarchyItem::kGroupElements:
+        {
+            QList<HierarchyItem*> childItems = Utility::childItems(pBaseItem);
+            int numChildren = childItems.size();
+            for (int iChild = 0; iChild != numChildren; ++iChild)
+                createElementEditor(childItems[iChild]);
+            break;
+        }
+        case HierarchyItem::kElement:
+            createElementEditor(pBaseItem);
+            break;
+        default:
+            break;
+        }
+    }
+
+    // Create the actions
+    if (!mpEditorManager->isEmpty())
+    {
+        QAction* pEditAction = new QAction(tr("&Edit"));
+        connect(pEditAction, &QAction::triggered, mpEditorManager, &EditorManager::show);
+        pMenu->addAction(pEditAction);
+    }
 
     // Fill up the menu with the common actions
     if (!pMenu->actions().isEmpty())

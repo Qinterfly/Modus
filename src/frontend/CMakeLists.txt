@@ -35,6 +35,9 @@ set(FRONTEND_HEADERS
     iview.h
     viewmanager.h
     modelview.h
+    editormanager.h
+    lineedit.h
+    beameditor.h
 )
 
 set(FRONTEND_SOURCES
@@ -46,6 +49,9 @@ set(FRONTEND_SOURCES
     hierarchyitem.cpp
     viewmanager.cpp
     modelview.cpp
+    editormanager.cpp
+    lineedit.cpp
+    beameditor.cpp
 )
 
 qt_add_library(frontend STATIC

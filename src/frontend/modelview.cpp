@@ -53,8 +53,6 @@ auto const skMassTypes = Utility::massTypes();
 auto const skSpringTypes = Utility::springTypes();
 
 // Helper functions
-Transformation computeTransformation(KCL::Vec3 const& coords, double dihedralAngle, double sweepAngle, double zAngle);
-Transformation reflectTransformation(Transformation const& transform);
 vtkSmartPointer<vtkTexture> readTexture(QString const& pathFile);
 
 ModelViewOptions::ModelViewOptions()
@@ -274,12 +272,12 @@ void ModelView::drawModel()
         bool isSymmetry = pData->iSymmetry == 0;
 
         // Build up the transformation
-        auto transform = computeTransformation(pData->coords, pData->dihedralAngle, pData->sweepAngle, pData->zAngle);
-        auto aeroTransform = computeTransformation(pData->coords, pData->dihedralAngle, 0.0, pData->zAngle);
+        auto transform = Utility::computeTransformation(pData->coords, pData->dihedralAngle, pData->sweepAngle, pData->zAngle);
+        auto aeroTransform = Utility::computeTransformation(pData->coords, pData->dihedralAngle, 0.0, pData->zAngle);
 
         // Reflect the transformation about the XOY plane
-        auto reflectTransform = reflectTransformation(transform);
-        auto reflectAeroTransform = reflectTransformation(aeroTransform);
+        auto reflectTransform = Utility::reflectTransformation(transform);
+        auto reflectAeroTransform = Utility::reflectTransformation(aeroTransform);
 
         // Draw the aero panels
         for (auto type : skAeroPanelTypes)
@@ -828,11 +826,12 @@ void ModelView::drawSprings(bool isReflect, KCL::ElementType type)
         // Process the first elastic surface
         auto firstSurface = mModel.surfaces[pElement->iFirstSurface - 1];
         auto pFirstData = (KCL::GeneralData*) firstSurface.element(KCL::OD);
-        auto firstTransform = computeTransformation(pFirstData->coords, pFirstData->dihedralAngle, pFirstData->sweepAngle, pFirstData->zAngle);
+        auto firstTransform = Utility::computeTransformation(pFirstData->coords, pFirstData->dihedralAngle, pFirstData->sweepAngle,
+                                                             pFirstData->zAngle);
         if (pFirstData->iSymmetry != 0 && isReflect)
             continue;
         if (isReflect)
-            firstTransform = reflectTransformation(firstTransform);
+            firstTransform = Utility::reflectTransformation(firstTransform);
         Vector3d firstPosition = firstTransform * Vector3d(pElement->coordsFirstRod[0], 0.0, pElement->coordsFirstRod[1]);
 
         // Process the second elastic surface
@@ -841,18 +840,18 @@ void ModelView::drawSprings(bool isReflect, KCL::ElementType type)
         {
             auto secondSurface = mModel.surfaces[pElement->iSecondSurface - 1];
             auto pSecondData = (KCL::GeneralData*) secondSurface.element(KCL::OD);
-            auto secondTransform = computeTransformation(pSecondData->coords, pSecondData->dihedralAngle, pSecondData->sweepAngle,
-                                                         pSecondData->zAngle);
+            auto secondTransform = Utility::computeTransformation(pSecondData->coords, pSecondData->dihedralAngle, pSecondData->sweepAngle,
+                                                                  pSecondData->zAngle);
             if (pSecondData->iSymmetry != 0 && isReflect)
                 continue;
             if (isReflect)
-                secondTransform = reflectTransformation(secondTransform);
+                secondTransform = Utility::reflectTransformation(secondTransform);
             secondPosition = secondTransform * Vector3d(pElement->coordsSecondRod[0], 0.0, pElement->coordsSecondRod[1]);
         }
         else
         {
             KCL::Vec3 addCoords = {0, 0, pElement->lengthFirstRod};
-            auto addTransform = computeTransformation(addCoords, pElement->anglesFirstRod[0], pElement->anglesFirstRod[1], 0.0);
+            auto addTransform = Utility::computeTransformation(addCoords, pElement->anglesFirstRod[0], pElement->anglesFirstRod[1], 0.0);
             secondPosition = addTransform * firstPosition;
         }
 
@@ -1446,25 +1445,6 @@ void ModelView::showViewEditor()
     // Position the dialog on the screen
     QPoint center = mapToGlobal(rect().center());
     pDialog->move(center.x() - pDialog->width() / 2, center.y() - pDialog->height() / 2);
-}
-
-//! Helper function to build up the transformation for the elastic surface using its local coordinate
-Transformation computeTransformation(KCL::Vec3 const& coords, double dihedralAngle, double sweepAngle, double zAngle)
-{
-    Transformation result = Transformation::Identity();
-    result.translate(Vector3d(coords[0], coords[1], coords[2]));
-    result.rotate(AngleAxisd(-qDegreesToRadians(dihedralAngle), Vector3d::UnitX()));
-    result.rotate(AngleAxisd(qDegreesToRadians(sweepAngle), Vector3d::UnitY()));
-    result.rotate(AngleAxisd(qDegreesToRadians(zAngle), Vector3d::UnitZ()));
-    return result;
-}
-
-//! Helper function to reflect the current transformation about the XOY plane
-Transformation reflectTransformation(Transformation const& transform)
-{
-    Matrix4d matrix = Matrix4d::Identity();
-    matrix(2, 2) = -1.0;
-    return Transformation(matrix * transform.matrix());
 }
 
 //! Helper function to read texture from a file

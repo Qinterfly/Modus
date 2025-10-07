@@ -26,6 +26,8 @@ namespace Frontend
 
 class ProjectHierarchyModel;
 class HierarchyItem;
+class ElementHierarchyItem;
+class EditorManager;
 
 class ProjectBrowser : public QWidget
 {
@@ -37,8 +39,10 @@ public:
 
     QSize sizeHint() const override;
 
-    void update();
+    Backend::Core::Project& project();
+    EditorManager* editorManager();
 
+    void update();
     void selectItems(KCL::Model const& model, QList<Backend::Core::Selection> const& selections);
 
 signals:
@@ -62,6 +66,7 @@ private:
     QLineEdit* mpFilterLineEdit;
     ProjectHierarchyModel* mpSourceModel;
     QSortFilterProxyModel* mpFilterModel;
+    EditorManager* mpEditorManager;
 };
 
 }

@@ -24,6 +24,7 @@ public:
 private slots:
     void testOpenProject();
     void testViewModel();
+    void testEditorManager();
 
 private:
     Frontend::MainWindow* mpMainWindow;
