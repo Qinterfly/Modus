@@ -9,6 +9,8 @@ QT_FORWARD_DECLARE_CLASS(QGroupBox)
 namespace Frontend
 {
 
+class DoubleLineEdit;
+
 using LocalEdits = std::array<DoubleLineEdit*, 2>;
 using GlobalEdits = std::array<DoubleLineEdit*, 3>;
 
@@ -26,7 +28,10 @@ public:
 private:
     void createContent();
     void initialize();
+    void createConnections();
     void setGlobalByLocal();
+    void setLocalByGlobal();
+    void setElementData();
     QGroupBox* createLocalGroupBox();
     QGroupBox* createGlobalGroupBox();
     QGroupBox* createStifnessGroupBox();

@@ -3,8 +3,6 @@
 
 #include <QDialog>
 
-#include "lineedit.h"
-
 QT_FORWARD_DECLARE_CLASS(QComboBox)
 
 namespace KCL
@@ -40,6 +38,9 @@ public:
     Type type() const;
     QString const& name() const;
     QIcon const& icon() const;
+
+signals:
+    void dataChanged();
 
 protected:
     Type const mkType;

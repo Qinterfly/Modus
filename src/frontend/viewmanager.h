@@ -38,6 +38,7 @@ public:
     QList<IView*> views();
     IView* currentView();
     int numViews() const;
+    int numViews(IView::Type type);
     bool isEmpty() const;
     IView* findView(KCL::Model const& model);
 
@@ -53,7 +54,7 @@ private:
     void createContent();
     void initialize();
     void processModelItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews);
-    QString newViewName();
+    QString getViewName(IView* pView);
 
 private:
     QSettings& mSettings;

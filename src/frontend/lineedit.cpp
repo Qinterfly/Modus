@@ -6,12 +6,14 @@ using namespace Frontend;
 
 DoubleLineEdit::DoubleLineEdit(QWidget* pParent)
 {
-    int const kNumDecimals = 6;
-    double const kRangeValue = 1e9;
+    int const kNumDecimals = 4;
+    double const kRangeValue = 1e6;
     mpValidator = new QDoubleValidator(this);
     mpValidator->setNotation(QDoubleValidator::StandardNotation);
     mpValidator->setRange(-kRangeValue, kRangeValue, kNumDecimals);
+    mpValidator->setLocale(QLocale::C);
     setValidator(mpValidator);
+    connect(this, &DoubleLineEdit::textEdited, this, &DoubleLineEdit::processTextChanged);
 }
 
 DoubleLineEdit::DoubleLineEdit(double minimum, double maximum, int decimals, QWidget* pParent)
@@ -46,9 +48,8 @@ int DoubleLineEdit::decimals() const
 void DoubleLineEdit::setValue(double value)
 {
     QString newText = QString::number(value, 'g', mpValidator->decimals());
-    int position = 0;
-    if (mpValidator->validate(newText, position) == QValidator::Acceptable)
-        setText(newText);
+    mpValidator->fixup(newText);
+    setText(newText);
 }
 
 void DoubleLineEdit::setRange(double minimum, double maximum)
@@ -59,4 +60,17 @@ void DoubleLineEdit::setRange(double minimum, double maximum)
 void DoubleLineEdit::setDecimals(int number)
 {
     mpValidator->setDecimals(number);
+}
+
+void DoubleLineEdit::processTextChanged()
+{
+    int position = 0;
+    QString newText = text();
+    if (newText.contains(","))
+    {
+        newText.replace(",", ".");
+        setText(newText);
+    }
+    if (mpValidator->validate(newText, position) == QValidator::Acceptable)
+        emit valueChanged();
 }

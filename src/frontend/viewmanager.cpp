@@ -56,6 +56,19 @@ int ViewManager::numViews() const
     return mpTabWidget->count();
 }
 
+//! Get number of views of the specified type
+int ViewManager::numViews(IView::Type type)
+{
+    int result = 0;
+    int count = numViews();
+    for (int i = 0; i != count; ++i)
+    {
+        if (view(i)->type() == type)
+            ++result;
+    }
+    return result;
+}
+
 //! Check if there are any views
 bool ViewManager::isEmpty() const
 {
@@ -104,7 +117,7 @@ IView* ViewManager::createView(KCL::Model const& model)
             [pModelView, this](QList<Core::Selection> selections) { emit selectItemsRequested(pModelView->model(), selections); });
 
     // Add it to the tab
-    mpTabWidget->addTab(pModelView, newViewName());
+    mpTabWidget->addTab(pModelView, getViewName(pModelView));
     mpTabWidget->setCurrentWidget(pModelView);
 
     return pModelView;
@@ -249,7 +262,17 @@ void ViewManager::initialize()
 }
 
 //! Generate a name for a new view
-QString ViewManager::newViewName()
+QString ViewManager::getViewName(IView* pView)
 {
-    return QString("View %1").arg(numViews() + 1);
+    auto type = pView->type();
+    QString prefix = "View";
+    switch (type)
+    {
+    case IView::kModel:
+        prefix = "Model";
+        break;
+    default:
+        break;
+    }
+    return QString("%1 %2").arg(prefix).arg(numViews(type) + 1);
 }

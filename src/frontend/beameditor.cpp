@@ -3,6 +3,7 @@
 #include <QVBoxLayout>
 
 #include "beameditor.h"
+#include "lineedit.h"
 #include "uiutility.h"
 
 using namespace Frontend;
@@ -20,6 +21,7 @@ BeamEditor::BeamEditor(KCL::ElasticSurface const& surface, KCL::AbstractElement*
 {
     createContent();
     initialize();
+    createConnections();
 }
 
 QSize BeamEditor::sizeHint() const
@@ -81,20 +83,76 @@ void BeamEditor::initialize()
     }
 }
 
+//! Specify the widget connections
+void BeamEditor::createConnections()
+{
+    // Local coordinates
+    int numLocals = mStartLocalEdits.size();
+    for (int i = 0; i != numLocals; ++i)
+    {
+        connect(mStartLocalEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setGlobalByLocal);
+        connect(mEndLocalEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setGlobalByLocal);
+        connect(mStartLocalEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setElementData);
+        connect(mEndLocalEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setElementData);
+    }
+    // Global coordinates
+    int numGlobals = mStartGlobalEdits.size();
+    for (int i = 0; i != numGlobals; ++i)
+    {
+        connect(mStartGlobalEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setLocalByGlobal);
+        connect(mEndGlobalEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setLocalByGlobal);
+    }
+    // Stiffness and inertia values
+    int numValues = mStiffnessEdits.size();
+    for (int i = 0; i != numValues; ++i)
+    {
+        connect(mStiffnessEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setElementData);
+        connect(mInertiaEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setElementData);
+    }
+}
+
 //! Set global coordinates by the local ones
 void BeamEditor::setGlobalByLocal()
 {
     // Compute the positions
-    Vector3d startPosition = mTransform * Vector3d({mStartLocalEdits[0]->value(), 0.0, mStartLocalEdits[1]->value()});
-    Vector3d endPosition = mTransform * Vector3d({mEndLocalEdits[0]->value(), 0.0, mEndLocalEdits[1]->value()});
+    auto startPosition = mTransform * Vector3d({mStartLocalEdits[0]->value(), 0.0, mStartLocalEdits[1]->value()});
+    auto endPosition = mTransform * Vector3d({mEndLocalEdits[0]->value(), 0.0, mEndLocalEdits[1]->value()});
 
     // Set the positions
     int numCoords = startPosition.size();
     for (int i = 0; i != numCoords; ++i)
     {
+        QSignalBlocker blockerStart(mStartGlobalEdits[i]);
+        QSignalBlocker blockerEnd(mEndGlobalEdits[i]);
         mStartGlobalEdits[i]->setValue(startPosition[i]);
         mEndGlobalEdits[i]->setValue(endPosition[i]);
     }
+}
+
+//! Set local coordinates by the global ones
+void BeamEditor::setLocalByGlobal()
+{
+    // Constants
+    QList<int> const kMapIndices = {0, 2};
+
+    // Compute the positions
+    auto invTransform = mTransform.inverse();
+    auto startPosition = invTransform * Vector3d({mStartGlobalEdits[0]->value(), mStartGlobalEdits[1]->value(), mStartGlobalEdits[2]->value()});
+    auto endPosition = invTransform * Vector3d({mEndGlobalEdits[0]->value(), mEndGlobalEdits[1]->value(), mEndGlobalEdits[2]->value()});
+
+    // Set the positions
+    int numLocals = mStartLocalEdits.size();
+    for (int i = 0; i != numLocals; ++i)
+    {
+        QSignalBlocker blockerStart(mStartLocalEdits[i]);
+        QSignalBlocker blockerEnd(mEndLocalEdits[i]);
+        int iSlice = kMapIndices[i];
+        mStartLocalEdits[i]->setValue(startPosition[iSlice]);
+        mEndLocalEdits[i]->setValue(endPosition[iSlice]);
+    }
+
+    // Update element data
+    setElementData();
 }
 
 //! Create the group of widgets to edit local coordinates of the beam
@@ -116,6 +174,32 @@ QGroupBox* BeamEditor::createLocalGroupBox()
     }
     pGroupBox->setLayout(pLayout);
     return pGroupBox;
+}
+
+//! Slice data from widgets to set element data
+void BeamEditor::setElementData()
+{
+    // Slice the current data
+    KCL::VecN data = mpElement->get();
+
+    // Set the coordinates
+    int numCoords = mStartLocalEdits.size();
+    for (int i = 0; i != numCoords; ++i)
+    {
+        data[i] = mStartLocalEdits[i]->value();
+        data[numCoords + i] = mEndLocalEdits[i]->value();
+    }
+
+    // Set the stiffness and inertia values
+    int numValues = mStiffnessEdits.size();
+    for (int i = 0; i != numValues; ++i)
+    {
+        data[4 + i] = mStiffnessEdits[i]->value();
+        data[4 + numValues + i] = mInertiaEdits[i]->value();
+    }
+
+    // Set the updated data
+    mpElement->set(data);
 }
 
 //! Create the group of widgets to edit global coordinates of the beam
