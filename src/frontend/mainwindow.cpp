@@ -43,7 +43,7 @@ void MainWindow::newProject()
     mProject = Core::Project();
     qInfo() << tr("New project was created");
     setModified(false);
-    mpProjectBrowser->update();
+    mpProjectBrowser->refresh();
 }
 
 //! Read the project located at the specified path
@@ -54,7 +54,7 @@ bool MainWindow::openProject(QString const& pathFile)
         qInfo() << tr("Project %1 was successfully opened").arg(pathFile);
         setModified(false);
         addToRecentProjects();
-        mpProjectBrowser->update();
+        mpProjectBrowser->refresh();
         return true;
     }
     return false;

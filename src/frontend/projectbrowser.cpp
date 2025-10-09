@@ -23,8 +23,7 @@ ProjectBrowser::ProjectBrowser(Core::Project& project, QSettings& settings, QWid
     , mSettings(settings)
 {
     createContent();
-    update();
-    mpEditorManager = new EditorManager(this);
+    refresh();
 }
 
 ProjectBrowser::~ProjectBrowser()
@@ -47,7 +46,7 @@ EditorManager* ProjectBrowser::editorManager()
 }
 
 //! Update the viewer content
-void ProjectBrowser::update()
+void ProjectBrowser::refresh()
 {
     // Create the model to represent the project hierarchy
     QItemSelectionModel* pOldSelectionModel = mpView->selectionModel();
@@ -106,6 +105,9 @@ void ProjectBrowser::selectItems(KCL::Model const& model, QList<Backend::Core::S
 void ProjectBrowser::createContent()
 {
     uint const kMargin = 2;
+
+    // Create the editor manager
+    mpEditorManager = new EditorManager(this);
 
     // Create the view widget
     mpView = new QTreeView;

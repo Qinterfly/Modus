@@ -25,9 +25,10 @@ public:
 
     QSize sizeHint() const override;
 
+    void refresh() override;
+
 private:
     void createContent();
-    void initialize();
     void createConnections();
     void setGlobalByLocal();
     void setLocalByGlobal();

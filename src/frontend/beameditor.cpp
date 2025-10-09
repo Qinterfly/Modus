@@ -20,8 +20,8 @@ BeamEditor::BeamEditor(KCL::ElasticSurface const& surface, KCL::AbstractElement*
     , mpElement(pElement)
 {
     createContent();
-    initialize();
     createConnections();
+    BeamEditor::refresh();
 }
 
 QSize BeamEditor::sizeHint() const
@@ -55,8 +55,8 @@ void BeamEditor::createContent()
     setLayout(pMainLayout);
 }
 
-//! Set the initial values of all widgets
-void BeamEditor::initialize()
+//! Update the widgets from the element source
+void BeamEditor::refresh()
 {
     // Slice element data
     KCL::VecN data = mpElement->get();
@@ -67,6 +67,8 @@ void BeamEditor::initialize()
     int numCoords = startPosition.size();
     for (int i = 0; i != numCoords; ++i)
     {
+        QSignalBlocker blockerStart(mStartLocalEdits[i]);
+        QSignalBlocker blockerEnd(mEndLocalEdits[i]);
         mStartLocalEdits[i]->setValue(startPosition[i]);
         mEndLocalEdits[i]->setValue(endPosition[i]);
     }
@@ -78,6 +80,8 @@ void BeamEditor::initialize()
     int numValues = mStiffnessEdits.size();
     for (int i = 0; i != numValues; ++i)
     {
+        QSignalBlocker blockerStiffness(mStiffnessEdits[i]);
+        QSignalBlocker blockerInertia(mInertiaEdits[i]);
         mStiffnessEdits[i]->setValue(data[4 + i]);
         mInertiaEdits[i]->setValue(data[4 + numValues + i]);
     }
@@ -199,7 +203,7 @@ void BeamEditor::setElementData()
     }
 
     // Set the updated data
-    mpElement->set(data);
+    emit commandExecuted(new EditElement(mpElement, data, name()));
 }
 
 //! Create the group of widgets to edit global coordinates of the beam

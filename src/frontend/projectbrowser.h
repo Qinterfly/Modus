@@ -42,7 +42,7 @@ public:
     Backend::Core::Project& project();
     EditorManager* editorManager();
 
-    void update();
+    void refresh();
     void selectItems(KCL::Model const& model, QList<Backend::Core::Selection> const& selections);
 
 signals:

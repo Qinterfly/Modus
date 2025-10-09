@@ -2,6 +2,9 @@
 #define EDITORMANAGER_H
 
 #include <QDialog>
+#include <QUndoCommand>
+
+#include "kcl/alias.h"
 
 QT_FORWARD_DECLARE_CLASS(QComboBox)
 
@@ -19,6 +22,21 @@ struct Selection;
 
 namespace Frontend
 {
+
+class EditElement : public QUndoCommand
+{
+public:
+    EditElement(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name);
+    ~EditElement() = default;
+
+    void undo() override;
+    void redo() override;
+
+private:
+    KCL::AbstractElement* mpElement;
+    KCL::VecN mOldData;
+    KCL::VecN mNewData;
+};
 
 //! Base class for all editors
 class Editor : public QWidget
@@ -39,8 +57,10 @@ public:
     QString const& name() const;
     QIcon const& icon() const;
 
+    virtual void refresh() = 0;
+
 signals:
-    void dataChanged();
+    void commandExecuted(QUndoCommand* pCommand);
 
 protected:
     Type const mkType;
@@ -63,15 +83,17 @@ public:
     void clear();
     void createEditor(KCL::Model& model, Backend::Core::Selection const& selection);
     void setCurrentEditor(int index);
+    void refreshCurrentEditor();
 
 private:
     void createContent();
     void createConnections();
 
 private:
-    QWidget* mpCurrentWidget;
+    Editor* mpCurrentEditor;
     QComboBox* mpEditorsList;
     QList<Editor*> mEditors;
+    QUndoStack* mpUndoStack;
 };
 }
 

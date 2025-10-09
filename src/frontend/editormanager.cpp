@@ -1,5 +1,6 @@
 #include <QComboBox>
 #include <QLabel>
+#include <QToolBar>
 #include <QVBoxLayout>
 
 #include <kcl/model.h>
@@ -12,6 +13,24 @@
 using namespace Backend;
 using namespace Frontend;
 using namespace Eigen;
+
+EditElement::EditElement(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name)
+    : mpElement(pElement)
+    , mOldData(pElement->get())
+    , mNewData(data)
+{
+    setText(QObject::tr("Edit %1").arg(name));
+}
+
+void EditElement::undo()
+{
+    mpElement->set(mOldData);
+}
+
+void EditElement::redo()
+{
+    mpElement->set(mNewData);
+}
 
 Editor::Editor(Type type, QString const& name, QIcon const& icon, QWidget* pParent)
     : QWidget(pParent)
@@ -38,7 +57,6 @@ QIcon const& Editor::icon() const
 
 EditorManager::EditorManager(QWidget* pParent)
     : QDialog(pParent)
-    , mpCurrentWidget(nullptr)
 {
     setWindowTitle(tr("Editor Manager"));
     createContent();
@@ -86,16 +104,17 @@ void EditorManager::createEditor(KCL::Model& model, Core::Selection const& selec
     {
         mEditors.push_back(pEditor);
         mpEditorsList->addItem(pEditor->icon(), pEditor->name());
+        connect(pEditor, &Editor::commandExecuted, this, [this](QUndoCommand* pCommand) { mpUndoStack->push(pCommand); });
     }
 }
 
 //! Set the current editor to work with
 void EditorManager::setCurrentEditor(int index)
 {
-    if (mpCurrentWidget)
+    if (mpCurrentEditor)
     {
-        layout()->removeWidget(mpCurrentWidget);
-        mpCurrentWidget->hide();
+        layout()->removeWidget(mpCurrentEditor);
+        mpCurrentEditor->hide();
     }
     if (index >= 0 && index < numEditors())
     {
@@ -103,14 +122,27 @@ void EditorManager::setCurrentEditor(int index)
         mpEditorsList->setCurrentIndex(index);
         Editor* pEditor = mEditors[index];
         layout()->addWidget(pEditor);
-        mpCurrentWidget = pEditor;
-        mpCurrentWidget->show();
+        mpCurrentEditor = pEditor;
+        mpCurrentEditor->refresh();
+        mpCurrentEditor->show();
     }
+}
+
+//! Update the current editor state from the source
+void EditorManager::refreshCurrentEditor()
+{
+    if (mpCurrentEditor)
+        mpCurrentEditor->refresh();
 }
 
 //! Create all the widgets which are common for editors
 void EditorManager::createContent()
 {
+    mpCurrentEditor = nullptr;
+
+    // Create the undo stack
+    mpUndoStack = new QUndoStack(this);
+
     // Create the layout to select edtors
     QHBoxLayout* pSelectLayout = new QHBoxLayout;
     mpEditorsList = new QComboBox;
@@ -118,10 +150,33 @@ void EditorManager::createContent()
     pSelectLayout->addWidget(mpEditorsList);
     pSelectLayout->addStretch();
 
+    // Create undo and redo actions
+    QAction* pUndoAction = mpUndoStack->createUndoAction(this, tr("&Undo"));
+    QAction* pRedoAction = mpUndoStack->createRedoAction(this, tr("&Redo"));
+
+    // Set the icons of the actions
+    pUndoAction->setIcon(QIcon(":/icons/undo.png"));
+    pRedoAction->setIcon(QIcon(":/icons/redo.png"));
+
+    // Set the shortcuts
+    pUndoAction->setShortcuts(QKeySequence::Undo);
+    pRedoAction->setShortcuts(QKeySequence::Redo);
+
+    // Create the connecions
+    connect(pUndoAction, &QAction::triggered, this, &EditorManager::refreshCurrentEditor);
+    connect(pRedoAction, &QAction::triggered, this, &EditorManager::refreshCurrentEditor);
+
+    // Create the toolbar
+    QToolBar* pToolBar = new QToolBar;
+    pToolBar->addAction(pUndoAction);
+    pToolBar->addAction(pRedoAction);
+    pSelectLayout->addWidget(pToolBar);
+    Utility::setShortcutHints(pToolBar);
+
     // Create the main layout
     QVBoxLayout* pMainLayout = new QVBoxLayout;
     pMainLayout->addLayout(pSelectLayout);
-    pMainLayout->addWidget(mpCurrentWidget);
+    pMainLayout->addWidget(mpCurrentEditor);
     setLayout(pMainLayout);
 }
 
