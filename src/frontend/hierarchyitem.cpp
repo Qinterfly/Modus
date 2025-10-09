@@ -173,6 +173,14 @@ void ModelHierarchyItem::appendChildren()
     appendRow(new SurfaceHierarchyItem(-1, mModel.specialSurface, icon, QObject::tr("Special surface")));
 }
 
+Core::Subproject* ModelHierarchyItem::subproject()
+{
+    HierarchyItem* pItem = Utility::findParentByType(this, HierarchyItem::kSubproject);
+    if (pItem)
+        return &static_cast<SubprojectHierarchyItem*>(pItem)->subproject();
+    return nullptr;
+}
+
 KCL::Model& ModelHierarchyItem::kclModel()
 {
     return mModel;
@@ -283,15 +291,11 @@ ElementHierarchyItem::ElementHierarchyItem(int iElement, KCL::AbstractElement* p
     setIcon(Utility::getIcon(mpElement));
 }
 
-int ElementHierarchyItem::iSurface() const
+int ElementHierarchyItem::iSurface()
 {
-    QStandardItem* pItem = parent();
-    while (pItem)
-    {
-        if (pItem->type() == HierarchyItem::kSurface)
-            return static_cast<SurfaceHierarchyItem*>(pItem)->iSurface();
-        pItem = pItem->parent();
-    }
+    HierarchyItem* pItem = Utility::findParentByType(this, HierarchyItem::kSurface);
+    if (pItem)
+        return static_cast<SurfaceHierarchyItem*>(pItem)->iSurface();
     return std::numeric_limits<int>::min();
 }
 
@@ -307,13 +311,17 @@ KCL::AbstractElement* ElementHierarchyItem::element()
 
 KCL::Model* ElementHierarchyItem::kclModel()
 {
-    QStandardItem* pItem = parent();
-    while (pItem)
-    {
-        if (pItem->type() == HierarchyItem::kModel)
-            return &static_cast<ModelHierarchyItem*>(pItem)->kclModel();
-        pItem = pItem->parent();
-    }
+    HierarchyItem* pItem = Utility::findParentByType(this, HierarchyItem::kModel);
+    if (pItem)
+        return &static_cast<ModelHierarchyItem*>(pItem)->kclModel();
+    return nullptr;
+}
+
+Core::Subproject* ElementHierarchyItem::subproject()
+{
+    HierarchyItem* pItem = Utility::findParentByType(this, HierarchyItem::kSubproject);
+    if (pItem)
+        return &static_cast<SubprojectHierarchyItem*>(pItem)->subproject();
     return nullptr;
 }
 

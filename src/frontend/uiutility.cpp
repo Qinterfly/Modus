@@ -190,6 +190,19 @@ bool isSameType(QList<HierarchyItem*> const& items)
     return true;
 }
 
+//! Find parent of the specified type
+HierarchyItem* findParentByType(HierarchyItem* pItem, HierarchyItem::Type type)
+{
+    QStandardItem* pParent = pItem->parent();
+    while (pParent)
+    {
+        if (pParent->type() == type)
+            return (HierarchyItem*) pParent;
+        pParent = pParent->parent();
+    }
+    return nullptr;
+}
+
 //! Retrieve the KCL types which can be rendered
 QList<KCL::ElementType> drawableTypes()
 {

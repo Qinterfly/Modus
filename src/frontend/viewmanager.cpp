@@ -8,6 +8,7 @@
 #include "hierarchyitem.h"
 #include "modelview.h"
 #include "selectionset.h"
+#include "subproject.h"
 #include "uiutility.h"
 #include "viewmanager.h"
 
@@ -97,13 +98,14 @@ IView* ViewManager::currentView()
 }
 
 //! Create the view associated with a KCL model
-IView* ViewManager::createView(KCL::Model const& model)
+IView* ViewManager::createView(KCL::Model const& model, QString const& name)
 {
     // Set the view as the current one if it has been already created
     IView* pView = findView(model);
     if (pView)
     {
         mpTabWidget->setCurrentWidget(pView);
+        mpTabWidget->setTabText(mpTabWidget->currentIndex(), name);
         return pView;
     }
 
@@ -117,7 +119,8 @@ IView* ViewManager::createView(KCL::Model const& model)
             [pModelView, this](QList<Core::Selection> selections) { emit selectItemsRequested(pModelView->model(), selections); });
 
     // Add it to the tab
-    mpTabWidget->addTab(pModelView, getViewName(pModelView));
+    QString label = name.isEmpty() ? getDefaultViewName(IView::kModel) : name;
+    mpTabWidget->addTab(pModelView, label);
     mpTabWidget->setCurrentWidget(pModelView);
 
     return pModelView;
@@ -127,8 +130,8 @@ IView* ViewManager::createView(KCL::Model const& model)
 void ViewManager::processItems(QList<HierarchyItem*> const& items)
 {
     // Constants
-    QSet<HierarchyItem::Type> kModelTypes = {HierarchyItem::kModel, HierarchyItem::kSurface, HierarchyItem::kGroupElements,
-                                             HierarchyItem::kElement};
+    QSet<HierarchyItem::Type> kModelTypes = {HierarchyItem::kSubproject, HierarchyItem::kModel, HierarchyItem::kSurface,
+                                             HierarchyItem::kGroupElements, HierarchyItem::kElement};
 
     // Check if there are any items to view
     if (items.isEmpty())
@@ -166,11 +169,25 @@ void ViewManager::processModelItems(QList<HierarchyItem*> const& items, QSet<IVi
         ModelView* pView = nullptr;
         switch (type)
         {
-        case HierarchyItem::kModel:
-            pView = (ModelView*) createView(static_cast<ModelHierarchyItem*>(pBaseItem)->kclModel());
+        case HierarchyItem::kSubproject:
+        {
+            SubprojectHierarchyItem* pItem = (SubprojectHierarchyItem*) pBaseItem;
+            Core::Subproject& subproject = pItem->subproject();
+            QString label = getModelViewName(&subproject);
+            pView = (ModelView*) createView(subproject.model(), label);
             pView->selector().deselectAll();
             modifiedViews.insert(pView);
             break;
+        }
+        case HierarchyItem::kModel:
+        {
+            ModelHierarchyItem* pItem = (ModelHierarchyItem*) pBaseItem;
+            QString label = getModelViewName(pItem->subproject());
+            pView = (ModelView*) createView(pItem->kclModel(), label);
+            pView->selector().deselectAll();
+            modifiedViews.insert(pView);
+            break;
+        }
         case HierarchyItem::kSurface:
             processModelItems(Utility::childItems(pBaseItem), modifiedViews);
             break;
@@ -195,7 +212,8 @@ void ViewManager::processModelItems(QList<HierarchyItem*> const& items, QSet<IVi
                 continue;
 
             // Create the view, if necessary
-            pView = (ModelView*) createView(*pModel);
+            QString label = getModelViewName(pItem->subproject());
+            pView = (ModelView*) createView(*pModel, label);
             if (!modifiedViews.contains(pView))
                 pView->selector().deselectAll();
 
@@ -213,12 +231,20 @@ void ViewManager::processModelItems(QList<HierarchyItem*> const& items, QSet<IVi
     }
 }
 
-//! Update all the views
+//! Render all the views
 void ViewManager::refresh()
 {
     int count = numViews();
     for (int i = 0; i != count; ++i)
         view(i)->refresh();
+}
+
+//! Replot all the views
+void ViewManager::plot()
+{
+    int count = numViews();
+    for (int i = 0; i != count; ++i)
+        view(i)->plot();
 }
 
 //! Destroy all views
@@ -261,10 +287,9 @@ void ViewManager::initialize()
     mpTabWidget->removeTab(0);
 }
 
-//! Generate a name for a new view
-QString ViewManager::getViewName(IView* pView)
+//! Construct a default view name
+QString ViewManager::getDefaultViewName(IView::Type type)
 {
-    auto type = pView->type();
     QString prefix = "View";
     switch (type)
     {
@@ -275,4 +300,13 @@ QString ViewManager::getViewName(IView* pView)
         break;
     }
     return QString("%1 %2").arg(prefix).arg(numViews(type) + 1);
+}
+
+//! Consturt a name for a new model view
+QString ViewManager::getModelViewName(Backend::Core::Subproject* pSubproject)
+{
+    if (pSubproject && !pSubproject->name().isEmpty())
+        return QString("%1 %2").arg(pSubproject->name(), tr("model"));
+    else
+        return getDefaultViewName(IView::kModel);
 }

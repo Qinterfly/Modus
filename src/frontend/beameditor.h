@@ -24,7 +24,6 @@ public:
     ~BeamEditor() = default;
 
     QSize sizeHint() const override;
-
     void refresh() override;
 
 private:

@@ -208,6 +208,7 @@ ads::CDockWidget* MainWindow::createLogger()
 void MainWindow::createConnections()
 {
     connect(mpProjectBrowser, &ProjectBrowser::selectionChanged, mpViewManager, &ViewManager::processItems);
+    connect(mpProjectBrowser, &ProjectBrowser::editingFinished, mpViewManager, &ViewManager::plot);
     connect(mpViewManager, &ViewManager::selectItemsRequested, mpProjectBrowser, &ProjectBrowser::selectItems);
 }
 

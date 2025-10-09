@@ -108,6 +108,7 @@ void ProjectBrowser::createContent()
 
     // Create the editor manager
     mpEditorManager = new EditorManager(this);
+    connect(mpEditorManager, &EditorManager::finished, this, &ProjectBrowser::editingFinished);
 
     // Create the view widget
     mpView = new QTreeView;

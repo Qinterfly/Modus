@@ -47,6 +47,7 @@ public:
 
 signals:
     void selectionChanged(QList<HierarchyItem*>);
+    void editingFinished();
 
 private:
     // Content

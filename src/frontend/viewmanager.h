@@ -16,6 +16,7 @@ struct Model;
 namespace Backend::Core
 {
 struct Selection;
+class Subproject;
 }
 
 namespace Frontend
@@ -23,6 +24,7 @@ namespace Frontend
 
 class HierarchyItem;
 class ElementHierarchyItem;
+class ModelHierarchyItem;
 
 class ViewManager : public QWidget
 {
@@ -42,9 +44,10 @@ public:
     bool isEmpty() const;
     IView* findView(KCL::Model const& model);
 
-    IView* createView(KCL::Model const& model);
+    IView* createView(KCL::Model const& model, QString const& name = QString());
     void processItems(QList<HierarchyItem*> const& items);
     void refresh();
+    void plot();
     void clear();
 
 signals:
@@ -54,7 +57,9 @@ private:
     void createContent();
     void initialize();
     void processModelItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews);
-    QString getViewName(IView* pView);
+    IView* createView(ModelHierarchyItem* pItem);
+    QString getDefaultViewName(IView::Type type);
+    QString getModelViewName(Backend::Core::Subproject* pSubproject);
 
 private:
     QSettings& mSettings;

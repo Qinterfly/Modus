@@ -59,6 +59,7 @@ EditorManager::EditorManager(QWidget* pParent)
     : QDialog(pParent)
 {
     setWindowTitle(tr("Editor Manager"));
+    setModal(true);
     createContent();
     createConnections();
 }
@@ -73,6 +74,7 @@ bool EditorManager::isEmpty() const
     return numEditors() == 0;
 }
 
+//! Retrieve the number of created editors
 int EditorManager::numEditors() const
 {
     return mEditors.size();
@@ -86,6 +88,8 @@ void EditorManager::clear()
     for (int i = 0; i != numItems; ++i)
         mEditors[i]->deleteLater();
     mEditors.clear();
+    mpCurrentEditor = nullptr;
+    mpUndoStack->clear();
 }
 
 //! Create a specific editor based on element type
@@ -176,7 +180,6 @@ void EditorManager::createContent()
     // Create the main layout
     QVBoxLayout* pMainLayout = new QVBoxLayout;
     pMainLayout->addLayout(pSelectLayout);
-    pMainLayout->addWidget(mpCurrentEditor);
     setLayout(pMainLayout);
 }
 

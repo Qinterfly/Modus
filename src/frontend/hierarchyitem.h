@@ -107,6 +107,7 @@ public:
     ModelHierarchyItem(KCL::Model& model);
     ~ModelHierarchyItem() = default;
 
+    Backend::Core::Subproject* subproject();
     KCL::Model& kclModel();
 
     void selectItems(QList<Backend::Core::Selection> const& selections);
@@ -142,10 +143,11 @@ public:
     ElementHierarchyItem(int iElement, KCL::AbstractElement* pElement, QString const& name);
     ~ElementHierarchyItem() = default;
 
-    int iSurface() const;
+    int iSurface();
     int iElement() const;
     KCL::AbstractElement* element();
     KCL::Model* kclModel();
+    Backend::Core::Subproject* subproject();
 
 private:
     int const mkIElement;

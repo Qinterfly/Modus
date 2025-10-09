@@ -50,6 +50,7 @@ template<typename Item>
 QList<Item*> castHierarchyItems(QList<HierarchyItem*> const& items);
 QList<HierarchyItem*> childItems(HierarchyItem* pItem);
 bool isSameType(QList<HierarchyItem*> const& items);
+HierarchyItem* findParentByType(HierarchyItem* pItem, HierarchyItem::Type type);
 
 // KCL
 QList<KCL::ElementType> drawableTypes();
