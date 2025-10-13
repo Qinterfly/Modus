@@ -75,7 +75,7 @@ void IntLineEdit::processTextChanged()
 DoubleLineEdit::DoubleLineEdit(QWidget* pParent)
 {
     int const kNumDecimals = 4;
-    double const kRangeValue = 1e6;
+    double const kRangeValue = 1e9;
 
     mpValidator = new QDoubleValidator(this);
     mpValidator->setNotation(QDoubleValidator::StandardNotation);
@@ -121,7 +121,7 @@ int DoubleLineEdit::decimals() const
 //! Set the current value
 void DoubleLineEdit::setValue(double value)
 {
-    QString newText = QString::number(value, 'g', mpValidator->decimals());
+    QString newText = QString::number(value, 'g');
     mpValidator->fixup(newText);
     setText(newText);
 }

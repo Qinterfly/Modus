@@ -28,6 +28,9 @@ public:
 private:
     void createContent();
     void createConnections();
+    void setGlobalByLocal();
+    void setLocalByGlobal();
+    void setElementData();
     QGroupBox* createLocalGroupBox();
     QGroupBox* createGlobalGroupBox();
     QGroupBox* createAnglesGroupBox();
@@ -45,7 +48,7 @@ private:
     DoubleLineEdit* mpAttackEdit;
     // Parameters
     QCheckBox* mpSymmetryCheckBox;
-    IntLineEdit* mpLiftSurfaceEdit;
+    IntLineEdit* mpLiftSurfacesEdit;
     IntLineEdit* mpGroupEdit;
     DoubleLineEdit* mpTorsionalEdit;
     DoubleLineEdit* mpBendingEdit;

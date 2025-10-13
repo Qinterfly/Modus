@@ -25,6 +25,7 @@
 #include <vtkUnstructuredGrid.h>
 
 #include "isolver.h"
+#include "lineedit.h"
 #include "selectionset.h"
 #include "uiutility.h"
 
@@ -587,6 +588,41 @@ vtkSmartPointer<vtkActor> createShellActor(Transformation const& transform, Matr
     actor->SetMapper(mapper);
 
     return actor;
+}
+
+//! Set global coordinates by the local ones
+void setGlobalByLocalEdits(Transformation const& transform, LocalEdits const& localEdits, GlobalEdits& globalEdits)
+{
+    // Compute the positions
+    auto position = transform * Vector3d({localEdits[0]->value(), 0.0, localEdits[1]->value()});
+
+    // Set the positions
+    int numGlobals = globalEdits.size();
+    for (int i = 0; i != numGlobals; ++i)
+    {
+        QSignalBlocker blocker(globalEdits[i]);
+        globalEdits[i]->setValue(position[i]);
+    }
+}
+
+//! Set local coordinates by the global ones
+void setLocalByGlobalEdits(Transformation const& transform, LocalEdits& localEdits, GlobalEdits const& globalEdits)
+{
+    // Constants
+    QList<int> const kMapIndices = {0, 2};
+
+    // Compute the positions
+    auto invTransform = transform.inverse();
+    auto position = invTransform * Vector3d({globalEdits[0]->value(), globalEdits[1]->value(), globalEdits[2]->value()});
+
+    // Set the positions
+    int numLocals = localEdits.size();
+    for (int i = 0; i != numLocals; ++i)
+    {
+        QSignalBlocker blocker(localEdits[i]);
+        int iSlice = kMapIndices[i];
+        localEdits[i]->setValue(position[iSlice]);
+    }
 }
 
 //! Retrieve an icon associated with an element by pointer

@@ -10,6 +10,7 @@
 #include "uiutility.h"
 
 using namespace Frontend;
+using namespace Eigen;
 
 GeneralDataEditor::GeneralDataEditor(KCL::ElasticSurface const& surface, KCL::GeneralData* pElement, QString const& name, QWidget* pParent)
     : Editor(kGeneralData, name, Utility::getIcon(pElement->type()), pParent)
@@ -23,16 +24,42 @@ GeneralDataEditor::GeneralDataEditor(KCL::ElasticSurface const& surface, KCL::Ge
 
 QSize GeneralDataEditor::sizeHint() const
 {
-    return QSize(640, 350);
+    return QSize(680, 350);
 }
 
 //! Update data of widgets from the element source
 void GeneralDataEditor::refresh()
 {
-    // Slice element data
-    KCL::VecN data = mpElement->get();
+    // Set local coordinates
+    int numLocals = mLocalEdits.size();
+    for (int i = 0; i != numLocals; ++i)
+    {
+        QSignalBlocker blocker(mLocalEdits[i]);
+        mLocalEdits[i]->setValue(mpElement->coords[i]);
+    }
 
-    // TODO
+    // Set global coordinates
+    setGlobalByLocal();
+
+    // Set angles
+    QSignalBlocker blockerDihedral(mpDihedralEdit);
+    QSignalBlocker blockerSweep(mpSweepEdit);
+    QSignalBlocker blockerAttack(mpAttackEdit);
+    mpDihedralEdit->setValue(mpElement->dihedralAngle);
+    mpSweepEdit->setValue(mpElement->sweepAngle);
+    mpAttackEdit->setValue(mpElement->zAngle);
+
+    // Set parameters
+    QSignalBlocker blockerSymmetry(mpSymmetryCheckBox);
+    QSignalBlocker blockerLiftSurfaces(mpLiftSurfacesEdit);
+    QSignalBlocker blockerGroup(mpGroupEdit);
+    QSignalBlocker blockerTorsional(mpTorsionalEdit);
+    QSignalBlocker blockerBending(mpBendingEdit);
+    mpSymmetryCheckBox->setCheckState(mpElement->iSymmetry == 0 ? Qt::Checked : Qt::Unchecked);
+    mpLiftSurfacesEdit->setValue(mpElement->iLiftSurfaces);
+    mpGroupEdit->setValue(mpElement->iGroup);
+    mpTorsionalEdit->setValue(mpElement->torsionalFactor);
+    mpBendingEdit->setValue(mpElement->bendingFactor);
 }
 
 //! Create all the widgets
@@ -60,7 +87,66 @@ void GeneralDataEditor::createContent()
 //! Specify signals and slots between widgets
 void GeneralDataEditor::createConnections()
 {
-    // TODO
+    // Local coordinates
+    int numLocals = mLocalEdits.size();
+    for (int i = 0; i != numLocals; ++i)
+    {
+        connect(mLocalEdits[i], &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setGlobalByLocal);
+        connect(mLocalEdits[i], &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
+    }
+
+    // Global coordinates
+    int numGlobals = mGlobalEdits.size();
+    for (int i = 0; i != numGlobals; ++i)
+        connect(mGlobalEdits[i], &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setLocalByGlobal);
+
+    // Angles
+    connect(mpDihedralEdit, &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
+    connect(mpSweepEdit, &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
+    connect(mpAttackEdit, &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
+
+    // Parameters
+    connect(mpSymmetryCheckBox, &QCheckBox::toggled, this, &GeneralDataEditor::setElementData);
+    connect(mpLiftSurfacesEdit, &IntLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
+    connect(mpGroupEdit, &IntLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
+    connect(mpTorsionalEdit, &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
+    connect(mpBendingEdit, &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
+}
+
+//! Set global coordinates by the local ones
+void GeneralDataEditor::setGlobalByLocal()
+{
+    Utility::setGlobalByLocalEdits(mTransform, mLocalEdits, mGlobalEdits);
+}
+
+//! Set local coordinates by the global ones
+void GeneralDataEditor::setLocalByGlobal()
+{
+    Utility::setLocalByGlobalEdits(mTransform, mLocalEdits, mGlobalEdits);
+    setElementData();
+}
+
+//! Update element data from the widgets
+void GeneralDataEditor::setElementData()
+{
+    // Slice the current data
+    KCL::VecN data = mpElement->get();
+
+    // Set the data for updating
+    int numLocals = mLocalEdits.size();
+    for (int i = 0; i != numLocals; ++i)
+        data[1 + i] = mLocalEdits[i]->value();
+    data[4] = mpDihedralEdit->value();
+    data[5] = mpSweepEdit->value();
+    data[6] = mpLiftSurfacesEdit->value();
+    data[7] = mpSymmetryCheckBox->isChecked() ? 0 : 1;
+    data[8] = mpAttackEdit->value();
+    data[9] = mpGroupEdit->value();
+    data[10] = mpTorsionalEdit->value();
+    data[11] = mpBendingEdit->value();
+
+    // Set the updated data
+    emit commandExecuted(new EditElement(mpElement, data, name()));
 }
 
 //! Create the group of widgets to edit local coordinates
@@ -141,12 +227,14 @@ QGroupBox* GeneralDataEditor::createParametersGroupBox()
     pLayout->addWidget(mpSymmetryCheckBox, 0, 0);
 
     // Create the lift surface edit
-    mpLiftSurfaceEdit = new IntLineEdit;
-    pLayout->addWidget(new QLabel(tr("Lift surface index (ISN): ")), 1, 0);
-    pLayout->addWidget(mpLiftSurfaceEdit, 1, 1);
+    mpLiftSurfacesEdit = new IntLineEdit;
+    mpLiftSurfacesEdit->setMinimum(0);
+    pLayout->addWidget(new QLabel(tr("Lift surfaces index (ISN): ")), 1, 0);
+    pLayout->addWidget(mpLiftSurfacesEdit, 1, 1);
 
     // Create the group edit
     mpGroupEdit = new IntLineEdit;
+    mpGroupEdit->setMinimum(0);
     pLayout->addWidget(new QLabel(tr("Group index (IAF): ")), 1, 2);
     pLayout->addWidget(mpGroupEdit, 1, 3);
 
@@ -156,9 +244,9 @@ QGroupBox* GeneralDataEditor::createParametersGroupBox()
     pLayout->addWidget(mpTorsionalEdit, 2, 1);
 
     // Create the bending edit
-    mpTorsionalEdit = new DoubleLineEdit;
+    mpBendingEdit = new DoubleLineEdit;
     pLayout->addWidget(new QLabel(tr("Bending stiffness (BEND): ")), 2, 2);
-    pLayout->addWidget(mpTorsionalEdit, 2, 3);
+    pLayout->addWidget(mpBendingEdit, 2, 3);
 
     // Create the widget and set the layout
     QGroupBox* pGroupBox = new QGroupBox(tr("Parameters"));

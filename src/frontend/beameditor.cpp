@@ -118,44 +118,15 @@ void BeamEditor::createConnections()
 //! Set global coordinates by the local ones
 void BeamEditor::setGlobalByLocal()
 {
-    // Compute the positions
-    auto startPosition = mTransform * Vector3d({mStartLocalEdits[0]->value(), 0.0, mStartLocalEdits[1]->value()});
-    auto endPosition = mTransform * Vector3d({mEndLocalEdits[0]->value(), 0.0, mEndLocalEdits[1]->value()});
-
-    // Set the positions
-    int numCoords = startPosition.size();
-    for (int i = 0; i != numCoords; ++i)
-    {
-        QSignalBlocker blockerStart(mStartGlobalEdits[i]);
-        QSignalBlocker blockerEnd(mEndGlobalEdits[i]);
-        mStartGlobalEdits[i]->setValue(startPosition[i]);
-        mEndGlobalEdits[i]->setValue(endPosition[i]);
-    }
+    Utility::setGlobalByLocalEdits(mTransform, mStartLocalEdits, mStartGlobalEdits);
+    Utility::setGlobalByLocalEdits(mTransform, mEndLocalEdits, mEndGlobalEdits);
 }
 
 //! Set local coordinates by the global ones
 void BeamEditor::setLocalByGlobal()
 {
-    // Constants
-    QList<int> const kMapIndices = {0, 2};
-
-    // Compute the positions
-    auto invTransform = mTransform.inverse();
-    auto startPosition = invTransform * Vector3d({mStartGlobalEdits[0]->value(), mStartGlobalEdits[1]->value(), mStartGlobalEdits[2]->value()});
-    auto endPosition = invTransform * Vector3d({mEndGlobalEdits[0]->value(), mEndGlobalEdits[1]->value(), mEndGlobalEdits[2]->value()});
-
-    // Set the positions
-    int numLocals = mStartLocalEdits.size();
-    for (int i = 0; i != numLocals; ++i)
-    {
-        QSignalBlocker blockerStart(mStartLocalEdits[i]);
-        QSignalBlocker blockerEnd(mEndLocalEdits[i]);
-        int iSlice = kMapIndices[i];
-        mStartLocalEdits[i]->setValue(startPosition[iSlice]);
-        mEndLocalEdits[i]->setValue(endPosition[iSlice]);
-    }
-
-    // Update element data
+    Utility::setLocalByGlobalEdits(mTransform, mStartLocalEdits, mStartGlobalEdits);
+    Utility::setLocalByGlobalEdits(mTransform, mEndLocalEdits, mEndGlobalEdits);
     setElementData();
 }
 

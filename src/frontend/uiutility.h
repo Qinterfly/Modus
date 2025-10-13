@@ -75,6 +75,10 @@ vtkSmartPointer<vtkActor> createCylinderActor(Eigen::Vector3d const& startPositi
 vtkSmartPointer<vtkActor> createShellActor(Transformation const& transform, Matrix42d const& coords, Eigen::Vector4d const& depths,
                                            double thickness);
 
+// Widgets
+void setGlobalByLocalEdits(Transformation const& transform, LocalEdits const& localEdits, GlobalEdits& globalEdits);
+void setLocalByGlobalEdits(Transformation const& transform, LocalEdits& localEdits, GlobalEdits const& globalEdits);
+
 // Icons
 QIcon getIcon(KCL::AbstractElement const* pElement);
 QIcon getIcon(KCL::ElementType type);
