@@ -40,6 +40,7 @@ void fullScreenResize(QWidget* pWidget);
 void setShortcutHints(QToolBar* pToolBar);
 QString errorColorName(double value, double acceptThreshold, double criticalThreshold);
 QString getLabel(Backend::Core::Selection selection);
+QString getLabel(int iSurface);
 QList<HierarchyItem*> findItems(HierarchyItem* pRootItem, HierarchyItem::Type type);
 
 // File

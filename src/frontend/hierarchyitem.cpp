@@ -250,6 +250,14 @@ KCL::ElasticSurface& SurfaceHierarchyItem::surface()
     return mSurface;
 }
 
+KCL::Model* SurfaceHierarchyItem::kclModel()
+{
+    HierarchyItem* pItem = Utility::findParentByType(this, HierarchyItem::kModel);
+    if (pItem)
+        return &static_cast<ModelHierarchyItem*>(pItem)->kclModel();
+    return nullptr;
+}
+
 //! Select items excluding duplicate entities
 void SurfaceHierarchyItem::selectItems(QList<Core::Selection> const& selections)
 {

@@ -23,7 +23,7 @@ void TestFrontend::testOpenProject()
     QString fileName = QString("tests.%1").arg(Core::Project::fileSuffix());
     QString pathFile = Utility::combineFilePath(EXAMPLES_DIR, fileName);
     QVERIFY(mpMainWindow->openProject(pathFile));
-    mpMainWindow->show();
+    // mpMainWindow->show();
 }
 
 //! View a model using project browser hierarchy
@@ -45,7 +45,9 @@ void TestFrontend::testEditorManager()
     KCL::Model& model = subproject.model();
     pManager->createEditor(model, Core::Selection(iSurface, KCL::BI, 0));
     pManager->createEditor(model, Core::Selection(iSurface, KCL::BK, 0));
-    // pManager->show();
+    pManager->createEditor(model, Core::Selection(iSurface, KCL::OD, 0));
+    pManager->setCurrentEditor(pManager->numEditors() - 1);
+    pManager->show();
 }
 
 TestFrontend::~TestFrontend()

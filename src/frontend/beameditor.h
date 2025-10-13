@@ -9,11 +9,6 @@ QT_FORWARD_DECLARE_CLASS(QGroupBox)
 namespace Frontend
 {
 
-class DoubleLineEdit;
-
-using LocalEdits = std::array<DoubleLineEdit*, 2>;
-using GlobalEdits = std::array<DoubleLineEdit*, 3>;
-
 //! Class to edit properties of beam elements
 class BeamEditor : public Editor
 {

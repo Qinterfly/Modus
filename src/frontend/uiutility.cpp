@@ -119,10 +119,17 @@ QString errorColorName(double value, double acceptThreshold, double criticalThre
 QString getLabel(Core::Selection selection)
 {
     QString typeName = magic_enum::enum_name(selection.type).data();
-    QString result = QString("%1:%2").arg(typeName).arg(selection.iElement + 1);
-    if (selection.iSurface >= 0)
-        result += QString(" ES:%1").arg(selection.iSurface + 1);
+    QString result = QString("%1:%2 %3").arg(typeName).arg(selection.iElement + 1).arg(getLabel(selection.iSurface));
     return result;
+}
+
+//! Retrieve a surface label to display
+QString getLabel(int iSurface)
+{
+    if (iSurface >= 0)
+        return QString("%1:%2").arg("ES").arg(iSurface + 1);
+    else
+        return "ES51";
 }
 
 //! Search for hierarchy items of the specified type

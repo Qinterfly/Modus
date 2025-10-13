@@ -46,7 +46,8 @@ class Editor : public QWidget
 public:
     enum Type
     {
-        kBeam
+        kBeam,
+        kGeneralData
     };
 
     Editor() = delete;
@@ -56,6 +57,8 @@ public:
     Type type() const;
     QString const& name() const;
     QIcon const& icon() const;
+
+    void setIcon(QIcon const& icon);
 
     virtual void refresh() = 0;
 
@@ -88,6 +91,7 @@ public:
 private:
     void createContent();
     void createConnections();
+    void addEditor(Editor* pEditor);
 
 private:
     Editor* mpCurrentEditor;

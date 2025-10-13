@@ -159,27 +159,6 @@ void BeamEditor::setLocalByGlobal()
     setElementData();
 }
 
-//! Create the group of widgets to edit local coordinates of the beam
-QGroupBox* BeamEditor::createLocalGroupBox()
-{
-    QStringList const kLabels = {tr("X"), tr("Z")};
-    QGroupBox* pGroupBox = new QGroupBox(tr("Local coordinates"));
-    QGridLayout* pLayout = new QGridLayout;
-    pLayout->addWidget(new QLabel(tr("Start: ")), 1, 0);
-    pLayout->addWidget(new QLabel(tr("End: ")), 2, 0);
-    int numCoords = mStartLocalEdits.size();
-    for (int i = 0; i != numCoords; ++i)
-    {
-        mStartLocalEdits[i] = new DoubleLineEdit;
-        mEndLocalEdits[i] = new DoubleLineEdit;
-        pLayout->addWidget(new QLabel(kLabels[i]), 0, 1 + i, Qt::AlignCenter);
-        pLayout->addWidget(mStartLocalEdits[i], 1, 1 + i);
-        pLayout->addWidget(mEndLocalEdits[i], 2, 1 + i);
-    }
-    pGroupBox->setLayout(pLayout);
-    return pGroupBox;
-}
-
 //! Slice data from widgets to set element data
 void BeamEditor::setElementData()
 {
@@ -206,11 +185,37 @@ void BeamEditor::setElementData()
     emit commandExecuted(new EditElement(mpElement, data, name()));
 }
 
+//! Create the group of widgets to edit local coordinates of the beam
+QGroupBox* BeamEditor::createLocalGroupBox()
+{
+    QStringList const kLabels = {tr("X"), tr("Z")};
+
+    // Create editors
+    QGridLayout* pLayout = new QGridLayout;
+    pLayout->addWidget(new QLabel(tr("Start: ")), 1, 0);
+    pLayout->addWidget(new QLabel(tr("End: ")), 2, 0);
+    int numCoords = mStartLocalEdits.size();
+    for (int i = 0; i != numCoords; ++i)
+    {
+        mStartLocalEdits[i] = new DoubleLineEdit;
+        mEndLocalEdits[i] = new DoubleLineEdit;
+        pLayout->addWidget(new QLabel(kLabels[i]), 0, 1 + i, Qt::AlignCenter);
+        pLayout->addWidget(mStartLocalEdits[i], 1, 1 + i);
+        pLayout->addWidget(mEndLocalEdits[i], 2, 1 + i);
+    }
+
+    // Create the widget and set the layout
+    QGroupBox* pGroupBox = new QGroupBox(tr("Local coordinates"));
+    pGroupBox->setLayout(pLayout);
+    return pGroupBox;
+}
+
 //! Create the group of widgets to edit global coordinates of the beam
 QGroupBox* BeamEditor::createGlobalGroupBox()
 {
     QStringList const kLabels = {tr("X"), tr("Y"), tr("Z")};
-    QGroupBox* pGroupBox = new QGroupBox(tr("Global coordinates"));
+
+    // Create editors for coodinates
     QGridLayout* pLayout = new QGridLayout;
     pLayout->addWidget(new QLabel(tr("Start: ")), 1, 0);
     pLayout->addWidget(new QLabel(tr("End: ")), 2, 0);
@@ -223,6 +228,9 @@ QGroupBox* BeamEditor::createGlobalGroupBox()
         pLayout->addWidget(mStartGlobalEdits[i], 1, 1 + i);
         pLayout->addWidget(mEndGlobalEdits[i], 2, 1 + i);
     }
+
+    // Create the widget and set the layout
+    QGroupBox* pGroupBox = new QGroupBox(tr("Global coordinates"));
     pGroupBox->setLayout(pLayout);
     return pGroupBox;
 }
@@ -231,10 +239,13 @@ QGroupBox* BeamEditor::createGlobalGroupBox()
 QGroupBox* BeamEditor::createStifnessGroupBox()
 {
     KCL::ElementType type = mpElement->type();
+
+    // Check if there are any values to display
     int numValues = countValues(type);
     if (numValues == 0)
         return nullptr;
-    QGroupBox* pGroupBox = new QGroupBox(tr("Stiffness"));
+
+    // Create editors
     QGridLayout* pLayout = new QGridLayout;
     mStiffnessEdits.resize(numValues);
     QString prefix = getStiffnessPrefix(type);
@@ -245,6 +256,9 @@ QGroupBox* BeamEditor::createStifnessGroupBox()
         pLayout->addWidget(new QLabel(label), 0, i, Qt::AlignCenter);
         pLayout->addWidget(mStiffnessEdits[i], 1, i);
     }
+
+    // Create the widget and set the layout
+    QGroupBox* pGroupBox = new QGroupBox(tr("Stiffness"));
     pGroupBox->setLayout(pLayout);
     return pGroupBox;
 }
@@ -253,10 +267,13 @@ QGroupBox* BeamEditor::createStifnessGroupBox()
 QGroupBox* BeamEditor::createInertiaGroupBox()
 {
     KCL::ElementType type = mpElement->type();
+
+    // Check if there are any values to display
     int numValues = countValues(type);
     if (numValues == 0)
         return nullptr;
-    QGroupBox* pGroupBox = new QGroupBox(tr("Inertia"));
+
+    // Create editors
     QGridLayout* pLayout = new QGridLayout;
     mInertiaEdits.resize(numValues);
     QString prefix = getInertiaPrefix(type);
@@ -267,6 +284,9 @@ QGroupBox* BeamEditor::createInertiaGroupBox()
         pLayout->addWidget(new QLabel(label), 0, i, Qt::AlignCenter);
         pLayout->addWidget(mInertiaEdits[i], 1, i);
     }
+
+    // Create the widget and set the layout
+    QGroupBox* pGroupBox = new QGroupBox(tr("Inertia"));
     pGroupBox->setLayout(pLayout);
     return pGroupBox;
 }

@@ -126,6 +126,7 @@ public:
 
     int iSurface() const;
     KCL::ElasticSurface& surface();
+    KCL::Model* kclModel();
 
     void selectItems(QList<Backend::Core::Selection> const& selections);
     void selectItem(HierarchyItem* pBaseItem, QSet<Backend::Core::Selection> const& selectionSet);

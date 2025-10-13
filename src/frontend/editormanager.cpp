@@ -8,6 +8,7 @@
 #include "beameditor.h"
 #include "editormanager.h"
 #include "selectionset.h"
+#include "generaldataeditor.h"
 #include "uiutility.h"
 
 using namespace Backend;
@@ -53,6 +54,11 @@ QString const& Editor::name() const
 QIcon const& Editor::icon() const
 {
     return mIcon;
+}
+
+void Editor::setIcon(QIcon const& icon)
+{
+    mIcon = icon;
 }
 
 EditorManager::EditorManager(QWidget* pParent)
@@ -104,12 +110,9 @@ void EditorManager::createEditor(KCL::Model& model, Core::Selection const& selec
     QString name = Utility::getLabel(selection);
     if (Utility::beamTypes().contains(type))
         pEditor = new BeamEditor(surface, pElement, name);
-    if (pEditor)
-    {
-        mEditors.push_back(pEditor);
-        mpEditorsList->addItem(pEditor->icon(), pEditor->name());
-        connect(pEditor, &Editor::commandExecuted, this, [this](QUndoCommand* pCommand) { mpUndoStack->push(pCommand); });
-    }
+    else if (type == KCL::OD)
+        pEditor = new GeneralDataEditor(surface, (KCL::GeneralData*) pElement, name);
+    addEditor(pEditor);
 }
 
 //! Set the current editor to work with
@@ -187,4 +190,14 @@ void EditorManager::createContent()
 void EditorManager::createConnections()
 {
     connect(mpEditorsList, &QComboBox::currentIndexChanged, this, [this](int index) { setCurrentEditor(index); });
+}
+
+//! Register the editor
+void EditorManager::addEditor(Editor* pEditor)
+{
+    if (!pEditor)
+        return;
+    mEditors.push_back(pEditor);
+    mpEditorsList->addItem(pEditor->icon(), pEditor->name());
+    connect(pEditor, &Editor::commandExecuted, this, [this](QUndoCommand* pCommand) { mpUndoStack->push(pCommand); });
 }
