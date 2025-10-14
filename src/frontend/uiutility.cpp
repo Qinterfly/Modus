@@ -664,6 +664,8 @@ QIcon getIcon(KCL::ElementType type)
         return QIcon(":/icons/trapezium.png");
     case KCL::DB:
         return QIcon(":/icons/beam-bending.png");
+    case KCL::P4:
+        return QIcon(":/icons/layer.png");
     case KCL::PK:
         return QIcon(":/icons/function.png");
     case KCL::QK:

@@ -7,8 +7,9 @@
 
 #include "beameditor.h"
 #include "editormanager.h"
-#include "selectionset.h"
 #include "generaldataeditor.h"
+#include "paneleditor.h"
+#include "selectionset.h"
 #include "uiutility.h"
 
 using namespace Backend;
@@ -110,6 +111,8 @@ void EditorManager::createEditor(KCL::Model& model, Core::Selection const& selec
     QString name = Utility::getLabel(selection);
     if (Utility::beamTypes().contains(type))
         pEditor = new BeamEditor(surface, pElement, name);
+    else if (Utility::panelTypes().contains(type))
+        pEditor = new PanelEditor(surface, pElement, name);
     else if (type == KCL::OD)
         pEditor = new GeneralDataEditor(surface, (KCL::GeneralData*) pElement, name);
     addEditor(pEditor);

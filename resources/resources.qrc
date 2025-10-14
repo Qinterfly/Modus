@@ -62,6 +62,7 @@
 		<file>icons/go-down.svg</file>
 		<file>icons/go-next.svg</file>
 		<file>icons/go-previous.svg</file>
+		<file>icons/check.svg</file>
 
 		<file>textures/mass.png</file>
 

@@ -5,6 +5,7 @@
 using namespace Frontend;
 
 IntLineEdit::IntLineEdit(QWidget* pParent)
+    : QLineEdit(pParent)
 {
     mpValidator = new QIntValidator(this);
     setValidator(mpValidator);
@@ -73,6 +74,7 @@ void IntLineEdit::processTextChanged()
 }
 
 DoubleLineEdit::DoubleLineEdit(QWidget* pParent)
+    : QLineEdit(pParent)
 {
     int const kNumDecimals = 4;
     double const kRangeValue = 1e9;

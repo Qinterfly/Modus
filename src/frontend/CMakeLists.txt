@@ -39,6 +39,7 @@ set(FRONTEND_HEADERS
     lineedit.h
     beameditor.h
     generaldataeditor.h
+    paneleditor.h
 )
 
 set(FRONTEND_SOURCES
@@ -54,6 +55,7 @@ set(FRONTEND_SOURCES
     lineedit.cpp
     beameditor.cpp
     generaldataeditor.cpp
+    paneleditor.cpp
 )
 
 qt_add_library(frontend STATIC

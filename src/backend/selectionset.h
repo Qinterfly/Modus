@@ -28,7 +28,7 @@ struct Selection : public ISerializable
 public:
     Selection();
     Selection(KCL::ElementType aType, int aIElement);
-    Selection(int aISurface, KCL::ElementType aType, int aIElement);
+    Selection(int aISurface, KCL::ElementType aType, int aIElement = 0);
     ~Selection();
 
     bool isValid() const;

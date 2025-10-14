@@ -46,8 +46,9 @@ class Editor : public QWidget
 public:
     enum Type
     {
+        kGeneralData,
         kBeam,
-        kGeneralData
+        kPanel
     };
 
     Editor() = delete;

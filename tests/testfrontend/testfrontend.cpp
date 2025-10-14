@@ -23,7 +23,7 @@ void TestFrontend::testOpenProject()
     QString fileName = QString("tests.%1").arg(Core::Project::fileSuffix());
     QString pathFile = Utility::combineFilePath(EXAMPLES_DIR, fileName);
     QVERIFY(mpMainWindow->openProject(pathFile));
-    mpMainWindow->show();
+    // mpMainWindow->show();
 }
 
 //! View a model using project browser hierarchy
@@ -38,14 +38,21 @@ void TestFrontend::testViewModel()
 //! Edit elements of different types through the manager
 void TestFrontend::testEditorManager()
 {
-    int iSubproject = 0;
+    int iSubproject = 1;
     int iSurface = 0;
     EditorManager* pManager = mpMainWindow->projectBrowser()->editorManager();
     Core::Subproject& subproject = mpMainWindow->project().subprojects()[iSubproject];
     KCL::Model& model = subproject.model();
-    pManager->createEditor(model, Core::Selection(iSurface, KCL::BI, 0));
-    pManager->createEditor(model, Core::Selection(iSurface, KCL::BK, 0));
-    pManager->createEditor(model, Core::Selection(iSurface, KCL::OD, 0));
+    KCL::ElasticSurface& surface = model.surfaces[iSurface];
+    surface.insertElement(KCL::BK);
+    surface.insertElement(KCL::PN);
+    surface.insertElement(KCL::P4);
+    pManager->createEditor(model, Core::Selection(iSurface, KCL::OD));
+    pManager->createEditor(model, Core::Selection(iSurface, KCL::BI));
+    pManager->createEditor(model, Core::Selection(iSurface, KCL::BK));
+    pManager->createEditor(model, Core::Selection(iSurface, KCL::PN));
+    pManager->createEditor(model, Core::Selection(iSurface, KCL::P4));
+    pManager->createEditor(model, Core::Selection(iSurface, KCL::OP));
     pManager->setCurrentEditor(pManager->numEditors() - 1);
     pManager->show();
 }
