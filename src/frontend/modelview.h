@@ -89,11 +89,22 @@ public:
     vtkCamera* camera;
 };
 
-//! Class to process mouse and key events
-class InteractorStyle : public QObject, public vtkInteractorStyleTrackballCamera
+//! Class to handle signals & slots
+class InteractorHandler : public QObject
 {
     Q_OBJECT
 
+public:
+    InteractorHandler(QObject* parent = nullptr);
+    ~InteractorHandler() = default;
+
+signals:
+    void selectItemsRequested(QList<Backend::Core::Selection> selections);
+};
+
+//! Class to process mouse and key events
+class InteractorStyle : public vtkInteractorStyleTrackballCamera
+{
 public:
     static InteractorStyle* New();
     InteractorStyle();
@@ -102,12 +113,10 @@ public:
     virtual void OnKeyPress() override;
     void clear();
 
-signals:
-    void selectItemsRequested(QList<Backend::Core::Selection> selections);
-
 public:
     ModelViewSelector* selector;
     double pickTolerance;
+    InteractorHandler* handler;
 
 private:
     ModelViewSelector::Flags getSelectorFlags();

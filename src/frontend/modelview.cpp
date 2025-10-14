@@ -13,6 +13,7 @@
 #include <vtkDataSetMapper.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkGeometryFilter.h>
+#include <vtkObjectFactory.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkPNGReader.h>
 #include <vtkPlaneSource.h>
@@ -191,6 +192,7 @@ void ModelView::initialize()
     mStyle->SetDefaultRenderer(mRenderer);
     mStyle->selector = &mSelector;
     mStyle->pickTolerance = mOptions.pickTolerance;
+    mStyle->handler = new InteractorHandler(this);
     interactor->SetInteractorStyle(mStyle);
 }
 
@@ -249,7 +251,7 @@ void ModelView::createContent()
 //! Set the signals & slots
 void ModelView::createConnections()
 {
-    connect(mStyle, &InteractorStyle::selectItemsRequested, this, &ModelView::selectItemsRequested);
+    connect(mStyle->handler, &InteractorHandler::selectItemsRequested, this, &ModelView::selectItemsRequested);
 }
 
 //! Represent the model entities
@@ -1133,6 +1135,11 @@ void PlaneFollowerCallback::Execute(vtkObject* caller, unsigned long evId, void*
     }
 }
 
+InteractorHandler::InteractorHandler(QObject* parent)
+    : QObject(parent)
+{
+}
+
 InteractorStyle::InteractorStyle()
     : selector(nullptr)
 {
@@ -1189,10 +1196,10 @@ void InteractorStyle::OnRightButtonDown()
     QMenu* pMenu = new QMenu;
 
     // Create the actions
-    QAction* pSelectItemsAction = new QAction(tr("Go to corresponding tree items"));
+    QAction* pSelectItemsAction = new QAction(QObject::tr("Go to corresponding tree items"));
 
     // Set the actions signals & slots
-    connect(pSelectItemsAction, &QAction::triggered, this, [this]() { emit selectItemsRequested(selector->selected()); });
+    QObject::connect(pSelectItemsAction, &QAction::triggered, handler, [this]() { emit handler->selectItemsRequested(selector->selected()); });
 
     // Add the actions to the menu
     pMenu->addAction(pSelectItemsAction);
@@ -1285,21 +1292,21 @@ void InteractorStyle::createSelectionWidget(vtkActorCollection* actors)
     ModelViewSelector::Flags flags = getSelectorFlags();
 
     // Set the connections
-    connect(pMenu, &QMenu::hovered, this,
-            [this](QAction* action)
-            {
-                auto selection = action->data().value<Core::Selection>();
-                highlight(selection);
-                GetInteractor()->Render();
-            });
-    connect(pMenu, &QMenu::triggered, this,
-            [this, flags](QAction* action)
-            {
-                auto selection = action->data().value<Core::Selection>();
-                selector->select(selection, flags);
-                removeHighlights();
-                GetInteractor()->Render();
-            });
+    QObject::connect(pMenu, &QMenu::hovered, handler,
+                     [this](QAction* action)
+                     {
+                         auto selection = action->data().value<Core::Selection>();
+                         highlight(selection);
+                         GetInteractor()->Render();
+                     });
+    QObject::connect(pMenu, &QMenu::triggered, handler,
+                     [this, flags](QAction* action)
+                     {
+                         auto selection = action->data().value<Core::Selection>();
+                         selector->select(selection, flags);
+                         removeHighlights();
+                         GetInteractor()->Render();
+                     });
 
     // Save the menu pointer
     mMenus.push_back(pMenu);
