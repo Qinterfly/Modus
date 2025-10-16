@@ -715,17 +715,17 @@ void ModelView::drawMasses(Transformation const& transform, int iSurface, KCL::E
         default:
             continue;
         }
-        startPosition = transform * startPosition;
-        auto endPosition = startPosition;
 
         // Build up the additional line which connects the mass to the elastic surface
+        Vector3d endPosition;
         if (lengthRod > 0.0)
         {
             // Transform the coordiantes to the global coordinate system
             auto addTransform = Transformation::Identity();
-            addTransform.translate(Vector3d(0, 0, lengthRod));
             addTransform.rotate(AngleAxisd(qDegreesToRadians(angleRodZ), Vector3d::UnitY()));
-            endPosition = addTransform * endPosition;
+            addTransform.translate(Vector3d(0, 0, lengthRod));
+            endPosition = transform * addTransform * startPosition;
+            startPosition = transform * startPosition;
 
             // Create the points and connectivity list
             vtkNew<vtkPoints> points;
@@ -752,6 +752,11 @@ void ModelView::drawMasses(Transformation const& transform, int iSurface, KCL::E
 
             // Add the actor to the scene
             mRenderer->AddActor(actor);
+        }
+        else
+        {
+            startPosition = transform * startPosition;
+            endPosition = startPosition;
         }
 
         // Create and position the source

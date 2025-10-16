@@ -92,13 +92,93 @@ void MassEditor::createContent()
 //! Update the widgets from the element source
 void MassEditor::refresh()
 {
-    // TODO
+    // Slice element data
+    KCL::VecN data = mpElement->get();
+    int iData = 0;
+
+    // Set the mass
+    QSignalBlocker blockerMass(mpMassEdit);
+    mpMassEdit->setValue(data[iData]);
+    ++iData;
+
+    // Set the inertia moments and coordinates
+    if (is3D(mpElement->type()))
+    {
+        int numInertias = mInertiaEdits.size();
+        for (int i = 0; i != numInertias; ++i)
+        {
+            QSignalBlocker blockerInertia(mInertiaEdits[i]);
+            mInertiaEdits[i]->setValue(data[iData]);
+            ++iData;
+        }
+        int numLocals = mLocalEdits3D.size();
+        for (int i = 0; i != numLocals; ++i)
+        {
+            QSignalBlocker blockerLocal(mLocalEdits3D[i]);
+            mLocalEdits3D[i]->setValue(data[iData]);
+            ++iData;
+        }
+    }
+    else
+    {
+        QSignalBlocker blockerInertia(mpInertiaEdit);
+        mpInertiaEdit->setValue(data[iData]);
+        ++iData;
+        int numLocals = mLocalEdits2D.size();
+        for (int i = 0; i != numLocals; ++i)
+        {
+            QSignalBlocker blockerLocal(mLocalEdits2D[i]);
+            mLocalEdits2D[i]->setValue(data[iData]);
+            ++iData;
+        }
+    }
+
+    // Set global coordinates
+    setGlobalByLocal();
+
+    // Set length and angle of the rod
+    QSignalBlocker blockerLengthRod(mpLengthRodEdit);
+    QSignalBlocker blockerAngleRodZ(mpAngleRodZEdit);
+    mpLengthRodEdit->setValue(data[iData]);
+    mpAngleRodZEdit->setValue(data[iData + 1]);
 }
 
 //! Specify the widget connections
 void MassEditor::createConnections()
 {
-    // TODO
+    // Common editors
+    connect(mpMassEdit, &Edit1d::valueChanged, this, &MassEditor::setElementData);
+    connect(mpLengthRodEdit, &Edit1d::valueChanged, this, &MassEditor::setElementData);
+    connect(mpAngleRodZEdit, &Edit1d::valueChanged, this, &MassEditor::setElementData);
+
+    // Inertia moments and local coordinates
+    if (is3D(mpElement->type()))
+    {
+        int numInertias = mInertiaEdits.size();
+        for (int i = 0; i != numInertias; ++i)
+            connect(mInertiaEdits[i], &Edit1d::valueChanged, this, &MassEditor::setElementData);
+        int numLocals = mLocalEdits3D.size();
+        for (int i = 0; i != numLocals; ++i)
+        {
+            connect(mLocalEdits3D[i], &Edit1d::valueChanged, this, &MassEditor::setGlobalByLocal);
+            connect(mLocalEdits3D[i], &Edit1d::valueChanged, this, &MassEditor::setElementData);
+        }
+    }
+    else
+    {
+        connect(mpInertiaEdit, &Edit1d::valueChanged, this, &MassEditor::setElementData);
+        int numLocals = mLocalEdits2D.size();
+        for (int i = 0; i != numLocals; ++i)
+        {
+            connect(mLocalEdits2D[i], &Edit1d::valueChanged, this, &MassEditor::setGlobalByLocal);
+            connect(mLocalEdits2D[i], &Edit1d::valueChanged, this, &MassEditor::setElementData);
+        }
+    }
+
+    // Global coordinates
+    int numGlobals = mGlobalEdits.size();
+    for (int i = 0; i != numGlobals; ++i)
+        connect(mGlobalEdits[i], &Edit1d::valueChanged, this, &MassEditor::setLocalByGlobal);
 }
 
 //! Set global coordinates by the local ones
@@ -123,7 +203,48 @@ void MassEditor::setLocalByGlobal()
 //! Slice data from widgets to set element data
 void MassEditor::setElementData()
 {
-    // TODO
+    // Slice element data
+    KCL::VecN data = mpElement->get();
+    int iData = 0;
+
+    // Set the mass
+    data[iData] = mpMassEdit->value();
+    ++iData;
+
+    // Set the inertia moments and local coordinates
+    if (is3D(mpElement->type()))
+    {
+        int numInertias = mInertiaEdits.size();
+        for (int i = 0; i != numInertias; ++i)
+        {
+            data[iData] = mInertiaEdits[i]->value();
+            ++iData;
+        }
+        int numLocals = mLocalEdits3D.size();
+        for (int i = 0; i != numLocals; ++i)
+        {
+            data[iData] = mLocalEdits3D[i]->value();
+            ++iData;
+        }
+    }
+    else
+    {
+        data[iData] = mpInertiaEdit->value();
+        ++iData;
+        int numLocals = mLocalEdits2D.size();
+        for (int i = 0; i != numLocals; ++i)
+        {
+            data[iData] = mLocalEdits2D[i]->value();
+            ++iData;
+        }
+    }
+
+    // Set the length and angle of the rod
+    data[iData] = mpLengthRodEdit->value();
+    data[iData + 1] = mpAngleRodZEdit->value();
+
+    // Set the updated data
+    emit commandExecuted(new EditElement(mpElement, data, name()));
 }
 
 //! Create the group of widgets to edit local coordinates
