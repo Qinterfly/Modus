@@ -40,6 +40,8 @@ set(FRONTEND_HEADERS
     beameditor.h
     generaldataeditor.h
     paneleditor.h
+    masseditor.h
+    constantseditor.h
 )
 
 set(FRONTEND_SOURCES
@@ -56,13 +58,14 @@ set(FRONTEND_SOURCES
     beameditor.cpp
     generaldataeditor.cpp
     paneleditor.cpp
+    masseditor.cpp
+    constantseditor.cpp
 )
 
 qt_add_library(frontend STATIC
     ${FRONTEND_HEADERS}
     ${FRONTEND_SOURCES}
     ${RESOURCES_FILE}
-    masseditor.h masseditor.cpp
 )
 
 target_link_libraries(frontend PRIVATE

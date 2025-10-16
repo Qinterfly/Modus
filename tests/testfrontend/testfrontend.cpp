@@ -56,6 +56,7 @@ void TestFrontend::testEditorManager()
     pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::OP));
     pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::SM));
     pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::M3));
+    pManager->createEditor(*pModel, Core::Selection(-1, KCL::CO));
     pManager->setCurrentEditor(pManager->numEditors() - 1);
     pManager->show();
 }

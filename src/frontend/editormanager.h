@@ -49,7 +49,8 @@ public:
         kGeneralData,
         kBeam,
         kPanel,
-        kMass
+        kMass,
+        kConstants
     };
 
     Editor() = delete;

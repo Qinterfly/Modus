@@ -6,6 +6,7 @@
 #include <kcl/model.h>
 
 #include "beameditor.h"
+#include "constantseditor.h"
 #include "editormanager.h"
 #include "generaldataeditor.h"
 #include "masseditor.h"
@@ -118,6 +119,8 @@ void EditorManager::createEditor(KCL::Model& model, Core::Selection const& selec
         pEditor = new MassEditor(surface, pElement, name);
     else if (type == KCL::OD)
         pEditor = new GeneralDataEditor(surface, (KCL::GeneralData*) pElement, name);
+    else if (type == KCL::CO)
+        pEditor = new ConstantsEditor((KCL::Constants*) pElement, name);
     addEditor(pEditor);
 }
 
