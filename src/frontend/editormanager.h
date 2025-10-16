@@ -48,7 +48,8 @@ public:
     {
         kGeneralData,
         kBeam,
-        kPanel
+        kPanel,
+        kMass
     };
 
     Editor() = delete;

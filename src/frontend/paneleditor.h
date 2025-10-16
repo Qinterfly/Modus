@@ -9,8 +9,8 @@ QT_FORWARD_DECLARE_CLASS(QGroupBox)
 namespace Frontend
 {
 
-using PanelLocalEdits = std::array<LocalEdits, 4>;
-using PanelGlobalEdits = std::array<GlobalEdits, 4>;
+using PanelLocalEdits = std::array<Edits2d, 4>;
+using PanelGlobalEdits = std::array<Edits3d, 4>;
 
 //! Class to edit properties of panel elements
 class PanelEditor : public Editor
@@ -39,19 +39,19 @@ private:
     Transformation mTransform;
     KCL::AbstractElement* mpElement;
     // Thickness
-    DoubleLineEdit* mpThicknessEdit;
+    Edit1d* mpThicknessEdit;
     // Coordinates
     PanelLocalEdits mLocalEdits;
     PanelGlobalEdits mGlobalEdits;
     // Depths
-    QList<DoubleLineEdit*> mDepthEdits;
+    EditsXd mDepthEdits;
     // Material
-    DoubleLineEdit* mpYoungsModulus1Edit;
-    DoubleLineEdit* mpYoungsModulus2Edit;
-    DoubleLineEdit* mpShearModulusEdit;
-    DoubleLineEdit* mpPoissonRatioEdit;
-    DoubleLineEdit* mpAngleE1ZEdit;
-    DoubleLineEdit* mpDensityEdit;
+    Edit1d* mpYoungsModulus1Edit;
+    Edit1d* mpYoungsModulus2Edit;
+    Edit1d* mpShearModulusEdit;
+    Edit1d* mpPoissonRatioEdit;
+    Edit1d* mpAngleE1ZEdit;
+    Edit1d* mpDensityEdit;
 };
 
 }

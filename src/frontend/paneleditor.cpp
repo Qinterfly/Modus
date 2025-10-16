@@ -9,6 +9,7 @@
 using namespace Frontend;
 using namespace Eigen;
 
+// Helper functions
 bool isOrthotropic(KCL::ElementType type);
 int countDepths(KCL::ElementType type);
 
@@ -24,7 +25,7 @@ PanelEditor::PanelEditor(KCL::ElasticSurface const& surface, KCL::AbstractElemen
 
 QSize PanelEditor::sizeHint() const
 {
-    return QSize(640, 350);
+    return QSize(680, 350);
 }
 
 //! Create all the widgets
@@ -34,7 +35,7 @@ void PanelEditor::createContent()
 
     // Create the thickness layout
     QHBoxLayout* pThicknessLayout = new QHBoxLayout;
-    mpThicknessEdit = new DoubleLineEdit;
+    mpThicknessEdit = new Edit1d;
     mpThicknessEdit->setMinimum(0);
     pThicknessLayout->addWidget(new QLabel(tr("Thickness: ")));
     pThicknessLayout->addWidget(mpThicknessEdit);
@@ -74,8 +75,8 @@ void PanelEditor::refresh()
         Vector2d position = {data[iData], data[iData + 1]};
 
         // Slice editors
-        LocalEdits& pointLocalEdits = mLocalEdits[i];
-        GlobalEdits& pointGlobalEdits = mGlobalEdits[i];
+        Edits2d& pointLocalEdits = mLocalEdits[i];
+        Edits3d& pointGlobalEdits = mGlobalEdits[i];
 
         // Assign local coordinates
         int numLocals = pointLocalEdits.size();
@@ -133,8 +134,8 @@ void PanelEditor::createConnections()
         int numLocals = mLocalEdits[i].size();
         for (int j = 0; j != numLocals; ++j)
         {
-            connect(mLocalEdits[i][j], &DoubleLineEdit::valueChanged, this, &PanelEditor::setGlobalByLocal);
-            connect(mLocalEdits[i][j], &DoubleLineEdit::valueChanged, this, &PanelEditor::setElementData);
+            connect(mLocalEdits[i][j], &Edit1d::valueChanged, this, &PanelEditor::setGlobalByLocal);
+            connect(mLocalEdits[i][j], &Edit1d::valueChanged, this, &PanelEditor::setElementData);
         }
     }
 
@@ -143,26 +144,26 @@ void PanelEditor::createConnections()
     {
         int numGlobals = mGlobalEdits[i].size();
         for (int j = 0; j != numGlobals; ++j)
-            connect(mGlobalEdits[i][j], &DoubleLineEdit::valueChanged, this, &PanelEditor::setLocalByGlobal);
+            connect(mGlobalEdits[i][j], &Edit1d::valueChanged, this, &PanelEditor::setLocalByGlobal);
     }
 
     // Depths
     int numDepths = mDepthEdits.size();
     for (int i = 0; i != numDepths; ++i)
-        connect(mDepthEdits[i], &DoubleLineEdit::valueChanged, this, &PanelEditor::setElementData);
+        connect(mDepthEdits[i], &Edit1d::valueChanged, this, &PanelEditor::setElementData);
 
     // Common material properties
-    connect(mpYoungsModulus1Edit, &DoubleLineEdit::valueChanged, this, &PanelEditor::setElementData);
-    connect(mpDensityEdit, &DoubleLineEdit::valueChanged, this, &PanelEditor::setElementData);
+    connect(mpYoungsModulus1Edit, &Edit1d::valueChanged, this, &PanelEditor::setElementData);
+    connect(mpDensityEdit, &Edit1d::valueChanged, this, &PanelEditor::setElementData);
 
     // Orthotropic material properties
     bool isOrtho = isOrthotropic(mpElement->type());
     if (isOrtho)
     {
-        connect(mpYoungsModulus2Edit, &DoubleLineEdit::valueChanged, this, &PanelEditor::setElementData);
-        connect(mpShearModulusEdit, &DoubleLineEdit::valueChanged, this, &PanelEditor::setElementData);
-        connect(mpPoissonRatioEdit, &DoubleLineEdit::valueChanged, this, &PanelEditor::setElementData);
-        connect(mpAngleE1ZEdit, &DoubleLineEdit::valueChanged, this, &PanelEditor::setElementData);
+        connect(mpYoungsModulus2Edit, &Edit1d::valueChanged, this, &PanelEditor::setElementData);
+        connect(mpShearModulusEdit, &Edit1d::valueChanged, this, &PanelEditor::setElementData);
+        connect(mpPoissonRatioEdit, &Edit1d::valueChanged, this, &PanelEditor::setElementData);
+        connect(mpAngleE1ZEdit, &Edit1d::valueChanged, this, &PanelEditor::setElementData);
     }
 }
 
@@ -253,7 +254,7 @@ QGroupBox* PanelEditor::createLocalGroupBox()
         pLayout->addWidget(new QLabel(label), 1 + i, 0);
         for (int j = 0; j != numCoords; ++j)
         {
-            mLocalEdits[i][j] = new DoubleLineEdit;
+            mLocalEdits[i][j] = new Edit1d;
             pLayout->addWidget(mLocalEdits[i][j], 1 + i, 1 + j);
         }
     }
@@ -284,7 +285,7 @@ QGroupBox* PanelEditor::createGlobalGroupBox()
         pLayout->addWidget(new QLabel(label), 1 + i, 0);
         for (int j = 0; j != numCoords; ++j)
         {
-            mGlobalEdits[i][j] = new DoubleLineEdit;
+            mGlobalEdits[i][j] = new Edit1d;
             pLayout->addWidget(mGlobalEdits[i][j], 1 + i, 1 + j);
         }
     }
@@ -307,7 +308,7 @@ QGroupBox* PanelEditor::createDepthGroupBox()
     for (int i = 0; i != numDepths; ++i)
     {
         QString label = tr("H<sub>%1</sub>").arg(i);
-        mDepthEdits[i] = new DoubleLineEdit;
+        mDepthEdits[i] = new Edit1d;
         pLayout->addWidget(new QLabel(label), 0, i, Qt::AlignCenter);
         pLayout->addWidget(mDepthEdits[i], 1, i, Qt::AlignCenter);
     }
@@ -336,17 +337,17 @@ QGroupBox* PanelEditor::createMaterialGroupBox()
     mpDensityEdit = nullptr;
 
     // Create the base editors
-    mpYoungsModulus1Edit = new DoubleLineEdit;
-    mpDensityEdit = new DoubleLineEdit;
+    mpYoungsModulus1Edit = new Edit1d;
+    mpDensityEdit = new Edit1d;
 
     // Create the orthotropic editors
     bool isComposite = isOrthotropic(mpElement->type());
     if (isComposite)
     {
-        mpYoungsModulus2Edit = new DoubleLineEdit;
-        mpShearModulusEdit = new DoubleLineEdit;
-        mpPoissonRatioEdit = new DoubleLineEdit;
-        mpAngleE1ZEdit = new DoubleLineEdit;
+        mpYoungsModulus2Edit = new Edit1d;
+        mpShearModulusEdit = new Edit1d;
+        mpPoissonRatioEdit = new Edit1d;
+        mpAngleE1ZEdit = new Edit1d;
         mpPoissonRatioEdit->setRange(0, 1);
         mpAngleE1ZEdit->setRange(-90, 90);
     }

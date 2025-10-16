@@ -40,18 +40,18 @@ private:
     Transformation mTransform;
     KCL::GeneralData* mpElement;
     // Coordinates
-    LocalEdits mLocalEdits;
-    GlobalEdits mGlobalEdits;
+    Edits2d mLocalEdits;
+    Edits3d mGlobalEdits;
     // Angles
-    DoubleLineEdit* mpDihedralEdit;
-    DoubleLineEdit* mpSweepEdit;
-    DoubleLineEdit* mpAttackEdit;
+    Edit1d* mpDihedralEdit;
+    Edit1d* mpSweepEdit;
+    Edit1d* mpAttackEdit;
     // Parameters
     QCheckBox* mpSymmetryCheckBox;
-    IntLineEdit* mpLiftSurfacesEdit;
-    IntLineEdit* mpGroupEdit;
-    DoubleLineEdit* mpTorsionalEdit;
-    DoubleLineEdit* mpBendingEdit;
+    Edit1i* mpLiftSurfacesEdit;
+    Edit1i* mpGroupEdit;
+    Edit1d* mpTorsionalEdit;
+    Edit1d* mpBendingEdit;
 };
 }
 

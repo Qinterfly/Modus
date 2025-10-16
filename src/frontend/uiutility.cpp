@@ -36,6 +36,8 @@ using namespace Frontend;
 namespace Frontend::Utility
 {
 
+void setEdits(DoubleLineEdit** edits, Eigen::Vector3d const& values, QList<int> const& indices = {0, 1, 2});
+
 //! Retrieve the active text color from the palette
 QColor textColor(const QPalette& palette)
 {
@@ -590,39 +592,35 @@ vtkSmartPointer<vtkActor> createShellActor(Transformation const& transform, Matr
     return actor;
 }
 
-//! Set global coordinates by the local ones
-void setGlobalByLocalEdits(Transformation const& transform, LocalEdits const& localEdits, GlobalEdits& globalEdits)
+//! Set global coordinates by the two dimensional local ones
+void setGlobalByLocalEdits(Transformation const& transform, Edits2d const& localEdits, Edits3d& globalEdits)
 {
-    // Compute the positions
-    auto position = transform * Vector3d({localEdits[0]->value(), 0.0, localEdits[1]->value()});
-
-    // Set the positions
-    int numGlobals = globalEdits.size();
-    for (int i = 0; i != numGlobals; ++i)
-    {
-        QSignalBlocker blocker(globalEdits[i]);
-        globalEdits[i]->setValue(position[i]);
-    }
+    Vector3d position = transform * Vector3d({localEdits[0]->value(), 0.0, localEdits[1]->value()});
+    setEdits(globalEdits.data(), position);
 }
 
-//! Set local coordinates by the global ones
-void setLocalByGlobalEdits(Transformation const& transform, LocalEdits& localEdits, GlobalEdits const& globalEdits)
+//! Set global coordinates by the three dimensional local ones
+void setGlobalByLocalEdits(Transformation const& transform, Edits3d const& localEdits, Edits3d& globalEdits)
 {
-    // Constants
-    QList<int> const kMapIndices = {0, 2};
+    Vector3d position = transform * Vector3d({localEdits[0]->value(), localEdits[1]->value(), localEdits[2]->value()});
+    setEdits(globalEdits.data(), position);
+}
 
-    // Compute the positions
+//! Set two dimensional local coordinates by the global ones
+void setLocalByGlobalEdits(Transformation const& transform, Edits2d& localEdits, Edits3d const& globalEdits)
+{
+    QList<int> const kMapIndices = {0, 2};
     auto invTransform = transform.inverse();
     auto position = invTransform * Vector3d({globalEdits[0]->value(), globalEdits[1]->value(), globalEdits[2]->value()});
+    setEdits(localEdits.data(), position, kMapIndices);
+}
 
-    // Set the positions
-    int numLocals = localEdits.size();
-    for (int i = 0; i != numLocals; ++i)
-    {
-        QSignalBlocker blocker(localEdits[i]);
-        int iSlice = kMapIndices[i];
-        localEdits[i]->setValue(position[iSlice]);
-    }
+//! Set three dimensional local coordinates by the global ones
+void setLocalByGlobalEdits(Transformation const& transform, Edits3d& localEdits, Edits3d const& globalEdits)
+{
+    auto invTransform = transform.inverse();
+    auto position = invTransform * Vector3d({globalEdits[0]->value(), globalEdits[1]->value(), globalEdits[2]->value()});
+    setEdits(localEdits.data(), position);
 }
 
 //! Retrieve an icon associated with an element by pointer
@@ -699,6 +697,17 @@ QIcon getIcon(Core::ISolver const* pSolver)
         return QIcon(":/icons/optimization.png");
     }
     return QIcon();
+}
+
+//! Helper function to set values of edits
+void setEdits(DoubleLineEdit** edits, Eigen::Vector3d const& values, QList<int> const& indices)
+{
+    int numIndices = indices.size();
+    for (int i = 0; i != numIndices; ++i)
+    {
+        QSignalBlocker blocker(edits[i]);
+        edits[i]->setValue(values[indices[i]]);
+    }
 }
 
 // Explicit template instantiation

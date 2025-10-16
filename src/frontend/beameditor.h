@@ -35,12 +35,12 @@ private:
 private:
     Transformation mTransform;
     KCL::AbstractElement* mpElement;
-    LocalEdits mStartLocalEdits;
-    LocalEdits mEndLocalEdits;
-    GlobalEdits mStartGlobalEdits;
-    GlobalEdits mEndGlobalEdits;
-    QList<DoubleLineEdit*> mStiffnessEdits;
-    QList<DoubleLineEdit*> mInertiaEdits;
+    Edits2d mStartLocalEdits;
+    Edits2d mEndLocalEdits;
+    Edits3d mStartGlobalEdits;
+    Edits3d mEndGlobalEdits;
+    EditsXd mStiffnessEdits;
+    EditsXd mInertiaEdits;
 };
 }
 

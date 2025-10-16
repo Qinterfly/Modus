@@ -91,26 +91,26 @@ void GeneralDataEditor::createConnections()
     int numLocals = mLocalEdits.size();
     for (int i = 0; i != numLocals; ++i)
     {
-        connect(mLocalEdits[i], &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setGlobalByLocal);
-        connect(mLocalEdits[i], &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
+        connect(mLocalEdits[i], &Edit1d::valueChanged, this, &GeneralDataEditor::setGlobalByLocal);
+        connect(mLocalEdits[i], &Edit1d::valueChanged, this, &GeneralDataEditor::setElementData);
     }
 
     // Global coordinates
     int numGlobals = mGlobalEdits.size();
     for (int i = 0; i != numGlobals; ++i)
-        connect(mGlobalEdits[i], &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setLocalByGlobal);
+        connect(mGlobalEdits[i], &Edit1d::valueChanged, this, &GeneralDataEditor::setLocalByGlobal);
 
     // Angles
-    connect(mpDihedralEdit, &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
-    connect(mpSweepEdit, &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
-    connect(mpAttackEdit, &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
+    connect(mpDihedralEdit, &Edit1d::valueChanged, this, &GeneralDataEditor::setElementData);
+    connect(mpSweepEdit, &Edit1d::valueChanged, this, &GeneralDataEditor::setElementData);
+    connect(mpAttackEdit, &Edit1d::valueChanged, this, &GeneralDataEditor::setElementData);
 
     // Parameters
     connect(mpSymmetryCheckBox, &QCheckBox::toggled, this, &GeneralDataEditor::setElementData);
-    connect(mpLiftSurfacesEdit, &IntLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
-    connect(mpGroupEdit, &IntLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
-    connect(mpTorsionalEdit, &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
-    connect(mpBendingEdit, &DoubleLineEdit::valueChanged, this, &GeneralDataEditor::setElementData);
+    connect(mpLiftSurfacesEdit, &Edit1i::valueChanged, this, &GeneralDataEditor::setElementData);
+    connect(mpGroupEdit, &Edit1i::valueChanged, this, &GeneralDataEditor::setElementData);
+    connect(mpTorsionalEdit, &Edit1d::valueChanged, this, &GeneralDataEditor::setElementData);
+    connect(mpBendingEdit, &Edit1d::valueChanged, this, &GeneralDataEditor::setElementData);
 }
 
 //! Set global coordinates by the local ones
@@ -152,14 +152,14 @@ void GeneralDataEditor::setElementData()
 //! Create the group of widgets to edit local coordinates
 QGroupBox* GeneralDataEditor::createLocalGroupBox()
 {
-    QStringList const kLabels = {tr("X<sub>0</sub>"), tr("Z<sub>0</sub>")};
+    QStringList const kLabels = {"X<sub>0</sub>", "Z<sub>0</sub>"};
 
     // Create editors for coordinates
     QGridLayout* pLayout = new QGridLayout;
     int numCoords = mLocalEdits.size();
     for (int i = 0; i != numCoords; ++i)
     {
-        mLocalEdits[i] = new DoubleLineEdit;
+        mLocalEdits[i] = new Edit1d;
         pLayout->addWidget(new QLabel(kLabels[i]), 0, i, Qt::AlignCenter);
         pLayout->addWidget(mLocalEdits[i], 1, i);
     }
@@ -173,14 +173,14 @@ QGroupBox* GeneralDataEditor::createLocalGroupBox()
 //! Create the group of widgets to edit global coordinates
 QGroupBox* GeneralDataEditor::createGlobalGroupBox()
 {
-    QStringList const kLabels = {tr("X<sub>0</sub>"), tr("Y<sub>0</sub>"), tr("Z<sub>0</sub>")};
+    QStringList const kLabels = {"X<sub>0</sub>", "Y<sub>0</sub>", "Z<sub>0</sub>"};
 
     // Create editors for coordinates
     QGridLayout* pLayout = new QGridLayout;
     int numCoords = mGlobalEdits.size();
     for (int i = 0; i != numCoords; ++i)
     {
-        mGlobalEdits[i] = new DoubleLineEdit;
+        mGlobalEdits[i] = new Edit1d;
         pLayout->addWidget(new QLabel(kLabels[i]), 0, i, Qt::AlignCenter);
         pLayout->addWidget(mGlobalEdits[i], 1, i);
     }
@@ -197,17 +197,17 @@ QGroupBox* GeneralDataEditor::createAnglesGroupBox()
     QHBoxLayout* pLayout = new QHBoxLayout;
 
     // Create editor for dihedral angle
-    mpDihedralEdit = new DoubleLineEdit;
+    mpDihedralEdit = new Edit1d;
     pLayout->addWidget(new QLabel(tr("Dihedral angle (V, °): ")));
     pLayout->addWidget(mpDihedralEdit);
 
     // Create editor for sweep angle
-    mpSweepEdit = new DoubleLineEdit;
+    mpSweepEdit = new Edit1d;
     pLayout->addWidget(new QLabel(tr("Sweep angle (HI, °): ")));
     pLayout->addWidget(mpSweepEdit);
 
     // Create editor for local Z-angle
-    mpAttackEdit = new DoubleLineEdit;
+    mpAttackEdit = new Edit1d;
     pLayout->addWidget(new QLabel(tr("Attack angle (Alf, °): ")));
     pLayout->addWidget(mpAttackEdit);
 
@@ -227,24 +227,24 @@ QGroupBox* GeneralDataEditor::createParametersGroupBox()
     pLayout->addWidget(mpSymmetryCheckBox, 0, 0);
 
     // Create the lift surface edit
-    mpLiftSurfacesEdit = new IntLineEdit;
+    mpLiftSurfacesEdit = new Edit1i;
     mpLiftSurfacesEdit->setMinimum(0);
     pLayout->addWidget(new QLabel(tr("Lift surfaces index (ISN): ")), 1, 0);
     pLayout->addWidget(mpLiftSurfacesEdit, 1, 1);
 
     // Create the group edit
-    mpGroupEdit = new IntLineEdit;
+    mpGroupEdit = new Edit1i;
     mpGroupEdit->setMinimum(0);
     pLayout->addWidget(new QLabel(tr("Group index (IAF): ")), 1, 2);
     pLayout->addWidget(mpGroupEdit, 1, 3);
 
     // Create the torsional edit
-    mpTorsionalEdit = new DoubleLineEdit;
+    mpTorsionalEdit = new Edit1d;
     pLayout->addWidget(new QLabel(tr("Torsional stiffness (TORS): ")), 2, 0);
     pLayout->addWidget(mpTorsionalEdit, 2, 1);
 
     // Create the bending edit
-    mpBendingEdit = new DoubleLineEdit;
+    mpBendingEdit = new Edit1d;
     pLayout->addWidget(new QLabel(tr("Bending stiffness (BEND): ")), 2, 2);
     pLayout->addWidget(mpBendingEdit, 2, 3);
 

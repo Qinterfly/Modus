@@ -76,8 +76,10 @@ vtkSmartPointer<vtkActor> createShellActor(Transformation const& transform, Matr
                                            double thickness);
 
 // Widgets
-void setGlobalByLocalEdits(Transformation const& transform, LocalEdits const& localEdits, GlobalEdits& globalEdits);
-void setLocalByGlobalEdits(Transformation const& transform, LocalEdits& localEdits, GlobalEdits const& globalEdits);
+void setGlobalByLocalEdits(Transformation const& transform, Edits2d const& localEdits, Edits3d& globalEdits);
+void setGlobalByLocalEdits(Transformation const& transform, Edits3d const& localEdits, Edits3d& globalEdits);
+void setLocalByGlobalEdits(Transformation const& transform, Edits2d& localEdits, Edits3d const& globalEdits);
+void setLocalByGlobalEdits(Transformation const& transform, Edits3d& localEdits, Edits3d const& globalEdits);
 
 // Icons
 QIcon getIcon(KCL::AbstractElement const* pElement);

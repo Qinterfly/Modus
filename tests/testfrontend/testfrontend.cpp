@@ -42,17 +42,20 @@ void TestFrontend::testEditorManager()
     int iSurface = 0;
     EditorManager* pManager = mpMainWindow->projectBrowser()->editorManager();
     Core::Subproject& subproject = mpMainWindow->project().subprojects()[iSubproject];
-    KCL::Model& model = subproject.model();
-    KCL::ElasticSurface& surface = model.surfaces[iSurface];
+    KCL::Model* pModel = new KCL::Model(subproject.model());
+    KCL::ElasticSurface& surface = pModel->surfaces[iSurface];
     surface.insertElement(KCL::BK);
     surface.insertElement(KCL::PN);
     surface.insertElement(KCL::P4);
-    pManager->createEditor(model, Core::Selection(iSurface, KCL::OD));
-    pManager->createEditor(model, Core::Selection(iSurface, KCL::BI));
-    pManager->createEditor(model, Core::Selection(iSurface, KCL::BK));
-    pManager->createEditor(model, Core::Selection(iSurface, KCL::PN));
-    pManager->createEditor(model, Core::Selection(iSurface, KCL::P4));
-    pManager->createEditor(model, Core::Selection(iSurface, KCL::OP));
+    surface.insertElement(KCL::SM);
+    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::OD));
+    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::BI));
+    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::BK));
+    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::PN));
+    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::P4));
+    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::OP));
+    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::SM));
+    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::M3));
     pManager->setCurrentEditor(pManager->numEditors() - 1);
     pManager->show();
 }

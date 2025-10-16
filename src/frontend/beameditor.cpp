@@ -26,7 +26,7 @@ BeamEditor::BeamEditor(KCL::ElasticSurface const& surface, KCL::AbstractElement*
 
 QSize BeamEditor::sizeHint() const
 {
-    return QSize(640, 350);
+    return QSize(680, 350);
 }
 
 //! Create all the widgets
@@ -94,24 +94,24 @@ void BeamEditor::createConnections()
     int numLocals = mStartLocalEdits.size();
     for (int i = 0; i != numLocals; ++i)
     {
-        connect(mStartLocalEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setGlobalByLocal);
-        connect(mEndLocalEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setGlobalByLocal);
-        connect(mStartLocalEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setElementData);
-        connect(mEndLocalEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setElementData);
+        connect(mStartLocalEdits[i], &Edit1d::valueChanged, this, &BeamEditor::setGlobalByLocal);
+        connect(mEndLocalEdits[i], &Edit1d::valueChanged, this, &BeamEditor::setGlobalByLocal);
+        connect(mStartLocalEdits[i], &Edit1d::valueChanged, this, &BeamEditor::setElementData);
+        connect(mEndLocalEdits[i], &Edit1d::valueChanged, this, &BeamEditor::setElementData);
     }
     // Global coordinates
     int numGlobals = mStartGlobalEdits.size();
     for (int i = 0; i != numGlobals; ++i)
     {
-        connect(mStartGlobalEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setLocalByGlobal);
-        connect(mEndGlobalEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setLocalByGlobal);
+        connect(mStartGlobalEdits[i], &Edit1d::valueChanged, this, &BeamEditor::setLocalByGlobal);
+        connect(mEndGlobalEdits[i], &Edit1d::valueChanged, this, &BeamEditor::setLocalByGlobal);
     }
     // Stiffness and inertia values
     int numValues = mStiffnessEdits.size();
     for (int i = 0; i != numValues; ++i)
     {
-        connect(mStiffnessEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setElementData);
-        connect(mInertiaEdits[i], &DoubleLineEdit::valueChanged, this, &BeamEditor::setElementData);
+        connect(mStiffnessEdits[i], &Edit1d::valueChanged, this, &BeamEditor::setElementData);
+        connect(mInertiaEdits[i], &Edit1d::valueChanged, this, &BeamEditor::setElementData);
     }
 }
 
@@ -159,7 +159,7 @@ void BeamEditor::setElementData()
 //! Create the group of widgets to edit local coordinates of the beam
 QGroupBox* BeamEditor::createLocalGroupBox()
 {
-    QStringList const kLabels = {tr("X"), tr("Z")};
+    QStringList const kLabels = {"X", "Z"};
 
     // Create editors
     QGridLayout* pLayout = new QGridLayout;
@@ -168,8 +168,8 @@ QGroupBox* BeamEditor::createLocalGroupBox()
     int numCoords = mStartLocalEdits.size();
     for (int i = 0; i != numCoords; ++i)
     {
-        mStartLocalEdits[i] = new DoubleLineEdit;
-        mEndLocalEdits[i] = new DoubleLineEdit;
+        mStartLocalEdits[i] = new Edit1d;
+        mEndLocalEdits[i] = new Edit1d;
         pLayout->addWidget(new QLabel(kLabels[i]), 0, 1 + i, Qt::AlignCenter);
         pLayout->addWidget(mStartLocalEdits[i], 1, 1 + i);
         pLayout->addWidget(mEndLocalEdits[i], 2, 1 + i);
@@ -184,7 +184,7 @@ QGroupBox* BeamEditor::createLocalGroupBox()
 //! Create the group of widgets to edit global coordinates of the beam
 QGroupBox* BeamEditor::createGlobalGroupBox()
 {
-    QStringList const kLabels = {tr("X"), tr("Y"), tr("Z")};
+    QStringList const kLabels = {"X", "Y", "Z"};
 
     // Create editors for coodinates
     QGridLayout* pLayout = new QGridLayout;
@@ -193,8 +193,8 @@ QGroupBox* BeamEditor::createGlobalGroupBox()
     int numCoords = mStartGlobalEdits.size();
     for (int i = 0; i != numCoords; ++i)
     {
-        mStartGlobalEdits[i] = new DoubleLineEdit;
-        mEndGlobalEdits[i] = new DoubleLineEdit;
+        mStartGlobalEdits[i] = new Edit1d;
+        mEndGlobalEdits[i] = new Edit1d;
         pLayout->addWidget(new QLabel(kLabels[i]), 0, 1 + i, Qt::AlignCenter);
         pLayout->addWidget(mStartGlobalEdits[i], 1, 1 + i);
         pLayout->addWidget(mEndGlobalEdits[i], 2, 1 + i);
@@ -222,7 +222,7 @@ QGroupBox* BeamEditor::createStifnessGroupBox()
     QString prefix = getStiffnessPrefix(type);
     for (int i = 0; i != numValues; ++i)
     {
-        mStiffnessEdits[i] = new DoubleLineEdit;
+        mStiffnessEdits[i] = new Edit1d;
         QString label = QString("%1<sub>%2</sub>").arg(prefix).arg(1 + i);
         pLayout->addWidget(new QLabel(label), 0, i, Qt::AlignCenter);
         pLayout->addWidget(mStiffnessEdits[i], 1, i);
@@ -250,7 +250,7 @@ QGroupBox* BeamEditor::createInertiaGroupBox()
     QString prefix = getInertiaPrefix(type);
     for (int i = 0; i != numValues; ++i)
     {
-        mInertiaEdits[i] = new DoubleLineEdit;
+        mInertiaEdits[i] = new Edit1d;
         QString label = QString("%1<sub>%2</sub>").arg(prefix).arg(1 + i);
         pLayout->addWidget(new QLabel(label), 0, i, Qt::AlignCenter);
         pLayout->addWidget(mInertiaEdits[i], 1, i);

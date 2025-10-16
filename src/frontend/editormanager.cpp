@@ -8,6 +8,7 @@
 #include "beameditor.h"
 #include "editormanager.h"
 #include "generaldataeditor.h"
+#include "masseditor.h"
 #include "paneleditor.h"
 #include "selectionset.h"
 #include "uiutility.h"
@@ -113,6 +114,8 @@ void EditorManager::createEditor(KCL::Model& model, Core::Selection const& selec
         pEditor = new BeamEditor(surface, pElement, name);
     else if (Utility::panelTypes().contains(type))
         pEditor = new PanelEditor(surface, pElement, name);
+    else if (Utility::massTypes().contains(type))
+        pEditor = new MassEditor(surface, pElement, name);
     else if (type == KCL::OD)
         pEditor = new GeneralDataEditor(surface, (KCL::GeneralData*) pElement, name);
     addEditor(pEditor);
