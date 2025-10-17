@@ -49,7 +49,7 @@ vtkStandardNewMacro(InteractorStyle);
 constexpr auto skAllTypes = magic_enum::enum_values<KCL::ElementType>();
 auto const skBeamTypes = Utility::beamTypes();
 auto const skPanelTypes = Utility::panelTypes();
-auto const skAeroPanelTypes = Utility::aeroPanelsTypes();
+auto const skAeroTrapeziumTypes = Utility::aeroTrapeziumTypes();
 auto const skMassTypes = Utility::massTypes();
 auto const skSpringTypes = Utility::springTypes();
 
@@ -68,7 +68,7 @@ ModelViewOptions::ModelViewOptions()
         elementColors[type] = vtkColors->GetColor3d("gold");
     for (auto type : skPanelTypes)
         elementColors[type] = vtkColors->GetColor3d("lightseagreen");
-    for (auto type : skAeroPanelTypes)
+    for (auto type : skAeroTrapeziumTypes)
         elementColors[type] = vtkColors->GetColor3d("purple");
     for (auto type : skSpringTypes)
         elementColors[type] = vtkColors->GetColor3d("chocolate");
@@ -281,12 +281,12 @@ void ModelView::drawModel()
         auto reflectTransform = Utility::reflectTransformation(transform);
         auto reflectAeroTransform = Utility::reflectTransformation(aeroTransform);
 
-        // Draw the aero panels
-        for (auto type : skAeroPanelTypes)
+        // Draw the aero trapeziums
+        for (auto type : skAeroTrapeziumTypes)
         {
-            drawAeroPanels(aeroTransform, iSurface, type);
+            drawAeroTrapeziums(aeroTransform, iSurface, type);
             if (isSymmetry && mOptions.showSymmetry)
-                drawAeroPanels(reflectAeroTransform, iSurface, type);
+                drawAeroTrapeziums(reflectAeroTransform, iSurface, type);
         }
 
         // Draw the panels
@@ -567,8 +567,8 @@ void ModelView::drawPanels3D(Transformation const& transform, int iSurface, KCL:
     }
 }
 
-//! Render aerodynamic panel elements
-void ModelView::drawAeroPanels(Transformation const& transform, int iSurface, KCL::ElementType type)
+//! Render aerodynamic trapezium elements
+void ModelView::drawAeroTrapeziums(Transformation const& transform, int iSurface, KCL::ElementType type)
 {
     double const kOpacity = 0.5;
     double const kPolyOffset = 0.01;

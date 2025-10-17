@@ -198,7 +198,7 @@ private:
     void drawBeams3D(Transformation const& transform, int iSurface, KCL::ElementType type);
     void drawPanels2D(Transformation const& transform, int iSurface, KCL::ElementType type);
     void drawPanels3D(Transformation const& transform, int iSurface, KCL::ElementType type);
-    void drawAeroPanels(Transformation const& transform, int iSurface, KCL::ElementType type);
+    void drawAeroTrapeziums(Transformation const& transform, int iSurface, KCL::ElementType type);
     void drawMasses(Transformation const& transform, int iSurface, KCL::ElementType type);
     void drawSprings(bool isReflect, KCL::ElementType type);
     double getMaximumDimension();

@@ -5,6 +5,7 @@
 
 #include <kcl/model.h>
 
+#include "analysisparameterseditor.h"
 #include "beameditor.h"
 #include "constantseditor.h"
 #include "editormanager.h"
@@ -121,6 +122,8 @@ void EditorManager::createEditor(KCL::Model& model, Core::Selection const& selec
         pEditor = new GeneralDataEditor(surface, (KCL::GeneralData*) pElement, name);
     else if (type == KCL::CO)
         pEditor = new ConstantsEditor((KCL::Constants*) pElement, name);
+    else if (type == KCL::WP)
+        pEditor = new AnalysisParametersEditor((KCL::AnalysisParameters*) pElement, name);
     addEditor(pEditor);
 }
 

@@ -57,7 +57,7 @@ HierarchyItem* findParentByType(HierarchyItem* pItem, HierarchyItem::Type type);
 QList<KCL::ElementType> drawableTypes();
 QList<KCL::ElementType> beamTypes();
 QList<KCL::ElementType> panelTypes();
-QList<KCL::ElementType> aeroPanelsTypes();
+QList<KCL::ElementType> aeroTrapeziumTypes();
 QList<KCL::ElementType> massTypes();
 QList<KCL::ElementType> springTypes();
 Transformation computeTransformation(KCL::ElasticSurface const& surface);

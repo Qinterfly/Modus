@@ -42,21 +42,22 @@ void TestFrontend::testEditorManager()
     int iSurface = 0;
     EditorManager* pManager = mpMainWindow->projectBrowser()->editorManager();
     Core::Subproject& subproject = mpMainWindow->project().subprojects()[iSubproject];
-    KCL::Model* pModel = new KCL::Model(subproject.model());
-    KCL::ElasticSurface& surface = pModel->surfaces[iSurface];
+    mpModel = new KCL::Model(subproject.model());
+    KCL::ElasticSurface& surface = mpModel->surfaces[iSurface];
     surface.insertElement(KCL::BK);
     surface.insertElement(KCL::PN);
     surface.insertElement(KCL::P4);
     surface.insertElement(KCL::SM);
-    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::OD));
-    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::BI));
-    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::BK));
-    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::PN));
-    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::P4));
-    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::OP));
-    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::SM));
-    pManager->createEditor(*pModel, Core::Selection(iSurface, KCL::M3));
-    pManager->createEditor(*pModel, Core::Selection(-1, KCL::CO));
+    pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::OD));
+    pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::BI));
+    pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::BK));
+    pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::PN));
+    pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::P4));
+    pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::OP));
+    pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::SM));
+    pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::M3));
+    pManager->createEditor(*mpModel, Core::Selection(-1, KCL::CO));
+    pManager->createEditor(*mpModel, Core::Selection(-1, KCL::WP));
     pManager->setCurrentEditor(pManager->numEditors() - 1);
     pManager->show();
 }
@@ -65,6 +66,7 @@ TestFrontend::~TestFrontend()
 {
     QTest::qWait(30000);
     mpMainWindow->deleteLater();
+    delete mpModel;
 }
 
 QTEST_MAIN(TestFrontend)

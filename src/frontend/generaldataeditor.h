@@ -14,6 +14,8 @@ class GeneralData;
 
 namespace Frontend
 {
+
+//! Class to edit general data
 class GeneralDataEditor : public Editor
 {
     Q_OBJECT

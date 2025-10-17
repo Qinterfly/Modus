@@ -12,6 +12,7 @@ class Constants;
 namespace Frontend
 {
 
+//! Class to edit constants
 class ConstantsEditor : public Editor
 {
     Q_OBJECT

@@ -11,6 +11,7 @@ class IntLineEdit;
 class DoubleLineEdit;
 using Edit1i = IntLineEdit;
 using Edit1d = DoubleLineEdit;
+using Edits2i = std::array<Edit1i*, 2>;
 using Edits2d = std::array<Edit1d*, 2>;
 using Edits3d = std::array<Edit1d*, 3>;
 using EditsXd = QList<Edit1d*>;

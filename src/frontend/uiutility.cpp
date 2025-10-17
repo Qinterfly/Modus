@@ -219,7 +219,7 @@ QList<KCL::ElementType> drawableTypes()
     QList<KCL::ElementType> result;
     result.append(beamTypes());
     result.append(panelTypes());
-    result.append(aeroPanelsTypes());
+    result.append(aeroTrapeziumTypes());
     result.append(massTypes());
     result.append(springTypes());
     return result;
@@ -237,8 +237,8 @@ QList<KCL::ElementType> panelTypes()
     return {KCL::PN, KCL::OP, KCL::P4};
 }
 
-//! Retrieve the KCL types which are associated with aerodynamic panel elements
-QList<KCL::ElementType> aeroPanelsTypes()
+//! Retrieve the KCL types which are associated with aerodynamic trapezium elements
+QList<KCL::ElementType> aeroTrapeziumTypes()
 {
     return {KCL::AE, KCL::DA};
 }

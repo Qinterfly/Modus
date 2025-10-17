@@ -10,7 +10,7 @@
 using namespace Frontend;
 
 ConstantsEditor::ConstantsEditor(KCL::Constants* pElement, QString const& name, QWidget* pParent)
-    : Editor(Editor::kConstants, name, Utility::getIcon(pElement->type()))
+    : Editor(Editor::kConstants, name, Utility::getIcon(pElement->type()), pParent)
     , mpElement(pElement)
 {
     createContent();

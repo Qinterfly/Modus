@@ -28,6 +28,7 @@ private slots:
 
 private:
     Frontend::MainWindow* mpMainWindow;
+    KCL::Model* mpModel;
 };
 
 }

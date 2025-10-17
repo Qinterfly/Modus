@@ -9,6 +9,7 @@ QT_FORWARD_DECLARE_CLASS(QGroupBox)
 namespace Frontend
 {
 
+//! Class to edit mass properties
 class MassEditor : public Editor
 {
 public:

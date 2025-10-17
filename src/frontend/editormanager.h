@@ -50,7 +50,8 @@ public:
         kBeam,
         kPanel,
         kMass,
-        kConstants
+        kConstants,
+        kAnalysisParameters
     };
 
     Editor() = delete;

@@ -42,6 +42,7 @@ set(FRONTEND_HEADERS
     paneleditor.h
     masseditor.h
     constantseditor.h
+    analysisparameterseditor.h
 )
 
 set(FRONTEND_SOURCES
@@ -60,6 +61,7 @@ set(FRONTEND_SOURCES
     paneleditor.cpp
     masseditor.cpp
     constantseditor.cpp
+    analysisparameterseditor.cpp
 )
 
 qt_add_library(frontend STATIC
