@@ -162,6 +162,7 @@ void DoubleLineEdit::processTextChanged()
         newText.replace(",", ".");
         setText(newText);
     }
-    if (mpValidator->validate(newText, position) == QValidator::Acceptable)
+    auto state = mpValidator->validate(newText, position);
+    if (state == QValidator::Acceptable)
         emit valueChanged();
 }

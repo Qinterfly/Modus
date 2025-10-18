@@ -37,17 +37,22 @@ private:
 private:
     KCL::AnalysisParameters* mpElement;
     QComboBox* mpSymmetryComboBox;
+    // Modal and flutter
     Edit1i* mpNumModesEdit;
     Edit1i* mpIFlowEdit;
     Edit1d* mpInitFlowEdit;
     Edit1d* mpFlowStepEdit;
     Edit1i* mpNumFlowStepsEdit;
     Edit1d* mpMinRealFlutterFreqEdit;
+    // Root hodograph
     Edits2d mLimitsRealFreqEdits;
     Edits2d mLimitsImagFreqEdits;
     Edits2i mGridStepEdits;
+    // Aero
     Edits2i mIntegrationEdits;
     Edit1d* mpControlPointPositionEdit;
+    QComboBox* mpHomogenousComboBox;
+    Edit1i* mpBasicSurface;
 };
 
 }
