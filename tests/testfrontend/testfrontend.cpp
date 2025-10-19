@@ -48,6 +48,7 @@ void TestFrontend::testEditorManager()
     surface.insertElement(KCL::PN);
     surface.insertElement(KCL::P4);
     surface.insertElement(KCL::SM);
+    surface.insertElement(KCL::DA);
     pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::OD));
     pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::BI));
     pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::BK));
@@ -58,6 +59,8 @@ void TestFrontend::testEditorManager()
     pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::M3));
     pManager->createEditor(*mpModel, Core::Selection(-1, KCL::CO));
     pManager->createEditor(*mpModel, Core::Selection(-1, KCL::WP));
+    pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::DA));
+    pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::AE));
     pManager->setCurrentEditor(pManager->numEditors() - 1);
     pManager->show();
 }

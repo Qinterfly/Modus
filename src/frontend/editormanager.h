@@ -51,7 +51,8 @@ public:
         kPanel,
         kMass,
         kConstants,
-        kAnalysisParameters
+        kAnalysisParameters,
+        kAeroTrapezium
     };
 
     Editor() = delete;

@@ -152,7 +152,7 @@ void GeneralDataEditor::setElementData()
 //! Create the group of widgets to edit local coordinates
 QGroupBox* GeneralDataEditor::createLocalGroupBox()
 {
-    QStringList const kLabels = {"X<sub>0</sub>", "Z<sub>0</sub>"};
+    QStringList const kColumnNames = {"X<sub>0</sub>", "Z<sub>0</sub>"};
 
     // Create editors for coordinates
     QGridLayout* pLayout = new QGridLayout;
@@ -160,7 +160,7 @@ QGroupBox* GeneralDataEditor::createLocalGroupBox()
     for (int i = 0; i != numCoords; ++i)
     {
         mLocalEdits[i] = new Edit1d;
-        pLayout->addWidget(new QLabel(kLabels[i]), 0, i, Qt::AlignCenter);
+        pLayout->addWidget(new QLabel(kColumnNames[i]), 0, i, Qt::AlignCenter);
         pLayout->addWidget(mLocalEdits[i], 1, i);
     }
 
@@ -173,7 +173,7 @@ QGroupBox* GeneralDataEditor::createLocalGroupBox()
 //! Create the group of widgets to edit global coordinates
 QGroupBox* GeneralDataEditor::createGlobalGroupBox()
 {
-    QStringList const kLabels = {"X<sub>0</sub>", "Y<sub>0</sub>", "Z<sub>0</sub>"};
+    QStringList const kColumnNames = {"X<sub>0</sub>", "Y<sub>0</sub>", "Z<sub>0</sub>"};
 
     // Create editors for coordinates
     QGridLayout* pLayout = new QGridLayout;
@@ -181,7 +181,7 @@ QGroupBox* GeneralDataEditor::createGlobalGroupBox()
     for (int i = 0; i != numCoords; ++i)
     {
         mGlobalEdits[i] = new Edit1d;
-        pLayout->addWidget(new QLabel(kLabels[i]), 0, i, Qt::AlignCenter);
+        pLayout->addWidget(new QLabel(kColumnNames[i]), 0, i, Qt::AlignCenter);
         pLayout->addWidget(mGlobalEdits[i], 1, i);
     }
 

@@ -159,7 +159,7 @@ void BeamEditor::setElementData()
 //! Create the group of widgets to edit local coordinates of the beam
 QGroupBox* BeamEditor::createLocalGroupBox()
 {
-    QStringList const kLabels = {"X", "Z"};
+    QStringList const kColumnNames = {"X", "Z"};
 
     // Create editors
     QGridLayout* pLayout = new QGridLayout;
@@ -170,7 +170,7 @@ QGroupBox* BeamEditor::createLocalGroupBox()
     {
         mStartLocalEdits[i] = new Edit1d;
         mEndLocalEdits[i] = new Edit1d;
-        pLayout->addWidget(new QLabel(kLabels[i]), 0, 1 + i, Qt::AlignCenter);
+        pLayout->addWidget(new QLabel(kColumnNames[i]), 0, 1 + i, Qt::AlignCenter);
         pLayout->addWidget(mStartLocalEdits[i], 1, 1 + i);
         pLayout->addWidget(mEndLocalEdits[i], 2, 1 + i);
     }
@@ -184,7 +184,7 @@ QGroupBox* BeamEditor::createLocalGroupBox()
 //! Create the group of widgets to edit global coordinates of the beam
 QGroupBox* BeamEditor::createGlobalGroupBox()
 {
-    QStringList const kLabels = {"X", "Y", "Z"};
+    QStringList const kColumnNames = {"X", "Y", "Z"};
 
     // Create editors for coodinates
     QGridLayout* pLayout = new QGridLayout;
@@ -195,7 +195,7 @@ QGroupBox* BeamEditor::createGlobalGroupBox()
     {
         mStartGlobalEdits[i] = new Edit1d;
         mEndGlobalEdits[i] = new Edit1d;
-        pLayout->addWidget(new QLabel(kLabels[i]), 0, 1 + i, Qt::AlignCenter);
+        pLayout->addWidget(new QLabel(kColumnNames[i]), 0, 1 + i, Qt::AlignCenter);
         pLayout->addWidget(mStartGlobalEdits[i], 1, 1 + i);
         pLayout->addWidget(mEndGlobalEdits[i], 2, 1 + i);
     }

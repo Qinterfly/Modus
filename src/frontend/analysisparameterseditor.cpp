@@ -11,6 +11,7 @@
 
 using namespace Frontend;
 
+// Helper enumerations
 enum SymmetryKey
 {
     kSymmetrical = 0,
@@ -25,6 +26,7 @@ enum HomogenousKey
     kAeroservoelasticityControl = 77
 };
 
+// Helper function
 void setIndexByKey(QComboBox* pComboBox, int key);
 
 AnalysisParametersEditor::AnalysisParametersEditor(KCL::AnalysisParameters* pElement, QString const& name, QWidget* pParent)

@@ -237,14 +237,14 @@ void PanelEditor::setElementData()
 //! Create the group of widgets to edit local coordinates of the panel
 QGroupBox* PanelEditor::createLocalGroupBox()
 {
-    QStringList const kLabels = {tr("X"), tr("Z")};
+    QStringList const kColumnNames = {tr("X"), tr("Z")};
 
     QGridLayout* pLayout = new QGridLayout;
 
     // Set the header
-    int numCoords = kLabels.size();
+    int numCoords = kColumnNames.size();
     for (int i = 0; i != numCoords; ++i)
-        pLayout->addWidget(new QLabel(kLabels[i]), 0, 1 + i, Qt::AlignCenter);
+        pLayout->addWidget(new QLabel(kColumnNames[i]), 0, 1 + i, Qt::AlignCenter);
 
     // Set the editors
     int numPoints = mLocalEdits.size();
@@ -268,14 +268,14 @@ QGroupBox* PanelEditor::createLocalGroupBox()
 //! Create the group of widgets to edit global coordinates of the panel
 QGroupBox* PanelEditor::createGlobalGroupBox()
 {
-    QStringList const kLabels = {tr("X"), tr("Y"), tr("Z")};
+    QStringList const kColumnNames = {tr("X"), tr("Y"), tr("Z")};
 
     QGridLayout* pLayout = new QGridLayout;
 
     // Set the header
-    int numCoords = kLabels.size();
+    int numCoords = kColumnNames.size();
     for (int i = 0; i != numCoords; ++i)
-        pLayout->addWidget(new QLabel(kLabels[i]), 0, 1 + i, Qt::AlignCenter);
+        pLayout->addWidget(new QLabel(kColumnNames[i]), 0, 1 + i, Qt::AlignCenter);
 
     // Set the editors
     int numPoints = mGlobalEdits.size();

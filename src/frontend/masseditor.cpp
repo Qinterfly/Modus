@@ -30,7 +30,7 @@ QSize MassEditor::sizeHint() const
 void MassEditor::createContent()
 {
     // Constants
-    QList<QString> const kLabels = {"I", "I<sub>0</sub>", "I<sub>y</sub>"};
+    QList<QString> const kColumnNames = {"I", "I<sub>0</sub>", "I<sub>y</sub>"};
 
     // Create the main layout
     QVBoxLayout* pMainLayout = new QVBoxLayout;
@@ -52,7 +52,7 @@ void MassEditor::createContent()
         for (int i = 0; i != numEdits; ++i)
         {
             mInertiaEdits[i] = new Edit1d;
-            pInertiaLayout->addWidget(new QLabel(kLabels[i]), 0, 1 + i, Qt::AlignCenter);
+            pInertiaLayout->addWidget(new QLabel(kColumnNames[i]), 0, 1 + i, Qt::AlignCenter);
             pInertiaLayout->addWidget(mInertiaEdits[i], 1, 1 + i);
         }
         pMainLayout->addLayout(pInertiaLayout);
@@ -250,7 +250,7 @@ void MassEditor::setElementData()
 //! Create the group of widgets to edit local coordinates
 QGroupBox* MassEditor::createLocalGroupBox()
 {
-    QStringList const kLabels = {"X<sub>0</sub>", "Y<sub>0</sub>", "Z<sub>0</sub>"};
+    QStringList const kColumnNames = {"X<sub>0</sub>", "Y<sub>0</sub>", "Z<sub>0</sub>"};
 
     // Process two- and three dimensional edits
     int numEdits = 0;
@@ -274,7 +274,7 @@ QGroupBox* MassEditor::createLocalGroupBox()
     for (int i = 0; i != numEdits; ++i)
     {
         edits[i] = new Edit1d;
-        pLayout->addWidget(new QLabel(kLabels[indicesLabels[i]]), 0, i, Qt::AlignCenter);
+        pLayout->addWidget(new QLabel(kColumnNames[indicesLabels[i]]), 0, i, Qt::AlignCenter);
         pLayout->addWidget(edits[i], 1, i);
     }
 
@@ -287,7 +287,7 @@ QGroupBox* MassEditor::createLocalGroupBox()
 //! Create the group of widgets to edit global coordinates
 QGroupBox* MassEditor::createGlobalGroupBox()
 {
-    QStringList const kLabels = {"X<sub>0</sub>", "Y<sub>0</sub>", "Z<sub>0</sub>"};
+    QStringList const kColumnNames = {"X<sub>0</sub>", "Y<sub>0</sub>", "Z<sub>0</sub>"};
 
     // Create editors for coordinates
     QGridLayout* pLayout = new QGridLayout;
@@ -295,7 +295,7 @@ QGroupBox* MassEditor::createGlobalGroupBox()
     for (int i = 0; i != numCoords; ++i)
     {
         mGlobalEdits[i] = new Edit1d;
-        pLayout->addWidget(new QLabel(kLabels[i]), 0, i, Qt::AlignCenter);
+        pLayout->addWidget(new QLabel(kColumnNames[i]), 0, i, Qt::AlignCenter);
         pLayout->addWidget(mGlobalEdits[i], 1, i);
     }
 

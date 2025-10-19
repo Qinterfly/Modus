@@ -43,6 +43,7 @@ set(FRONTEND_HEADERS
     masseditor.h
     constantseditor.h
     analysisparameterseditor.h
+    aerotrapeziumeditor.h
 )
 
 set(FRONTEND_SOURCES
@@ -62,6 +63,7 @@ set(FRONTEND_SOURCES
     masseditor.cpp
     constantseditor.cpp
     analysisparameterseditor.cpp
+    aerotrapeziumeditor.cpp
 )
 
 qt_add_library(frontend STATIC

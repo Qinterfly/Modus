@@ -5,6 +5,7 @@
 
 #include <kcl/model.h>
 
+#include "aerotrapeziumeditor.h"
 #include "analysisparameterseditor.h"
 #include "beameditor.h"
 #include "constantseditor.h"
@@ -118,6 +119,8 @@ void EditorManager::createEditor(KCL::Model& model, Core::Selection const& selec
         pEditor = new PanelEditor(surface, pElement, name);
     else if (Utility::massTypes().contains(type))
         pEditor = new MassEditor(surface, pElement, name);
+    else if (Utility::aeroTrapeziumTypes().contains(type))
+        pEditor = new AeroTrapeziumEditor(surface, pElement, name);
     else if (type == KCL::OD)
         pEditor = new GeneralDataEditor(surface, (KCL::GeneralData*) pElement, name);
     else if (type == KCL::CO)
