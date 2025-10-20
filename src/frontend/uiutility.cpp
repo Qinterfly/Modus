@@ -36,7 +36,7 @@ using namespace Frontend;
 namespace Frontend::Utility
 {
 
-void setEdits(DoubleLineEdit** edits, Eigen::Vector3d const& values, QList<int> const& indices = {0, 1, 2});
+void setEdits(DoubleLineEdit** edits, Eigen::Vector3d const& values, VectorXi const& indices = Vector3i(0, 1, 2));
 
 //! Retrieve the active text color from the palette
 QColor textColor(const QPalette& palette)
@@ -240,7 +240,7 @@ QList<KCL::ElementType> panelTypes()
 //! Retrieve the KCL types which are associated with aerodynamic trapezium elements
 QList<KCL::ElementType> aeroTrapeziumTypes()
 {
-    return {KCL::AE, KCL::DA};
+    return {KCL::AE, KCL::DA, KCL::DE, KCL::GS};
 }
 
 //! Retrieve the KCL types which are associated with mass elements
@@ -255,14 +255,35 @@ QList<KCL::ElementType> springTypes()
     return {KCL::PR};
 }
 
+//! Check if an aerodynamic trapezium is perpendiculart to an elastic surface
+bool isAeroVertical(KCL::ElementType type)
+{
+    return type == KCL::ElementType::DA;
+}
+
+//! Check if an aerodynamic trapezium is an aileron
+bool isAeroAileron(KCL::ElementType type)
+{
+    return type == KCL::DE;
+}
+
+//! Check if an aerodynamic trapezium is meshable
+bool isAeroMeshable(KCL::ElementType type)
+{
+    return type == KCL::AE || type == KCL::DA;
+}
+
 //! Build up the transformation for the elastic surface
-Transformation computeTransformation(KCL::ElasticSurface const& surface)
+Transformation computeTransformation(KCL::ElasticSurface const& surface, bool isAero)
 {
     Transformation result = Transformation::Identity();
     if (!surface.containsElement(KCL::OD))
         return result;
     auto pData = (KCL::GeneralData const*) surface.element(KCL::OD);
-    result = computeTransformation(pData->coords, pData->dihedralAngle, pData->sweepAngle, pData->zAngle);
+    if (isAero)
+        result = computeTransformation(pData->coords, pData->dihedralAngle, 0.0, pData->zAngle);
+    else
+        result = computeTransformation(pData->coords, pData->dihedralAngle, pData->sweepAngle, pData->zAngle);
     return result;
 }
 
@@ -592,10 +613,24 @@ vtkSmartPointer<vtkActor> createShellActor(Transformation const& transform, Matr
     return actor;
 }
 
-//! Set global coordinates by the two dimensional local ones
-void setGlobalByLocalEdits(Transformation const& transform, Edits2d const& localEdits, Edits3d& globalEdits)
+//! Set global coordinate by the local one
+void setGlobalByLocalEdits(Transformation const& transform, Edit1d* pLocalEdit, Edit1d* pGlobalEdit)
 {
-    Vector3d position = transform * Vector3d({localEdits[0]->value(), 0.0, localEdits[1]->value()});
+    VectorXi indices(1);
+    indices << 0;
+    Vector3d position = transform * Vector3d({pLocalEdit->value(), 0.0, 0.0});
+    setEdits(&pGlobalEdit, position, indices);
+}
+
+//! Set global coordinates by the two dimensional local ones
+void setGlobalByLocalEdits(Transformation const& transform, Edits2d const& localEdits, Edits3d& globalEdits, Vector2i const& indices)
+{
+    Vector3d position;
+    position.fill(0.0);
+    int numIndices = indices.size();
+    for (int i = 0; i != numIndices; ++i)
+        position[indices[i]] = localEdits[i]->value();
+    position = transform * position;
     setEdits(globalEdits.data(), position);
 }
 
@@ -606,13 +641,22 @@ void setGlobalByLocalEdits(Transformation const& transform, Edits3d const& local
     setEdits(globalEdits.data(), position);
 }
 
-//! Set two dimensional local coordinates by the global ones
-void setLocalByGlobalEdits(Transformation const& transform, Edits2d& localEdits, Edits3d const& globalEdits)
+//! Set local coordinate by the global one
+void setLocalByGlobalEdits(Transformation const& transform, Edit1d* pLocalEdit, Edit1d* pGlobalEdit)
 {
-    QList<int> const kMapIndices = {0, 2};
+    VectorXi indices(1);
+    indices << 0;
+    auto invTransform = transform.inverse();
+    auto position = invTransform * Vector3d({pGlobalEdit->value(), 0.0, 0.0});
+    setEdits(&pLocalEdit, position, indices);
+}
+
+//! Set two dimensional local coordinates by the global ones
+void setLocalByGlobalEdits(Transformation const& transform, Edits2d& localEdits, Edits3d const& globalEdits, Vector2i const& indices)
+{
     auto invTransform = transform.inverse();
     auto position = invTransform * Vector3d({globalEdits[0]->value(), globalEdits[1]->value(), globalEdits[2]->value()});
-    setEdits(localEdits.data(), position, kMapIndices);
+    setEdits(localEdits.data(), position, indices);
 }
 
 //! Set three dimensional local coordinates by the global ones
@@ -654,6 +698,8 @@ QIcon getIcon(KCL::ElementType type)
         return QIcon(":/icons/layer.png");
     case KCL::BK:
         return QIcon(":/icons/beam-torsion.png");
+    case KCL::GS:
+        return QIcon(":/icons/trapezium.png");
     case KCL::AE:
         return QIcon(":/icons/trapezium.png");
     case KCL::DQ:
@@ -700,7 +746,7 @@ QIcon getIcon(Core::ISolver const* pSolver)
 }
 
 //! Helper function to set values of edits
-void setEdits(DoubleLineEdit** edits, Eigen::Vector3d const& values, QList<int> const& indices)
+void setEdits(DoubleLineEdit** edits, Eigen::Vector3d const& values, VectorXi const& indices)
 {
     int numIndices = indices.size();
     for (int i = 0; i != numIndices; ++i)

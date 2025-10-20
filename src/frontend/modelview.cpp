@@ -582,7 +582,9 @@ void ModelView::drawAeroTrapeziums(Transformation const& transform, int iSurface
 
     // Process all the elements
     int numElements = elements.size();
-    bool isVertical = type == KCL::ElementType::DA;
+    bool isVertical = Utility::isAeroVertical(type);
+    bool isAileron = Utility::isAeroAileron(type);
+    bool isMeshable = Utility::isAeroMeshable(type);
     for (int iElement = 0; iElement != numElements; ++iElement)
     {
         KCL::AbstractElement const* pElement = elements[iElement];
@@ -591,11 +593,17 @@ void ModelView::drawAeroTrapeziums(Transformation const& transform, int iSurface
 
         // Slice element parameters
         KCL::VecN data = pElement->get();
-        KCL::Vec2 coords0 = {data[0], data[1]};
-        KCL::Vec2 coords1 = {data[2], data[3]};
-        KCL::Vec2 coords2 = {data[4], data[5]};
-        int numStrips = data[6];
-        int numPanels = data[7];
+        int iShift = isAileron ? 1 : 0;
+        KCL::Vec2 coords0 = {data[iShift + 0], data[iShift + 1]};
+        KCL::Vec2 coords1 = {data[iShift + 2], data[iShift + 3]};
+        KCL::Vec2 coords2 = {data[iShift + 4], data[iShift + 5]};
+        int numStrips = 1;
+        int numPanels = 1;
+        if (isMeshable)
+        {
+            numStrips = data[iShift + 6];
+            numPanels = data[iShift + 7];
+        }
 
         // Combine the vertex coordinates
         Vector2d A = {coords0[0], coords0[1]}; // Bottom left

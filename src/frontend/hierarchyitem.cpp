@@ -225,19 +225,30 @@ void SurfaceHierarchyItem::appendChildren()
             pGroupItem->setEditable(false);
             for (int iElement = 0; iElement != numElements; ++iElement)
             {
+                KCL::AbstractElement* pElement = mSurface.element(type, iElement);
+                if (!isInsertable(pElement))
+                    continue;
                 QString name = QObject::tr("%1: %2").arg(typeName).arg(1 + iElement);
-                ElementHierarchyItem* pElementItem = new ElementHierarchyItem(iElement, mSurface.element(type, iElement), name);
+                ElementHierarchyItem* pElementItem = new ElementHierarchyItem(iElement, pElement, name);
                 pGroupItem->appendRow(pElementItem);
                 if (pGroupItem->icon().isNull())
                     pGroupItem->setIcon(pElementItem->icon());
             }
-            appendRow(pGroupItem);
+            if (pGroupItem->hasChildren())
+                appendRow(pGroupItem);
         }
         else if (numElements == 1)
         {
-            appendRow(new ElementHierarchyItem(0, mSurface.element(type), typeName));
+            KCL::AbstractElement* pElement = mSurface.element(type);
+            if (isInsertable(pElement))
+                appendRow(new ElementHierarchyItem(0, pElement, typeName));
         }
     }
+}
+
+bool SurfaceHierarchyItem::isInsertable(KCL::AbstractElement* pElement)
+{
+    return pElement && pElement->subType() != KCL::AE1;
 }
 
 int SurfaceHierarchyItem::iSurface() const

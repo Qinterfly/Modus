@@ -22,23 +22,34 @@ public:
 private:
     void createContent();
     void createConnections();
+    void setGlobalByLocal();
+    void setLocalByGlobal();
     void setElementData();
+    QLayout* createAileronLayout();
     QGroupBox* createLocalGroupBox();
     QGroupBox* createGlobalGroupBox();
+    QGroupBox* createMeshGroupBox();
+    QGroupBox* createFactorsGroupBox();
 
 private:
     Transformation mTransform;
     KCL::AbstractElement* mpElement;
+    // Aileron index
+    Edit1i* mpAileronIndexEdit;
     // Local edits
     Edits2d mLocal0Edits;
     Edits2d mLocal1Edits;
-    Edit1d* mpLocal2Edit;
-    Edit1d* mpLocal3Edit;
+    Edits2d mLocal2Edits;
     // Global edits
     Edits3d mGlobal0Edits;
     Edits3d mGlobal1Edits;
-    Edit1d* mpGlobal2Edit;
-    Edit1d* mpGlobal3Edit;
+    Edits2d mGlobal2Edits;
+    // Mesh edits
+    Edit1i* mpNumStripsEdit;
+    Edit1i* mpNumPanelsEdit;
+    // Factor edits
+    Edit1d* mpStiffnessFactorEdit;
+    Edit1d* mpDampingFactorEdit;
 };
 
 }

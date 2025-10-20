@@ -60,7 +60,10 @@ QList<KCL::ElementType> panelTypes();
 QList<KCL::ElementType> aeroTrapeziumTypes();
 QList<KCL::ElementType> massTypes();
 QList<KCL::ElementType> springTypes();
-Transformation computeTransformation(KCL::ElasticSurface const& surface);
+bool isAeroVertical(KCL::ElementType type);
+bool isAeroAileron(KCL::ElementType type);
+bool isAeroMeshable(KCL::ElementType type);
+Transformation computeTransformation(KCL::ElasticSurface const& surface, bool isAero = false);
 Transformation computeTransformation(KCL::Vec3 const& coords, double dihedralAngle, double sweepAngle, double zAngle);
 Transformation reflectTransformation(Transformation const& transform);
 
@@ -76,9 +79,13 @@ vtkSmartPointer<vtkActor> createShellActor(Transformation const& transform, Matr
                                            double thickness);
 
 // Widgets
-void setGlobalByLocalEdits(Transformation const& transform, Edits2d const& localEdits, Edits3d& globalEdits);
+void setGlobalByLocalEdits(Transformation const& transform, Edit1d* pLocalEdit, Edit1d* pGlobalEdit);
+void setGlobalByLocalEdits(Transformation const& transform, Edits2d const& localEdits, Edits3d& globalEdits,
+                           Eigen::Vector2i const& indices = {0, 2});
 void setGlobalByLocalEdits(Transformation const& transform, Edits3d const& localEdits, Edits3d& globalEdits);
-void setLocalByGlobalEdits(Transformation const& transform, Edits2d& localEdits, Edits3d const& globalEdits);
+void setLocalByGlobalEdits(Transformation const& transform, Edit1d* pLocalEdit, Edit1d* pGlobalEdit);
+void setLocalByGlobalEdits(Transformation const& transform, Edits2d& localEdits, Edits3d const& globalEdits,
+                           Eigen::Vector2i const& indices = {0, 2});
 void setLocalByGlobalEdits(Transformation const& transform, Edits3d& localEdits, Edits3d const& globalEdits);
 
 // Icons

@@ -133,6 +133,7 @@ public:
 
 private:
     void appendChildren();
+    bool isInsertable(KCL::AbstractElement* pElement);
 
     int const mkISurface;
     KCL::ElasticSurface& mSurface;
