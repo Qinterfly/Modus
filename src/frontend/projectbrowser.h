@@ -55,6 +55,9 @@ private:
     void filterContent(QString const& pattern);
     void processContextMenuRequest(QPoint const& point);
     void processSelection(QItemSelection const& selected, QItemSelection const& deselected);
+    void processDoubleClick(QModelIndex const& index);
+    void createElementEditor(HierarchyItem* pBaseItem);
+    void createElementEditors(QList<HierarchyItem*>& items);
 
     // Subproject management
     QList<HierarchyItem*> selectedItems();

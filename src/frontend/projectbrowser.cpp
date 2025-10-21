@@ -122,6 +122,7 @@ void ProjectBrowser::createContent()
 
     // Connect the view widget
     connect(mpView, &QTreeView::customContextMenuRequested, this, &ProjectBrowser::processContextMenuRequest);
+    connect(mpView, &QTreeView::doubleClicked, this, &ProjectBrowser::processDoubleClick);
 
     // Create the actions
     QAction* pExpandAction = new QAction(tr("E&xpand all"), this);
@@ -190,45 +191,14 @@ void ProjectBrowser::processContextMenuRequest(QPoint const& point)
     QList<HierarchyItem*> items = selectedItems();
     if (items.isEmpty())
         return;
-    mpEditorManager->clear();
 
     // Create the context menu
     QMenu* pMenu = new QMenu(this);
     pMenu->setAttribute(Qt::WA_DeleteOnClose);
 
-    // Auxiliary functions
-    auto createElementEditor = [this](HierarchyItem* pBaseItem)
-    {
-        ElementHierarchyItem* pItem = (ElementHierarchyItem*) pBaseItem;
-        Core::Selection selection = Core::Selection(pItem->iSurface(), pItem->element()->type(), pItem->iElement());
-        KCL::Model* pModel = pItem->kclModel();
-        if (pModel)
-            mpEditorManager->createEditor(*pModel, selection);
-    };
-
-    // Fill up the context menu with the item related actions
-    int numItems = items.size();
-    for (int iItem = 0; iItem != numItems; ++iItem)
-    {
-        HierarchyItem* pBaseItem = items[iItem];
-        auto type = pBaseItem->type();
-        switch (type)
-        {
-        case HierarchyItem::kGroupElements:
-        {
-            QList<HierarchyItem*> childItems = Utility::childItems(pBaseItem);
-            int numChildren = childItems.size();
-            for (int iChild = 0; iChild != numChildren; ++iChild)
-                createElementEditor(childItems[iChild]);
-            break;
-        }
-        case HierarchyItem::kElement:
-            createElementEditor(pBaseItem);
-            break;
-        default:
-            break;
-        }
-    }
+    // Create editors for all selected items
+    mpEditorManager->clear();
+    createElementEditors(items);
 
     // Create the actions
     if (!mpEditorManager->isEmpty())
@@ -253,6 +223,59 @@ void ProjectBrowser::processContextMenuRequest(QPoint const& point)
 void ProjectBrowser::processSelection(QItemSelection const& selected, QItemSelection const& deselected)
 {
     emit selectionChanged(selectedItems());
+}
+
+//! Show an editor on double click
+void ProjectBrowser::processDoubleClick(QModelIndex const& index)
+{
+    // Retrieve the item
+    QModelIndex sourceIndex = mpFilterModel->mapToSource(index);
+    HierarchyItem* pItem = (HierarchyItem*) mpSourceModel->itemFromIndex(sourceIndex);
+
+    // Create the editor
+    if (pItem->type() == HierarchyItem::kElement)
+    {
+        mpEditorManager->clear();
+        createElementEditor(pItem);
+        mpEditorManager->show();
+    }
+}
+
+//! Construct an element editor for a hierarchy item
+void ProjectBrowser::createElementEditor(HierarchyItem* pBaseItem)
+{
+    ElementHierarchyItem* pItem = (ElementHierarchyItem*) pBaseItem;
+    Core::Selection selection = Core::Selection(pItem->iSurface(), pItem->element()->type(), pItem->iElement());
+    KCL::Model* pModel = pItem->kclModel();
+    if (pModel)
+        mpEditorManager->createEditor(*pModel, selection);
+}
+
+//! Create multiple element editors for hierarchy items
+void ProjectBrowser::createElementEditors(QList<HierarchyItem*>& items)
+{
+    int numItems = items.size();
+    for (int iItem = 0; iItem != numItems; ++iItem)
+    {
+        HierarchyItem* pBaseItem = items[iItem];
+        auto type = pBaseItem->type();
+        switch (type)
+        {
+        case HierarchyItem::kGroupElements:
+        {
+            QList<HierarchyItem*> childItems = Utility::childItems(pBaseItem);
+            int numChildren = childItems.size();
+            for (int iChild = 0; iChild != numChildren; ++iChild)
+                createElementEditor(childItems[iChild]);
+            break;
+        }
+        case HierarchyItem::kElement:
+            createElementEditor(pBaseItem);
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 //! Retrieve the currently selected items
