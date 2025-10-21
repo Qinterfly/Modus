@@ -48,6 +48,10 @@
 		<file>icons/document-new.svg</file>
 		<file>icons/document-save.svg</file>
 		<file>icons/document-save-as.svg</file>
+		<file>icons/edit-copy.svg</file>
+		<file>icons/edit-cut.svg</file>
+		<file>icons/edit-delete.svg</file>
+		<file>icons/edit-paste.svg</file>
 		<file>icons/close-button.svg</file>
 		<file>icons/close-button-disabled.svg</file>
 		<file>icons/close-button-focused.svg</file>

@@ -9,6 +9,7 @@
 #include "analysisparameterseditor.h"
 #include "beameditor.h"
 #include "constantseditor.h"
+#include "decrementseditor.h"
 #include "editormanager.h"
 #include "generaldataeditor.h"
 #include "masseditor.h"
@@ -127,6 +128,8 @@ void EditorManager::createEditor(KCL::Model& model, Core::Selection const& selec
         pEditor = new ConstantsEditor((KCL::Constants*) pElement, name);
     else if (type == KCL::WP)
         pEditor = new AnalysisParametersEditor((KCL::AnalysisParameters*) pElement, name);
+    else if (type == KCL::TE)
+        pEditor = new DecrementsEditor((KCL::Decrements*) pElement, name);
     addEditor(pEditor);
 }
 

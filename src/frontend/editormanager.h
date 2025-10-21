@@ -52,7 +52,8 @@ public:
         kMass,
         kConstants,
         kAnalysisParameters,
-        kAeroTrapezium
+        kAeroTrapezium,
+        kDecrements
     };
 
     Editor() = delete;
