@@ -1,6 +1,9 @@
+#include <QComboBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
+
+#include <magicenum/magic_enum.hpp>
 
 #include "customtable.h"
 #include "lineedit.h"
@@ -33,7 +36,12 @@ void PolyExponentsEditor::refresh()
     QSignalBlocker blockerNumData(mpNumDataEdit);
     QSignalBlocker blockerDataTable(mpDataTable);
 
+    // Update the type combobox
+    updateTypeComboBox();
+
     // Update the editor of table dimension
+    KCL::VecN dataX = mpElementX->get();
+    KCL::VecN dataZ = mpElementZ->get();
     int numData = mpElementX->values.size();
     mpNumDataEdit->setValue(numData);
 
@@ -44,8 +52,6 @@ void PolyExponentsEditor::refresh()
     mpDataTable->setVerticalHeaderLabels({"PK", "QK"});
 
     // Set the data
-    KCL::VecN dataX = mpElementX->get();
-    KCL::VecN dataZ = mpElementZ->get();
     for (int jColumn = 0; jColumn != numData; ++jColumn)
     {
         Edit1i* pEditX = new Edit1i;
@@ -72,28 +78,51 @@ void PolyExponentsEditor::refresh()
 //! Create all the widgets
 void PolyExponentsEditor::createContent()
 {
+    // Constants
+    QMap<KCL::PolyType, QString> kMapTypes;
+    kMapTypes[KCL::BendingBeamX] = tr("Bending beam X");
+    kMapTypes[KCL::BendingBeamZ] = tr("Bending beam Z");
+    kMapTypes[KCL::TorsionBeamX] = tr("Torsion beam X");
+    kMapTypes[KCL::TorsionBeamZ] = tr("Torsion beam Z");
+    kMapTypes[KCL::BendingTorsionBeamX] = tr("Bending-torsion beam X");
+    kMapTypes[KCL::BendingTorsionBeamZ] = tr("Bending-torsion beam Z");
+    kMapTypes[KCL::Plate] = tr("Plate");
+
     // Create the data table
     mpDataTable = new CustomTable;
     mpDataTable->setSizeAdjustPolicy(QTableWidget::AdjustToContents);
     mpDataTable->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
+    // Create the layout to edit polynomial type
+    mpTypeComboBox = new QComboBox;
+    auto types = magic_enum::enum_values<KCL::PolyType>();
+    for (auto type : types)
+        mpTypeComboBox->addItem(kMapTypes[type], type);
+    mpTypeComboBox->setCurrentIndex(-1);
+    QHBoxLayout* pTypeLayout = new QHBoxLayout;
+    pTypeLayout->addWidget(new QLabel(tr("Polynomial type: ")));
+    pTypeLayout->addWidget(mpTypeComboBox);
+    pTypeLayout->addStretch();
+
     // Create layout to edit data length
     mpNumDataEdit = new Edit1i;
     mpNumDataEdit->setMinimum(0);
-    QHBoxLayout* pLayout = new QHBoxLayout;
-    pLayout->addWidget(new QLabel(tr("Number of exponents: ")));
-    pLayout->addWidget(mpNumDataEdit);
-    pLayout->addStretch(1);
+    QHBoxLayout* pNumDataLayout = new QHBoxLayout;
+    pNumDataLayout->addWidget(new QLabel(tr("Number of exponents: ")));
+    pNumDataLayout->addWidget(mpNumDataEdit);
+    pNumDataLayout->addStretch(1);
 
     // Create the main layout
     QVBoxLayout* pMainLayout = new QVBoxLayout;
-    pMainLayout->addLayout(pLayout);
+    pMainLayout->addLayout(pTypeLayout);
+    pMainLayout->addLayout(pNumDataLayout);
     pMainLayout->addWidget(mpDataTable);
     pMainLayout->addStretch(1);
     setLayout(pMainLayout);
 
     // Set connections
     connect(mpNumDataEdit, &Edit1i::editingFinished, this, &PolyExponentsEditor::resizeElementData);
+    connect(mpTypeComboBox, &QComboBox::currentIndexChanged, this, &PolyExponentsEditor::setElementDataByType);
 }
 
 //! Change the element data dimension
@@ -109,8 +138,7 @@ void PolyExponentsEditor::resizeElementData()
     dataZ.resize(numData);
 
     // Set the updated data
-    emit commandExecuted(new EditElement(mpElementX, dataX, name()));
-    emit commandExecuted(new EditElement(mpElementZ, dataZ, name()));
+    emit commandExecuted(new EditElements({mpElementX, mpElementZ}, {dataX, dataZ}, name()));
 
     // Update the view
     refresh();
@@ -130,6 +158,51 @@ void PolyExponentsEditor::setElementData()
     }
 
     // Set the updated data
-    emit commandExecuted(new EditElement(mpElementX, dataX, name()));
-    emit commandExecuted(new EditElement(mpElementZ, dataZ, name()));
+    emit commandExecuted(new EditElements({mpElementX, mpElementZ}, {dataX, dataZ}, name()));
+
+    // Update the combobox of predefined data
+    updateTypeComboBox();
+}
+
+//! Set element data associated with a type
+void PolyExponentsEditor::setElementDataByType()
+{
+    // Check if any items selected
+    if (mpTypeComboBox->currentIndex() < 0)
+        return;
+
+    // Generate new data
+    auto type = mpTypeComboBox->currentData().value<KCL::PolyType>();
+    auto itemData = KCL::getPolyData(type);
+
+    // Set the updated data
+    emit commandExecuted(new EditElements({mpElementX, mpElementZ}, {itemData.first, itemData.second}, name()));
+
+    // Update the view
+    refresh();
+}
+
+//! Update the combobox to select predefined types
+void PolyExponentsEditor::updateTypeComboBox()
+{
+    // Block all the signals and reset the selection
+    QSignalBlocker blocker(mpTypeComboBox);
+    mpTypeComboBox->setCurrentIndex(-1);
+
+    // Slice element data
+    KCL::VecN dataX = mpElementX->get();
+    KCL::VecN dataZ = mpElementZ->get();
+
+    // Check if the data equals to one of the predefined sets
+    int numItems = mpTypeComboBox->count();
+    for (int i = 0; i != numItems; ++i)
+    {
+        auto type = mpTypeComboBox->itemData(i).value<KCL::PolyType>();
+        auto itemData = KCL::getPolyData(type);
+        if (itemData.first == dataX && itemData.second == dataZ)
+        {
+            mpTypeComboBox->setCurrentIndex(i);
+            break;
+        }
+    }
 }

@@ -116,5 +116,5 @@ void ConstantsEditor::setElementData()
     data[6] = mpReferenceChordEdit->value();
 
     // Set the updated data
-    emit commandExecuted(new EditElement(mpElement, data, name()));
+    emit commandExecuted(new EditElements(mpElement, data, name()));
 }

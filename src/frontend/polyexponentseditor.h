@@ -29,10 +29,13 @@ private:
     void createConnections();
     void resizeElementData();
     void setElementData();
+    void setElementDataByType();
+    void updateTypeComboBox();
 
 private:
     KCL::PolyExponentsX* mpElementX;
     KCL::PolyExponentsZ* mpElementZ;
+    QComboBox* mpTypeComboBox;
     Edit1i* mpNumDataEdit;
     CustomTable* mpDataTable;
 };

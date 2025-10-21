@@ -127,7 +127,7 @@ void RawDataEditor::resizeElementData()
     data.resize(numData);
 
     // Set the updated data
-    emit commandExecuted(new EditElement(mpElement, data, name()));
+    emit commandExecuted(new EditElements(mpElement, data, name()));
 
     // Update the view
     refresh();
@@ -143,7 +143,7 @@ void RawDataEditor::setElementData()
         data[i] = static_cast<Edit1d*>(mpDataTable->cellWidget(0, i))->value();
 
     // Set the updated data
-    emit commandExecuted(new EditElement(mpElement, data, name()));
+    emit commandExecuted(new EditElements(mpElement, data, name()));
 }
 
 //! Check if element data can be resized

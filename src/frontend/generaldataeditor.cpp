@@ -146,7 +146,7 @@ void GeneralDataEditor::setElementData()
     data[11] = mpBendingEdit->value();
 
     // Set the updated data
-    emit commandExecuted(new EditElement(mpElement, data, name()));
+    emit commandExecuted(new EditElements(mpElement, data, name()));
 }
 
 //! Create the group of widgets to edit local coordinates

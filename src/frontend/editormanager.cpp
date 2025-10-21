@@ -22,22 +22,39 @@ using namespace Backend;
 using namespace Frontend;
 using namespace Eigen;
 
-EditElement::EditElement(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name)
-    : mpElement(pElement)
-    , mOldData(pElement->get())
-    , mNewData(data)
+EditElements::EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::VecN> const& dataSet, QString const& name)
+    : mElements(elements)
 {
+    int numElements = mElements.size();
+    mOldDataSet.resize(numElements);
+    for (int i = 0; i != numElements; ++i)
+        mOldDataSet[i] = mElements[i]->get();
+    mNewDataSet = dataSet;
+    setText(QObject::tr("Multiple edits %1").arg(name));
+}
+
+EditElements::EditElements(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name)
+{
+    mElements.push_back(pElement);
+    mOldDataSet.push_back(pElement->get());
+    mNewDataSet.push_back(data);
     setText(QObject::tr("Edit %1").arg(name));
 }
 
-void EditElement::undo()
+//! Revert the changes
+void EditElements::undo()
 {
-    mpElement->set(mOldData);
+    int numElements = mElements.size();
+    for (int i = 0; i != numElements; ++i)
+        mElements[i]->set(mOldDataSet[i]);
 }
 
-void EditElement::redo()
+//! Apply the changes
+void EditElements::redo()
 {
-    mpElement->set(mNewData);
+    int numElements = mElements.size();
+    for (int i = 0; i != numElements; ++i)
+        mElements[i]->set(mNewDataSet[i]);
 }
 
 Editor::Editor(Type type, QString const& name, QIcon const& icon, QWidget* pParent)

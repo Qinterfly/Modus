@@ -23,19 +23,20 @@ struct Selection;
 namespace Frontend
 {
 
-class EditElement : public QUndoCommand
+class EditElements : public QUndoCommand
 {
 public:
-    EditElement(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name);
-    ~EditElement() = default;
+    EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::VecN> const& dataSet, QString const& name);
+    EditElements(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name);
+    ~EditElements() = default;
 
     void undo() override;
     void redo() override;
 
 private:
-    KCL::AbstractElement* mpElement;
-    KCL::VecN mOldData;
-    KCL::VecN mNewData;
+    QList<KCL::AbstractElement*> mElements;
+    QList<KCL::VecN> mOldDataSet;
+    QList<KCL::VecN> mNewDataSet;
 };
 
 //! Base class for all editors
