@@ -9,11 +9,12 @@
 #include "analysisparameterseditor.h"
 #include "beameditor.h"
 #include "constantseditor.h"
-#include "decrementseditor.h"
 #include "editormanager.h"
 #include "generaldataeditor.h"
 #include "masseditor.h"
 #include "paneleditor.h"
+#include "polypowerseditor.h"
+#include "rawdataeditor.h"
 #include "selectionset.h"
 #include "uiutility.h"
 
@@ -128,8 +129,12 @@ void EditorManager::createEditor(KCL::Model& model, Core::Selection const& selec
         pEditor = new ConstantsEditor((KCL::Constants*) pElement, name);
     else if (type == KCL::WP)
         pEditor = new AnalysisParametersEditor((KCL::AnalysisParameters*) pElement, name);
-    else if (type == KCL::TE)
-        pEditor = new DecrementsEditor((KCL::Decrements*) pElement, name);
+    else if (type == KCL::PK && surface.containsElement(KCL::QK))
+        pEditor = new PolyPowersEditor((KCL::PolyPowersX*) pElement, (KCL::PolyPowersZ*) surface.element(KCL::QK), name);
+    else if (type == KCL::QK && surface.containsElement(KCL::PK))
+        pEditor = new PolyPowersEditor((KCL::PolyPowersX*) surface.element(KCL::PK), (KCL::PolyPowersZ*) pElement, name);
+    else
+        pEditor = new RawDataEditor(pElement, name);
     addEditor(pEditor);
 }
 

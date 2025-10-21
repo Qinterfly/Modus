@@ -44,8 +44,9 @@ set(FRONTEND_HEADERS
     constantseditor.h
     analysisparameterseditor.h
     aerotrapeziumeditor.h
-    decrementseditor.h
+    rawdataeditor.h
     customtable.h
+    polypowerseditor.h
 )
 
 set(FRONTEND_SOURCES
@@ -66,8 +67,9 @@ set(FRONTEND_SOURCES
     constantseditor.cpp
     analysisparameterseditor.cpp
     aerotrapeziumeditor.cpp
-    decrementseditor.cpp
+    rawdataeditor.cpp
     customtable.cpp
+    polypowerseditor.cpp
 )
 
 qt_add_library(frontend STATIC

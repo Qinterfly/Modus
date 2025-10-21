@@ -60,6 +60,7 @@ QList<KCL::ElementType> panelTypes();
 QList<KCL::ElementType> aeroTrapeziumTypes();
 QList<KCL::ElementType> massTypes();
 QList<KCL::ElementType> springTypes();
+QList<KCL::ElementType> polyTypes();
 bool isAeroVertical(KCL::ElementType type);
 bool isAeroAileron(KCL::ElementType type);
 bool isAeroMeshable(KCL::ElementType type);

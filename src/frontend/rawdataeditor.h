@@ -1,24 +1,19 @@
-#ifndef DECREMENTSEDITOR_H
-#define DECREMENTSEDITOR_H
+#ifndef RAWDATAEDITOR_H
+#define RAWDATAEDITOR_H
 
 #include "editormanager.h"
 #include "uialiasdata.h"
-
-namespace KCL
-{
-class Decrements;
-}
 
 namespace Frontend
 {
 
 class CustomTable;
 
-class DecrementsEditor : public Editor
+class RawDataEditor : public Editor
 {
 public:
-    DecrementsEditor(KCL::Decrements* pElement, QString const& name, QWidget* pParent = nullptr);
-    ~DecrementsEditor() = default;
+    RawDataEditor(KCL::AbstractElement* pElement, QString const& name, QWidget* pParent = nullptr);
+    ~RawDataEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;
@@ -30,11 +25,11 @@ private:
     void setElementData();
 
 private:
-    KCL::Decrements* mpElement;
+    KCL::AbstractElement* mpElement;
     Edit1i* mpNumDataEdit;
     CustomTable* mpDataTable;
 };
 
 }
 
-#endif // DECREMENTSEDITOR_H
+#endif // RAWDATAEDITOR_H

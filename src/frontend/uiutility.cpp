@@ -255,6 +255,12 @@ QList<KCL::ElementType> springTypes()
     return {KCL::PR};
 }
 
+//! Retrieve the KCL types which are associated with polynoms
+QList<KCL::ElementType> polyTypes()
+{
+    return {KCL::PK, KCL::QK, KCL::DQ};
+}
+
 //! Check if an aerodynamic trapezium is perpendiculart to an elastic surface
 bool isAeroVertical(KCL::ElementType type)
 {

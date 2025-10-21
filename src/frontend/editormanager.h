@@ -46,6 +46,7 @@ class Editor : public QWidget
 public:
     enum Type
     {
+        kRawData,
         kGeneralData,
         kBeam,
         kPanel,
@@ -53,7 +54,7 @@ public:
         kConstants,
         kAnalysisParameters,
         kAeroTrapezium,
-        kDecrements
+        kPolyPowers
     };
 
     Editor() = delete;
