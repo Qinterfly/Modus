@@ -15,8 +15,6 @@ public:
     CustomTable(QWidget* pParent = nullptr);
     virtual ~CustomTable();
 
-    QSize sizeHint() const override;
-
     void setDataAlignment(Qt::Alignment alignment);
 
 private:

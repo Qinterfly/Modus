@@ -54,7 +54,7 @@ public:
         kConstants,
         kAnalysisParameters,
         kAeroTrapezium,
-        kPolyPowers
+        kPolyExponents
     };
 
     Editor() = delete;

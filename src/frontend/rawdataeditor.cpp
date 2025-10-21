@@ -3,6 +3,7 @@
 #include <QLabel>
 
 #include <kcl/model.h>
+#include <magicenum/magic_enum.hpp>
 
 #include "customtable.h"
 #include "lineedit.h"
@@ -40,9 +41,11 @@ void RawDataEditor::refresh()
     mpNumDataEdit->setValue(numData);
 
     // Resize the table
+    QString typeName = magic_enum::enum_name(mpElement->type()).data();
     mpDataTable->clear();
     mpDataTable->setRowCount(1);
     mpDataTable->setColumnCount(numData);
+    mpDataTable->setVerticalHeaderLabels({typeName});
 
     // Set the data
     bool isPoly = Utility::polyTypes().contains(mpElement->type());
@@ -81,6 +84,7 @@ void RawDataEditor::refresh()
 
     // Update the table geometry
     mpDataTable->resizeRowsToContents();
+    mpDataTable->updateGeometry();
 }
 
 //! Create all the widgets
@@ -88,27 +92,23 @@ void RawDataEditor::createContent()
 {
     // Create the data table
     mpDataTable = new CustomTable;
-    mpDataTable->verticalHeader()->setVisible(false);
+    mpDataTable->setSizeAdjustPolicy(QTableWidget::AdjustToContents);
+    mpDataTable->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     mpDataTable->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-    // Create the number of data layout
+    // Create layout to edit data length
     mpNumDataEdit = new Edit1i;
     mpNumDataEdit->setMinimum(0);
     mpNumDataEdit->setReadOnly(!isResizable(mpElement->type()));
-    QHBoxLayout* pNumDataLayout = new QHBoxLayout;
-    pNumDataLayout->addWidget(new QLabel(tr("Number of values: ")));
-    pNumDataLayout->addWidget(mpNumDataEdit);
-    pNumDataLayout->addStretch(1);
-
-    // Create the data layout
-    QHBoxLayout* pDataLayout = new QHBoxLayout;
-    pDataLayout->addWidget(new QLabel(tr("Values: ")));
-    pDataLayout->addWidget(mpDataTable);
+    QHBoxLayout* pLayout = new QHBoxLayout;
+    pLayout->addWidget(new QLabel(tr("Number of values: ")));
+    pLayout->addWidget(mpNumDataEdit);
+    pLayout->addStretch(1);
 
     // Create the main layout
     QVBoxLayout* pMainLayout = new QVBoxLayout;
-    pMainLayout->addLayout(pNumDataLayout);
-    pMainLayout->addLayout(pDataLayout);
+    pMainLayout->addLayout(pLayout);
+    pMainLayout->addWidget(mpDataTable);
     pMainLayout->addStretch(1);
     setLayout(pMainLayout);
 
@@ -136,7 +136,7 @@ void RawDataEditor::resizeElementData()
 //! Update element data from the widgets
 void RawDataEditor::setElementData()
 {
-    // Get the data from widgets
+    // Get the data from the table
     int numData = mpNumDataEdit->value();
     KCL::VecN data(numData);
     for (int i = 0; i != numData; ++i)

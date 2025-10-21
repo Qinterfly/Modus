@@ -21,11 +21,6 @@ CustomTable::~CustomTable()
 
 }
 
-QSize CustomTable::sizeHint() const
-{
-    return QSize(100, 70);
-}
-
 //! Align the data using the specified flag
 void CustomTable::setDataAlignment(Qt::Alignment alignment)
 {
