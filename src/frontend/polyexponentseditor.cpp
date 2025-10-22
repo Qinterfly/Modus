@@ -30,7 +30,7 @@ QSize PolyExponentsEditor::sizeHint() const
 void PolyExponentsEditor::refresh()
 {
     // Constants
-    int const kNumRows = 2;
+    int const kNumColumns = 2;
 
     // Block the signals & slots connections
     QSignalBlocker blockerNumData(mpNumDataEdit);
@@ -47,24 +47,24 @@ void PolyExponentsEditor::refresh()
 
     // Resize the table
     mpDataTable->clear();
-    mpDataTable->setRowCount(kNumRows);
-    mpDataTable->setColumnCount(numData);
-    mpDataTable->setVerticalHeaderLabels({"PK", "QK"});
+    mpDataTable->setRowCount(numData);
+    mpDataTable->setColumnCount(kNumColumns);
+    mpDataTable->setHorizontalHeaderLabels({"PK", "QK"});
 
     // Set the data
-    for (int jColumn = 0; jColumn != numData; ++jColumn)
+    for (int iRow = 0; iRow != numData; ++iRow)
     {
         Edit1i* pEditX = new Edit1i;
         Edit1i* pEditZ = new Edit1i;
-        QList<double> columnData = {dataX[jColumn], dataZ[jColumn]};
-        QList<Edit1i*> columnEdits = {pEditX, pEditZ};
-        for (int iRow = 0; iRow != kNumRows; ++iRow)
+        QList<double> rowData = {dataX[iRow], dataZ[iRow]};
+        QList<Edit1i*> rowEdits = {pEditX, pEditZ};
+        for (int jColumn = 0; jColumn != kNumColumns; ++jColumn)
         {
-            auto pEdit = columnEdits[iRow];
+            auto pEdit = rowEdits[jColumn];
             pEdit->setMinimum(0);
             pEdit->setAlignment(Qt::AlignCenter);
             pEdit->setStyleSheet(pEdit->styleSheet().append("border: none;"));
-            pEdit->setValue(columnData[iRow]);
+            pEdit->setValue(rowData[jColumn]);
             connect(pEdit, &Edit1i::valueChanged, this, &PolyExponentsEditor::setElementData);
             mpDataTable->setCellWidget(iRow, jColumn, pEdit);
         }
@@ -88,10 +88,14 @@ void PolyExponentsEditor::createContent()
     kMapTypes[KCL::BendingTorsionBeamZ] = tr("Bending-torsion beam Z");
     kMapTypes[KCL::Plate] = tr("Plate");
 
-    // Create the data table
+    // Create the data table layout
+    QHBoxLayout* pDataLayout = new QHBoxLayout;
     mpDataTable = new CustomTable;
     mpDataTable->setSizeAdjustPolicy(QTableWidget::AdjustToContents);
-    mpDataTable->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    mpDataTable->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+    pDataLayout->addWidget(new QLabel(tr("Exponents: ")));
+    pDataLayout->addWidget(mpDataTable);
+    pDataLayout->addStretch();
 
     // Create the layout to edit polynomial type
     mpTypeComboBox = new QComboBox;
@@ -100,7 +104,7 @@ void PolyExponentsEditor::createContent()
         mpTypeComboBox->addItem(kMapTypes[type], type);
     mpTypeComboBox->setCurrentIndex(-1);
     QHBoxLayout* pTypeLayout = new QHBoxLayout;
-    pTypeLayout->addWidget(new QLabel(tr("Polynomial type: ")));
+    pTypeLayout->addWidget(new QLabel(tr("Type: ")));
     pTypeLayout->addWidget(mpTypeComboBox);
     pTypeLayout->addStretch();
 
@@ -116,8 +120,8 @@ void PolyExponentsEditor::createContent()
     QVBoxLayout* pMainLayout = new QVBoxLayout;
     pMainLayout->addLayout(pTypeLayout);
     pMainLayout->addLayout(pNumDataLayout);
-    pMainLayout->addWidget(mpDataTable);
-    pMainLayout->addStretch(1);
+    pMainLayout->addLayout(pDataLayout);
+    pMainLayout->addStretch();
     setLayout(pMainLayout);
 
     // Set connections
@@ -153,8 +157,8 @@ void PolyExponentsEditor::setElementData()
     KCL::VecN dataZ(numData);
     for (int i = 0; i != numData; ++i)
     {
-        dataX[i] = static_cast<Edit1i*>(mpDataTable->cellWidget(0, i))->value();
-        dataZ[i] = static_cast<Edit1i*>(mpDataTable->cellWidget(1, i))->value();
+        dataX[i] = static_cast<Edit1i*>(mpDataTable->cellWidget(i, 0))->value();
+        dataZ[i] = static_cast<Edit1i*>(mpDataTable->cellWidget(i, 1))->value();
     }
 
     // Set the updated data

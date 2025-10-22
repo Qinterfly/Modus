@@ -29,32 +29,6 @@ QSize BeamEditor::sizeHint() const
     return QSize(680, 350);
 }
 
-//! Create all the widgets
-void BeamEditor::createContent()
-{
-    QVBoxLayout* pMainLayout = new QVBoxLayout;
-
-    // Create the widgets to edit coordinates
-    QHBoxLayout* pLayout = new QHBoxLayout;
-    pLayout->addWidget(createLocalGroupBox());
-    pLayout->addWidget(createGlobalGroupBox());
-    pMainLayout->addLayout(pLayout);
-
-    // Create the widgets to edit stiffness
-    QGroupBox* pGroupBox = createStifnessGroupBox();
-    if (pGroupBox)
-        pMainLayout->addWidget(pGroupBox);
-
-    // Create the widgets to edit inertia
-    pGroupBox = createInertiaGroupBox();
-    if (pGroupBox)
-        pMainLayout->addWidget(pGroupBox);
-
-    // Set the main layout
-    pMainLayout->addStretch();
-    setLayout(pMainLayout);
-}
-
 //! Update the widgets from the element source
 void BeamEditor::refresh()
 {
@@ -85,6 +59,32 @@ void BeamEditor::refresh()
         mStiffnessEdits[i]->setValue(data[4 + i]);
         mInertiaEdits[i]->setValue(data[4 + numValues + i]);
     }
+}
+
+//! Create all the widgets
+void BeamEditor::createContent()
+{
+    QVBoxLayout* pMainLayout = new QVBoxLayout;
+
+    // Create the widgets to edit coordinates
+    QHBoxLayout* pLayout = new QHBoxLayout;
+    pLayout->addWidget(createLocalGroupBox());
+    pLayout->addWidget(createGlobalGroupBox());
+    pMainLayout->addLayout(pLayout);
+
+    // Create the widgets to edit stiffness
+    QGroupBox* pGroupBox = createStifnessGroupBox();
+    if (pGroupBox)
+        pMainLayout->addWidget(pGroupBox);
+
+    // Create the widgets to edit inertia
+    pGroupBox = createInertiaGroupBox();
+    if (pGroupBox)
+        pMainLayout->addWidget(pGroupBox);
+
+    // Set the main layout
+    pMainLayout->addStretch();
+    setLayout(pMainLayout);
 }
 
 //! Specify the widget connections

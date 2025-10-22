@@ -12,6 +12,8 @@ namespace Frontend
 //! Class to edit aerodynamic trapeziums
 class AeroTrapeziumEditor : public Editor
 {
+    Q_OBJECT
+
 public:
     AeroTrapeziumEditor(KCL::ElasticSurface const& surface, KCL::AbstractElement* pElement, QString const& name, QWidget* pParent = nullptr);
     ~AeroTrapeziumEditor() = default;

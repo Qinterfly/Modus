@@ -26,6 +26,60 @@ QSize MassEditor::sizeHint() const
     return QSize(680, 350);
 }
 
+//! Update the widgets from the element source
+void MassEditor::refresh()
+{
+    // Slice element data
+    KCL::VecN data = mpElement->get();
+    int iData = 0;
+
+    // Set the mass
+    QSignalBlocker blockerMass(mpMassEdit);
+    mpMassEdit->setValue(data[iData]);
+    ++iData;
+
+    // Set the inertia moments and coordinates
+    if (is3D(mpElement->type()))
+    {
+        int numInertias = mInertiaEdits.size();
+        for (int i = 0; i != numInertias; ++i)
+        {
+            QSignalBlocker blockerInertia(mInertiaEdits[i]);
+            mInertiaEdits[i]->setValue(data[iData]);
+            ++iData;
+        }
+        int numLocals = mLocalEdits3D.size();
+        for (int i = 0; i != numLocals; ++i)
+        {
+            QSignalBlocker blockerLocal(mLocalEdits3D[i]);
+            mLocalEdits3D[i]->setValue(data[iData]);
+            ++iData;
+        }
+    }
+    else
+    {
+        QSignalBlocker blockerInertia(mpInertiaEdit);
+        mpInertiaEdit->setValue(data[iData]);
+        ++iData;
+        int numLocals = mLocalEdits2D.size();
+        for (int i = 0; i != numLocals; ++i)
+        {
+            QSignalBlocker blockerLocal(mLocalEdits2D[i]);
+            mLocalEdits2D[i]->setValue(data[iData]);
+            ++iData;
+        }
+    }
+
+    // Set global coordinates
+    setGlobalByLocal();
+
+    // Set length and angle of the rod
+    QSignalBlocker blockerLengthRod(mpLengthRodEdit);
+    QSignalBlocker blockerAngleRodZ(mpAngleRodZEdit);
+    mpLengthRodEdit->setValue(data[iData]);
+    mpAngleRodZEdit->setValue(data[iData + 1]);
+}
+
 //! Create all the widgets
 void MassEditor::createContent()
 {
@@ -87,60 +141,6 @@ void MassEditor::createContent()
     // Set the layout
     pMainLayout->addStretch();
     setLayout(pMainLayout);
-}
-
-//! Update the widgets from the element source
-void MassEditor::refresh()
-{
-    // Slice element data
-    KCL::VecN data = mpElement->get();
-    int iData = 0;
-
-    // Set the mass
-    QSignalBlocker blockerMass(mpMassEdit);
-    mpMassEdit->setValue(data[iData]);
-    ++iData;
-
-    // Set the inertia moments and coordinates
-    if (is3D(mpElement->type()))
-    {
-        int numInertias = mInertiaEdits.size();
-        for (int i = 0; i != numInertias; ++i)
-        {
-            QSignalBlocker blockerInertia(mInertiaEdits[i]);
-            mInertiaEdits[i]->setValue(data[iData]);
-            ++iData;
-        }
-        int numLocals = mLocalEdits3D.size();
-        for (int i = 0; i != numLocals; ++i)
-        {
-            QSignalBlocker blockerLocal(mLocalEdits3D[i]);
-            mLocalEdits3D[i]->setValue(data[iData]);
-            ++iData;
-        }
-    }
-    else
-    {
-        QSignalBlocker blockerInertia(mpInertiaEdit);
-        mpInertiaEdit->setValue(data[iData]);
-        ++iData;
-        int numLocals = mLocalEdits2D.size();
-        for (int i = 0; i != numLocals; ++i)
-        {
-            QSignalBlocker blockerLocal(mLocalEdits2D[i]);
-            mLocalEdits2D[i]->setValue(data[iData]);
-            ++iData;
-        }
-    }
-
-    // Set global coordinates
-    setGlobalByLocal();
-
-    // Set length and angle of the rod
-    QSignalBlocker blockerLengthRod(mpLengthRodEdit);
-    QSignalBlocker blockerAngleRodZ(mpAngleRodZEdit);
-    mpLengthRodEdit->setValue(data[iData]);
-    mpAngleRodZEdit->setValue(data[iData + 1]);
 }
 
 //! Specify the widget connections

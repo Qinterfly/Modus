@@ -43,9 +43,9 @@ void RawDataEditor::refresh()
     // Resize the table
     QString typeName = magic_enum::enum_name(mpElement->type()).data();
     mpDataTable->clear();
-    mpDataTable->setRowCount(1);
-    mpDataTable->setColumnCount(numData);
-    mpDataTable->setVerticalHeaderLabels({typeName});
+    mpDataTable->setRowCount(numData);
+    mpDataTable->setColumnCount(1);
+    mpDataTable->setHorizontalHeaderLabels({typeName});
 
     // Set the data
     bool isPoly = Utility::polyTypes().contains(mpElement->type());
@@ -68,7 +68,7 @@ void RawDataEditor::refresh()
         }
         pBaseEdit->setAlignment(Qt::AlignCenter);
         pBaseEdit->setStyleSheet(pBaseEdit->styleSheet().append("border: none;"));
-        mpDataTable->setCellWidget(0, i, pBaseEdit);
+        mpDataTable->setCellWidget(i, 0, pBaseEdit);
     }
 
     // Set the names
@@ -90,26 +90,29 @@ void RawDataEditor::refresh()
 //! Create all the widgets
 void RawDataEditor::createContent()
 {
-    // Create the data table
+    // Create the data table layout
     mpDataTable = new CustomTable;
     mpDataTable->setSizeAdjustPolicy(QTableWidget::AdjustToContents);
-    mpDataTable->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    mpDataTable->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    mpDataTable->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+    QHBoxLayout* pDataLayout = new QHBoxLayout;
+    pDataLayout->addWidget(new QLabel(tr("Values: ")));
+    pDataLayout->addWidget(mpDataTable);
+    pDataLayout->addStretch();
 
     // Create layout to edit data length
     mpNumDataEdit = new Edit1i;
     mpNumDataEdit->setMinimum(0);
     mpNumDataEdit->setReadOnly(!isResizable(mpElement->type()));
-    QHBoxLayout* pLayout = new QHBoxLayout;
-    pLayout->addWidget(new QLabel(tr("Number of values: ")));
-    pLayout->addWidget(mpNumDataEdit);
-    pLayout->addStretch(1);
+    QHBoxLayout* pNumDataLayout = new QHBoxLayout;
+    pNumDataLayout->addWidget(new QLabel(tr("Number of values: ")));
+    pNumDataLayout->addWidget(mpNumDataEdit);
+    pNumDataLayout->addStretch(1);
 
     // Create the main layout
     QVBoxLayout* pMainLayout = new QVBoxLayout;
-    pMainLayout->addLayout(pLayout);
-    pMainLayout->addWidget(mpDataTable);
-    pMainLayout->addStretch(1);
+    pMainLayout->addLayout(pNumDataLayout);
+    pMainLayout->addLayout(pDataLayout);
+    pMainLayout->addStretch();
     setLayout(pMainLayout);
 
     // Set connections
@@ -140,7 +143,7 @@ void RawDataEditor::setElementData()
     int numData = mpNumDataEdit->value();
     KCL::VecN data(numData);
     for (int i = 0; i != numData; ++i)
-        data[i] = static_cast<Edit1d*>(mpDataTable->cellWidget(0, i))->value();
+        data[i] = static_cast<Edit1d*>(mpDataTable->cellWidget(i, 0))->value();
 
     // Set the updated data
     emit commandExecuted(new EditElements(mpElement, data, name()));

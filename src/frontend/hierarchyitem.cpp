@@ -223,16 +223,18 @@ void SurfaceHierarchyItem::appendChildren()
         {
             HierarchyItem* pGroupItem = new HierarchyItem(kGroupElements, typeName);
             pGroupItem->setEditable(false);
+            int numInsert = 0;
             for (int iElement = 0; iElement != numElements; ++iElement)
             {
                 KCL::AbstractElement* pElement = mSurface.element(type, iElement);
                 if (!isInsertable(pElement))
                     continue;
-                QString name = QObject::tr("%1: %2").arg(typeName).arg(1 + iElement);
+                QString name = QObject::tr("%1: %2").arg(typeName).arg(1 + numInsert);
                 ElementHierarchyItem* pElementItem = new ElementHierarchyItem(iElement, pElement, name);
                 pGroupItem->appendRow(pElementItem);
                 if (pGroupItem->icon().isNull())
                     pGroupItem->setIcon(pElementItem->icon());
+                ++numInsert;
             }
             if (pGroupItem->hasChildren())
                 appendRow(pGroupItem);

@@ -9,7 +9,7 @@ QT_FORWARD_DECLARE_CLASS(QGroupBox)
 
 namespace KCL
 {
-class AnalysisParameters;
+struct AnalysisParameters;
 }
 
 namespace Frontend
@@ -18,6 +18,8 @@ namespace Frontend
 //! Class to edit analysis parameters
 class AnalysisParametersEditor : public Editor
 {
+    Q_OBJECT
+
 public:
     AnalysisParametersEditor(KCL::AnalysisParameters* pElement, QString const& name, QWidget* pParent = nullptr);
     ~AnalysisParametersEditor() = default;

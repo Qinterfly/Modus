@@ -47,6 +47,7 @@ set(FRONTEND_HEADERS
     rawdataeditor.h
     customtable.h
     polyexponentseditor.h
+    springdampereditor.h
 )
 
 set(FRONTEND_SOURCES
@@ -70,6 +71,7 @@ set(FRONTEND_SOURCES
     rawdataeditor.cpp
     customtable.cpp
     polyexponentseditor.cpp
+    springdampereditor.cpp
 )
 
 qt_add_library(frontend STATIC

@@ -6,8 +6,8 @@
 
 namespace KCL
 {
-class PolyExponentsX;
-class PolyExponentsZ;
+struct PolyExponentsX;
+struct PolyExponentsZ;
 }
 
 namespace Frontend
@@ -15,8 +15,11 @@ namespace Frontend
 
 class CustomTable;
 
+//! Class to edit polynomial exponents
 class PolyExponentsEditor : public Editor
 {
+    Q_OBJECT
+
 public:
     PolyExponentsEditor(KCL::PolyExponentsX* pElementX, KCL::PolyExponentsZ* pElementZ, QString const& name, QWidget* pParent = nullptr);
     ~PolyExponentsEditor() = default;

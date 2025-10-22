@@ -28,33 +28,6 @@ QSize PanelEditor::sizeHint() const
     return QSize(680, 350);
 }
 
-//! Create all the widgets
-void PanelEditor::createContent()
-{
-    QVBoxLayout* pMainLayout = new QVBoxLayout;
-
-    // Create the thickness layout
-    QHBoxLayout* pThicknessLayout = new QHBoxLayout;
-    mpThicknessEdit = new Edit1d;
-    mpThicknessEdit->setMinimum(0);
-    pThicknessLayout->addWidget(new QLabel(tr("Thickness: ")));
-    pThicknessLayout->addWidget(mpThicknessEdit);
-    pThicknessLayout->addStretch(1);
-
-    // Create the widgets to edit coordinates
-    QHBoxLayout* pCoordsLayout = new QHBoxLayout;
-    pCoordsLayout->addWidget(createLocalGroupBox());
-    pCoordsLayout->addWidget(createGlobalGroupBox());
-
-    // Set the main layout
-    pMainLayout->addLayout(pThicknessLayout);
-    pMainLayout->addLayout(pCoordsLayout);
-    pMainLayout->addWidget(createDepthGroupBox());
-    pMainLayout->addWidget(createMaterialGroupBox());
-    pMainLayout->addStretch();
-    setLayout(pMainLayout);
-}
-
 //! Update the widgets from the element source
 void PanelEditor::refresh()
 {
@@ -122,6 +95,33 @@ void PanelEditor::refresh()
         mpAngleE1ZEdit->setValue(data[iData + 2]);
         mpYoungsModulus2Edit->setValue(data[iData + 3]);
     }
+}
+
+//! Create all the widgets
+void PanelEditor::createContent()
+{
+    QVBoxLayout* pMainLayout = new QVBoxLayout;
+
+    // Create the thickness layout
+    QHBoxLayout* pThicknessLayout = new QHBoxLayout;
+    mpThicknessEdit = new Edit1d;
+    mpThicknessEdit->setMinimum(0);
+    pThicknessLayout->addWidget(new QLabel(tr("Thickness: ")));
+    pThicknessLayout->addWidget(mpThicknessEdit);
+    pThicknessLayout->addStretch(1);
+
+    // Create the widgets to edit coordinates
+    QHBoxLayout* pCoordsLayout = new QHBoxLayout;
+    pCoordsLayout->addWidget(createLocalGroupBox());
+    pCoordsLayout->addWidget(createGlobalGroupBox());
+
+    // Set the main layout
+    pMainLayout->addLayout(pThicknessLayout);
+    pMainLayout->addLayout(pCoordsLayout);
+    pMainLayout->addWidget(createDepthGroupBox());
+    pMainLayout->addWidget(createMaterialGroupBox());
+    pMainLayout->addStretch();
+    setLayout(pMainLayout);
 }
 
 //! Specify the widget connections

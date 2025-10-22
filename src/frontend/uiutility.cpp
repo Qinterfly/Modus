@@ -121,6 +121,9 @@ QString errorColorName(double value, double acceptThreshold, double criticalThre
 //! Retrieve a selection label to display
 QString getLabel(Core::Selection selection)
 {
+    // The first element is informational, so we do not enumerate it
+    if (selection.type == KCL::AE)
+        --selection.iElement;
     QString typeName = magic_enum::enum_name(selection.type).data();
     QString result = QString("%1:%2 %3").arg(typeName).arg(selection.iElement + 1).arg(getLabel(selection.iSurface));
     return result;

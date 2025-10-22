@@ -16,6 +16,7 @@
 #include "polyexponentseditor.h"
 #include "rawdataeditor.h"
 #include "selectionset.h"
+#include "springdampereditor.h"
 #include "uiutility.h"
 
 using namespace Backend;
@@ -119,7 +120,6 @@ void EditorManager::clear()
         mEditors[i]->deleteLater();
     mEditors.clear();
     mpCurrentEditor = nullptr;
-    mpUndoStack->clear();
 }
 
 //! Create a specific editor based on element type
@@ -150,6 +150,8 @@ void EditorManager::createEditor(KCL::Model& model, Core::Selection const& selec
         pEditor = new PolyExponentsEditor((KCL::PolyExponentsX*) pElement, (KCL::PolyExponentsZ*) surface.element(KCL::QK), name);
     else if (type == KCL::QK && surface.containsElement(KCL::PK))
         pEditor = new PolyExponentsEditor((KCL::PolyExponentsX*) surface.element(KCL::PK), (KCL::PolyExponentsZ*) pElement, name);
+    else if (type == KCL::PR)
+        pEditor = new SpringDamperEditor(model.surfaces, (KCL::SpringDamper*) pElement, name);
     else
         pEditor = new RawDataEditor(pElement, name);
     addEditor(pEditor);

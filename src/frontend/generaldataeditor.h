@@ -9,7 +9,7 @@ QT_FORWARD_DECLARE_CLASS(QCheckBox)
 
 namespace KCL
 {
-class GeneralData;
+struct GeneralData;
 }
 
 namespace Frontend

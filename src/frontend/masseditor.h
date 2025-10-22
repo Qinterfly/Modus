@@ -12,6 +12,8 @@ namespace Frontend
 //! Class to edit mass properties
 class MassEditor : public Editor
 {
+    Q_OBJECT
+
 public:
     MassEditor(KCL::ElasticSurface const& surface, KCL::AbstractElement* pElement, QString const& name, QWidget* pParent = nullptr);
     ~MassEditor() = default;

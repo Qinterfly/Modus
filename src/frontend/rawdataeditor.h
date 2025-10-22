@@ -11,6 +11,8 @@ class CustomTable;
 
 class RawDataEditor : public Editor
 {
+    Q_OBJECT
+
 public:
     RawDataEditor(KCL::AbstractElement* pElement, QString const& name, QWidget* pParent = nullptr);
     ~RawDataEditor() = default;

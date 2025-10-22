@@ -6,7 +6,7 @@
 
 namespace KCL
 {
-class Constants;
+struct Constants;
 }
 
 namespace Frontend
