@@ -70,6 +70,10 @@ QLineEdit:disabled, QPlainTextEdit:disabled, QSpinBox:disabled, QDoubleSpinBox:d
     color: #b9b9b9;
 }
 
+QLineEdit:read-only {
+    background: lightgray;
+}
+
 /* QSpinBox */
 
 QSpinBox::up-button, QDoubleSpinBox::up-button, QTimeEdit::up-button, QDateEdit::up-button, QDateTimeEdit::up-button {

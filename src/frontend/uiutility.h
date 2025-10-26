@@ -16,6 +16,7 @@ QT_FORWARD_DECLARE_CLASS(QToolBar);
 QT_FORWARD_DECLARE_CLASS(QColor);
 QT_FORWARD_DECLARE_CLASS(QPalette);
 QT_FORWARD_DECLARE_CLASS(QIcon)
+QT_FORWARD_DECLARE_CLASS(QComboBox)
 
 class vtkActor;
 class vtkColor3d;
@@ -88,6 +89,7 @@ void setLocalByGlobalEdits(Transformation const& transform, Edit1d* pLocalEdit, 
 void setLocalByGlobalEdits(Transformation const& transform, Edits2d& localEdits, Edits3d const& globalEdits,
                            Eigen::Vector2i const& indices = {0, 2});
 void setLocalByGlobalEdits(Transformation const& transform, Edits3d& localEdits, Edits3d const& globalEdits);
+void setIndexByKey(QComboBox* pComboBox, int key);
 
 // Icons
 QIcon getIcon(KCL::AbstractElement const* pElement);

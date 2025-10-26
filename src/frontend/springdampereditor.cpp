@@ -6,12 +6,16 @@
 
 #include <kcl/model.h>
 
+#include "customtable.h"
 #include "lineedit.h"
 #include "springdampereditor.h"
 #include "uiutility.h"
 
 using namespace Frontend;
 
+static int const skGroundIndex = 0;
+
+// Helper enumerations
 enum SpringType
 {
     kLong = -2,
@@ -39,7 +43,57 @@ QSize SpringDamperEditor::sizeHint() const
 //! Update data of widgets from the element source
 void SpringDamperEditor::refresh()
 {
-    // TODO
+    // Pairing widgets
+    QSignalBlocker blockerIFirstSurface(mpIFirstSurfaceComboBox);
+    QSignalBlocker blockerISecondSurface(mpISecondSurfaceComboBox);
+    Utility::setIndexByKey(mpIFirstSurfaceComboBox, mpElement->iFirstSurface);
+    Utility::setIndexByKey(mpISecondSurfaceComboBox, mpElement->iSecondSurface);
+    bool isGround = mpElement->iSecondSurface == skGroundIndex;
+
+    // Local coordinates
+    int numLocals = mFirstLocalEdits.size();
+    for (int i = 0; i != numLocals; ++i)
+    {
+        QSignalBlocker blockerFirstLocal(mFirstLocalEdits[i]);
+        QSignalBlocker blockerSecondLocal(mSecondLocalEdits[i]);
+        mFirstLocalEdits[i]->setValue(mpElement->coordsFirstRod[i]);
+        mSecondLocalEdits[i]->setValue(mpElement->coordsSecondRod[i]);
+        mSecondLocalEdits[i]->setReadOnly(isGround);
+    }
+
+    // Global coordinates
+    setGlobalByLocal();
+    int numGlobals = mSecondGlobalEdits.size();
+    for (int i = 0; i != numGlobals; ++i)
+        mSecondGlobalEdits[i]->setReadOnly(isGround);
+
+    // Length
+    QSignalBlocker blockerFirstLength(mpFirstLengthEdit);
+    QSignalBlocker blockerSecondLength(mpSecondLengthEdit);
+    mpFirstLengthEdit->setValue(mpElement->lengthFirstRod);
+    mpSecondLengthEdit->setValue(mpElement->lengthSecondRod);
+
+    // Angles
+    int numAngles = mFirstAngleEdits.size();
+    for (int i = 0; i != numAngles; ++i)
+    {
+        QSignalBlocker blockerFirstAngle(mFirstAngleEdits[i]);
+        QSignalBlocker blockerSecondAngle(mSecondAngleEdits[i]);
+        mFirstAngleEdits[i]->setValue(mpElement->anglesFirstRod[i]);
+        mSecondAngleEdits[i]->setValue(mpElement->anglesSecondRod[i]);
+    }
+
+    // Orientation
+    int numOrientation = mOrientationEdits.size();
+    for (int i = 0; i != numOrientation; ++i)
+    {
+        QSignalBlocker blockerOrientation(mOrientationEdits[i]);
+        mOrientationEdits[i]->setValue(mpElement->anglesCSys[i]);
+    }
+
+    // Type
+    QSignalBlocker blockerType(mpTypeComboBox);
+    Utility::setIndexByKey(mpTypeComboBox, mpElement->iSwitch);
 }
 
 //! Create all the widgets
@@ -58,7 +112,7 @@ void SpringDamperEditor::createContent()
     pLayout->addWidget(createOrientationGroupBox());
 
     // Create the matrix widgets
-    pLayout->addWidget(createMatrixDataGroupBox());
+    pLayout->addWidget(createMatrixGroupBox());
 
     // Set the layout
     pLayout->addStretch();
@@ -68,25 +122,157 @@ void SpringDamperEditor::createContent()
 //! Specify the widget connections
 void SpringDamperEditor::createConnections()
 {
-    // TODO
+    // Pairing
+    connect(mpIFirstSurfaceComboBox, &QComboBox::currentIndexChanged, this, &SpringDamperEditor::setSurfaceIndices);
+    connect(mpISecondSurfaceComboBox, &QComboBox::currentIndexChanged, this, &SpringDamperEditor::setSurfaceIndices);
+
+    // Surface local coordinates
+    int numLocals = mFirstLocalEdits.size();
+    for (int i = 0; i != numLocals; ++i)
+    {
+        connect(mFirstLocalEdits[i], &Edit1d::valueChanged, this, &SpringDamperEditor::setGlobalByLocal);
+        connect(mFirstLocalEdits[i], &Edit1d::valueChanged, this, &SpringDamperEditor::setElementData);
+        connect(mSecondLocalEdits[i], &Edit1d::valueChanged, this, &SpringDamperEditor::setGlobalByLocal);
+        connect(mSecondLocalEdits[i], &Edit1d::valueChanged, this, &SpringDamperEditor::setElementData);
+    }
+
+    // Surface global coordinates
+    int numGlobals = mFirstGlobalEdits.size();
+    for (int i = 0; i != numGlobals; ++i)
+    {
+        connect(mFirstGlobalEdits[i], &Edit1d::valueChanged, this, &SpringDamperEditor::setLocalByGlobal);
+        connect(mSecondGlobalEdits[i], &Edit1d::valueChanged, this, &SpringDamperEditor::setLocalByGlobal);
+    }
+
+    // Surface length
+    connect(mpFirstLengthEdit, &Edit1d::valueChanged, this, &SpringDamperEditor::setElementData);
+    connect(mpSecondLengthEdit, &Edit1d::valueChanged, this, &SpringDamperEditor::setElementData);
+
+    // Surface angles
+    int numAngles = mFirstAngleEdits.size();
+    for (int i = 0; i != numAngles; ++i)
+    {
+        connect(mFirstAngleEdits[i], &Edit1d::valueChanged, this, &SpringDamperEditor::setElementData);
+        connect(mSecondAngleEdits[i], &Edit1d::valueChanged, this, &SpringDamperEditor::setElementData);
+    }
+
+    // Orientation
+    int numOrientation = mOrientationEdits.size();
+    for (int i = 0; i != numOrientation; ++i)
+        connect(mOrientationEdits[i], &Edit1d::valueChanged, this, &SpringDamperEditor::setElementData);
+
+    // Type
+    connect(mpTypeComboBox, &QComboBox::currentIndexChanged, this, &SpringDamperEditor::setElementData);
+
+    // Matrices
+    connect(mpStiffnessButton, &QPushButton::clicked, this, [this]() { showMatrixEditor(true); });
+    connect(mpDampingButton, &QPushButton::clicked, this, [this]() { showMatrixEditor(false); });
 }
 
 //! Set global coordinates by the local ones
 void SpringDamperEditor::setGlobalByLocal()
 {
-    // TODO
+    // First surface
+    int iFirstSurface = mpIFirstSurfaceComboBox->currentData().toInt();
+    auto firstTransform = Utility::computeTransformation(mSurfaces[iFirstSurface - 1]);
+    Utility::setGlobalByLocalEdits(firstTransform, mFirstLocalEdits, mFirstGlobalEdits);
+
+    // Second surface
+    int iSecondSurface = mpISecondSurfaceComboBox->currentData().toInt();
+    if (iSecondSurface > 0)
+    {
+        auto secondTransform = Utility::computeTransformation(mSurfaces[iSecondSurface - 1]);
+        Utility::setGlobalByLocalEdits(secondTransform, mSecondLocalEdits, mSecondGlobalEdits);
+    }
 }
 
 //! Set local coordinates by the global ones
 void SpringDamperEditor::setLocalByGlobal()
 {
-    // TODO
+    // First surface
+    int iFirstSurface = mpIFirstSurfaceComboBox->currentData().toInt();
+    auto firstTransform = Utility::computeTransformation(mSurfaces[iFirstSurface - 1]);
+    Utility::setLocalByGlobalEdits(firstTransform, mFirstLocalEdits, mFirstGlobalEdits);
+
+    // Second surface
+    int iSecondSurface = mpISecondSurfaceComboBox->currentData().toInt();
+    if (iSecondSurface > 0)
+    {
+        auto secondTransform = Utility::computeTransformation(mSurfaces[iSecondSurface - 1]);
+        Utility::setLocalByGlobalEdits(secondTransform, mSecondLocalEdits, mSecondGlobalEdits);
+    }
+
+    // Update the element data
+    setElementData();
 }
 
 //! Slice data from widgets to set element data
 void SpringDamperEditor::setElementData()
 {
-    // TODO
+    // Slice element data
+    KCL::VecN data = mpElement->get();
+
+    // Pairing
+    data[0] = mpIFirstSurfaceComboBox->currentData().toInt();
+    data[6] = mpISecondSurfaceComboBox->currentData().toInt();
+
+    // Local coordinates
+    int numLocals = mFirstLocalEdits.size();
+    for (int i = 0; i != numLocals; ++i)
+    {
+        data[1 + i] = mFirstLocalEdits[i]->value();
+        data[7 + i] = mSecondLocalEdits[i]->value();
+    }
+
+    // Length
+    data[3] = mpFirstLengthEdit->value();
+    data[9] = mpSecondLengthEdit->value();
+
+    // Angles
+    int numAngles = mFirstAngleEdits.size();
+    for (int i = 0; i != numAngles; ++i)
+    {
+        data[4 + i] = mFirstAngleEdits[i]->value();
+        data[10 + i] = mSecondAngleEdits[i]->value();
+    }
+
+    // Orientation
+    int numOrientation = mOrientationEdits.size();
+    for (int i = 0; i != numOrientation; ++i)
+        data[12 + i] = mOrientationEdits[i]->value();
+
+    // Type
+    data[15] = mpTypeComboBox->currentData().toInt();
+
+    // Set the updated data
+    emit commandExecuted(new EditElements(mpElement, data, name()));
+}
+
+//! Process selection of an elastic surface for pairing
+void SpringDamperEditor::setSurfaceIndices()
+{
+    setElementData();
+    refresh();
+}
+
+//! Modify the matrix data
+void SpringDamperEditor::setMatrixData(bool isStiffness, int iRow, int iColumn, double value)
+{
+    // Slice element data
+    KCL::VecN data = mpElement->get();
+
+    // Get the start index for writing
+    int matSize = mpElement->stiffness.size();
+    int matLength = matSize * matSize;
+    int iShift = KCL::SpringDamper::skNumBaseParams;
+    if (!isStiffness)
+        iShift += matLength;
+
+    // Set the data
+    data[iShift + iRow * matSize + iColumn] = value;
+
+    // Set the updated data
+    emit commandExecuted(new EditElements(mpElement, data, name()));
 }
 
 //! Create a group box to pair elastic surfaces
@@ -94,22 +280,22 @@ QGroupBox* SpringDamperEditor::createPairGroupBox()
 {
     // Create the widgets to select first and second surfaces
     int numSurfaces = mSurfaces.size();
-    mpIFirstSurfaceEdit = new QComboBox;
-    mpISecondSurfaceEdit = new QComboBox;
+    mpIFirstSurfaceComboBox = new QComboBox;
+    mpISecondSurfaceComboBox = new QComboBox;
     for (int i = 0; i != numSurfaces; ++i)
     {
         QString name = mSurfaces[i].name.data();
-        mpIFirstSurfaceEdit->addItem(name, i);
-        mpISecondSurfaceEdit->addItem(name, i);
+        mpIFirstSurfaceComboBox->addItem(name, 1 + i);
+        mpISecondSurfaceComboBox->addItem(name, 1 + i);
     }
-    mpISecondSurfaceEdit->addItem(tr("Ground"), -1);
+    mpISecondSurfaceComboBox->addItem(tr("Ground"), skGroundIndex);
 
     // Add the widgets to the layout
     QHBoxLayout* pLayout = new QHBoxLayout;
     pLayout->addWidget(new QLabel(tr("First: ")));
-    pLayout->addWidget(mpIFirstSurfaceEdit);
+    pLayout->addWidget(mpIFirstSurfaceComboBox);
     pLayout->addWidget(new QLabel(tr("Second: ")));
-    pLayout->addWidget(mpISecondSurfaceEdit);
+    pLayout->addWidget(mpISecondSurfaceComboBox);
     pLayout->addStretch();
 
     // Create the group box widget
@@ -211,7 +397,7 @@ QGroupBox* SpringDamperEditor::createOrientationGroupBox()
 }
 
 //! Create a group box to edit stiffness and damping matrices
-QGroupBox* SpringDamperEditor::createMatrixDataGroupBox()
+QGroupBox* SpringDamperEditor::createMatrixGroupBox()
 {
     // Create the main layout
     QVBoxLayout* pMainLayout = new QVBoxLayout;
@@ -230,12 +416,12 @@ QGroupBox* SpringDamperEditor::createMatrixDataGroupBox()
 
     // Create the button to request editors
     QHBoxLayout* pDataLayout = new QHBoxLayout;
-    QPushButton* pStiffnessButton = new QPushButton(tr("Stiffness matrix"));
-    QPushButton* pDampingButton = new QPushButton(tr("Damping matrix"));
+    mpStiffnessButton = new QPushButton(tr("Stiffness matrix"));
+    mpDampingButton = new QPushButton(tr("Damping matrix"));
     pDataLayout->addStretch(10);
-    pDataLayout->addWidget(pStiffnessButton);
+    pDataLayout->addWidget(mpStiffnessButton);
     pDataLayout->addStretch(1);
-    pDataLayout->addWidget(pDampingButton);
+    pDataLayout->addWidget(mpDampingButton);
     pDataLayout->addStretch(10);
     pMainLayout->addLayout(pDataLayout);
 
@@ -243,4 +429,84 @@ QGroupBox* SpringDamperEditor::createMatrixDataGroupBox()
     QGroupBox* pGroupBox = new QGroupBox(tr("Spring data"));
     pGroupBox->setLayout(pMainLayout);
     return pGroupBox;
+}
+
+//! Show widget to edit matrices
+void SpringDamperEditor::showMatrixEditor(bool isStiffness)
+{
+    // Create the dialog widget
+    QDialog* pDialog = new QDialog;
+    QString title = isStiffness ? tr("Stiffness Matrix Editor") : tr("Damping Matrix Editor");
+    pDialog->setWindowTitle(title);
+    pDialog->setAttribute(Qt::WA_DeleteOnClose, true);
+
+    // Create the table
+    CustomTable* pTable = new CustomTable;
+    pTable->setSizeAdjustPolicy(QTableWidget::AdjustToContents);
+
+    // Add the cell editors
+    int numMat = mpElement->stiffness.size();
+    pTable->setRowCount(numMat);
+    pTable->setColumnCount(numMat);
+    for (int i = 0; i != numMat; ++i)
+    {
+        for (int j = 0; j != numMat; ++j)
+        {
+            Edit1d* pEdit = new Edit1d;
+            pEdit->setReadOnly(true);
+            pEdit->setStyleSheet(pEdit->styleSheet().append("border: none;"));
+            pEdit->setAlignment(Qt::AlignCenter);
+            pTable->setCellWidget(i, j, pEdit);
+        }
+    }
+
+    // Get the indices of elements which can be edited
+    QList<QPair<int, int>> indices;
+    switch (mpElement->iSwitch)
+    {
+    case kLong:
+        indices.push_back({2, 2});
+        indices.push_back({5, 5});
+        break;
+    case kShort36:
+        for (int i = 0; i != numMat; ++i)
+        {
+            for (int j = 0; j != numMat; ++j)
+                indices.push_back({i, j});
+        }
+        break;
+    default:
+        for (int i = 0; i != numMat; ++i)
+            indices.push_back({i, i});
+        break;
+    }
+
+    // Set the matrix data
+    KCL::Mat6x6 const& matrix = isStiffness ? mpElement->stiffness : mpElement->damping;
+    int numIndices = indices.size();
+    for (int i = 0; i != numIndices; ++i)
+    {
+        auto [iRow, iColumn] = indices[i];
+        auto pEdit = (Edit1d*) pTable->cellWidget(iRow, iColumn);
+        pEdit->setReadOnly(false);
+        pEdit->setValue(matrix[iRow][iColumn]);
+    }
+
+    // Set the connections
+    for (int i = 0; i != numMat; ++i)
+    {
+        for (int j = 0; j != numMat; ++j)
+        {
+            auto pEdit = (Edit1d*) pTable->cellWidget(i, j);
+            connect(pEdit, &Edit1d::valueChanged, this, [this, isStiffness, i, j, pEdit]() { setMatrixData(isStiffness, i, j, pEdit->value()); });
+        }
+    }
+
+    // Set the layout
+    QVBoxLayout* pLayout = new QVBoxLayout;
+    pLayout->addWidget(pTable);
+    pDialog->setLayout(pLayout);
+
+    // Show the dialog
+    pDialog->exec();
 }

@@ -123,6 +123,8 @@ int DoubleLineEdit::decimals() const
 //! Set the current value
 void DoubleLineEdit::setValue(double value)
 {
+    if (isReadOnly())
+        return;
     QString newText = QString::number(value, 'g');
     mpValidator->fixup(newText);
     setText(newText);

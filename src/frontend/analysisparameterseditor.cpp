@@ -26,9 +26,6 @@ enum HomogenousKey
     kAeroservoelasticityControl = 77
 };
 
-// Helper function
-void setIndexByKey(QComboBox* pComboBox, int key);
-
 AnalysisParametersEditor::AnalysisParametersEditor(KCL::AnalysisParameters* pElement, QString const& name, QWidget* pParent)
     : Editor(kAnalysisParameters, name, Utility::getIcon(pElement->type()), pParent)
     , mpElement(pElement)
@@ -48,7 +45,7 @@ void AnalysisParametersEditor::refresh()
 {
     // Set symmetry data
     QSignalBlocker blockerSymmetry(mpSymmetryComboBox);
-    setIndexByKey(mpSymmetryComboBox, mpElement->iSymmetry);
+    Utility::setIndexByKey(mpSymmetryComboBox, mpElement->iSymmetry);
 
     // Set modal and flutter data
     QSignalBlocker blockerNumModes(mpNumModesEdit);
@@ -87,7 +84,7 @@ void AnalysisParametersEditor::refresh()
     QSignalBlocker blockerHomogenous(mpHomogenousComboBox);
     QSignalBlocker blockerBasicSurface(mpBasicSurface);
     mpControlPointPositionEdit->setValue(mpElement->controlPointPosition);
-    setIndexByKey(mpHomogenousComboBox, mpElement->iHomogenous);
+    Utility::setIndexByKey(mpHomogenousComboBox, mpElement->iHomogenous);
     mpBasicSurface->setValue(mpElement->iBasicElasticSurface);
 }
 
@@ -319,19 +316,4 @@ QGroupBox* AnalysisParametersEditor::createAeroGroupBox()
     pMainLayout->addStretch();
     pWidget->setLayout(pMainLayout);
     return pWidget;
-}
-
-//! Helper function to set combobox current index by item key
-void setIndexByKey(QComboBox* pComboBox, int key)
-{
-    int numItems = pComboBox->count();
-    pComboBox->setCurrentIndex(-1);
-    for (int i = 0; i != numItems; ++i)
-    {
-        if (pComboBox->itemData(i).toInt() == key)
-        {
-            pComboBox->setCurrentIndex(i);
-            break;
-        }
-    }
 }

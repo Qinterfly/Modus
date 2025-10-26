@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QComboBox>
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QScreen>
@@ -674,6 +675,21 @@ void setLocalByGlobalEdits(Transformation const& transform, Edits3d& localEdits,
     auto invTransform = transform.inverse();
     auto position = invTransform * Vector3d({globalEdits[0]->value(), globalEdits[1]->value(), globalEdits[2]->value()});
     setEdits(localEdits.data(), position);
+}
+
+//! Set combobox current index by item key
+void setIndexByKey(QComboBox* pComboBox, int key)
+{
+    int numItems = pComboBox->count();
+    pComboBox->setCurrentIndex(-1);
+    for (int i = 0; i != numItems; ++i)
+    {
+        if (pComboBox->itemData(i).toInt() == key)
+        {
+            pComboBox->setCurrentIndex(i);
+            break;
+        }
+    }
 }
 
 //! Retrieve an icon associated with an element by pointer

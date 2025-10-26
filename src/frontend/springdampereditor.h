@@ -32,17 +32,20 @@ private:
     void setGlobalByLocal();
     void setLocalByGlobal();
     void setElementData();
+    void setSurfaceIndices();
+    void setMatrixData(bool isStiffness, int iRow, int iColumn, double value);
     QGroupBox* createPairGroupBox();
     QGroupBox* createSurfaceGroupBox(bool isFirst);
     QGroupBox* createOrientationGroupBox();
-    QGroupBox* createMatrixDataGroupBox();
+    QGroupBox* createMatrixGroupBox();
+    void showMatrixEditor(bool isStiffness);
 
 private:
     std::vector<KCL::ElasticSurface> const& mSurfaces;
-    KCL::AbstractElement* mpElement;
+    KCL::SpringDamper* mpElement;
     // Pairing
-    QComboBox* mpIFirstSurfaceEdit;
-    QComboBox* mpISecondSurfaceEdit;
+    QComboBox* mpIFirstSurfaceComboBox;
+    QComboBox* mpISecondSurfaceComboBox;
     // First surface
     Edits2d mFirstLocalEdits;
     Edits3d mFirstGlobalEdits;
@@ -57,6 +60,9 @@ private:
     Edits3d mOrientationEdits;
     // Type
     QComboBox* mpTypeComboBox;
+    // Matrices
+    QPushButton* mpStiffnessButton;
+    QPushButton* mpDampingButton;
 };
 
 }

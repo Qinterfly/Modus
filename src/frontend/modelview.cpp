@@ -817,6 +817,7 @@ void ModelView::drawSprings(bool isReflect, KCL::ElementType type)
 {
     int const kNumTurns = 6;
     int const kResolution = 30;
+    KCL::Vec3 kZeroVec = {0.0, 0.0, 0.0};
 
     // Slice the elements for rendering
     std::vector<KCL::AbstractElement const*> elements = mModel.specialSurface.elements(type);
@@ -843,10 +844,14 @@ void ModelView::drawSprings(bool isReflect, KCL::ElementType type)
         auto pFirstData = (KCL::GeneralData*) firstSurface.element(KCL::OD);
         auto firstTransform = Utility::computeTransformation(pFirstData->coords, pFirstData->dihedralAngle, pFirstData->sweepAngle,
                                                              pFirstData->zAngle);
+        auto addFirstTransform = Utility::computeTransformation(kZeroVec, 0.0, pElement->anglesFirstRod[0], pElement->anglesFirstRod[1]);
         if (pFirstData->iSymmetry != 0 && isReflect)
             continue;
         if (isReflect)
+        {
             firstTransform = Utility::reflectTransformation(firstTransform);
+            addFirstTransform = Utility::reflectTransformation(addFirstTransform);
+        }
         Vector3d firstPosition = firstTransform * Vector3d(pElement->coordsFirstRod[0], 0.0, pElement->coordsFirstRod[1]);
 
         // Process the second elastic surface
@@ -865,9 +870,8 @@ void ModelView::drawSprings(bool isReflect, KCL::ElementType type)
         }
         else
         {
-            KCL::Vec3 addCoords = {0, 0, pElement->lengthFirstRod};
-            auto addTransform = Utility::computeTransformation(addCoords, pElement->anglesFirstRod[0], pElement->anglesFirstRod[1], 0.0);
-            secondPosition = addTransform * firstPosition;
+            auto addFirstPosition = addFirstTransform * Vector3d({0.0, 0.0, pElement->lengthFirstRod});
+            secondPosition = firstPosition + addFirstPosition;
         }
 
         // Create the helix between two points
