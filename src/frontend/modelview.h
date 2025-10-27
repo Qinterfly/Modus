@@ -100,6 +100,7 @@ public:
 
 signals:
     void selectItemsRequested(QList<Backend::Core::Selection> selections);
+    void editItemsRequested(QList<Backend::Core::Selection> selections);
 };
 
 //! Class to process mouse and key events
@@ -183,6 +184,7 @@ public:
 
 signals:
     void selectItemsRequested(QList<Backend::Core::Selection> selections);
+    void editItemsRequested(QList<Backend::Core::Selection> selections);
 
 private:
     void initialize();

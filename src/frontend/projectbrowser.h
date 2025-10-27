@@ -44,6 +44,7 @@ public:
 
     void refresh();
     void selectItems(KCL::Model const& model, QList<Backend::Core::Selection> const& selections);
+    void editItems(KCL::Model const& model, QList<Backend::Core::Selection> const& selections);
 
 signals:
     void selectionChanged(QList<HierarchyItem*>);

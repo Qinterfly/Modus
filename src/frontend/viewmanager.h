@@ -52,6 +52,7 @@ public:
 
 signals:
     void selectItemsRequested(KCL::Model const& model, QList<Backend::Core::Selection> selections);
+    void editItemsRequested(KCL::Model const& model, QList<Backend::Core::Selection> selections);
 
 private:
     void createContent();

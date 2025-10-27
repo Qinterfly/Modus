@@ -117,6 +117,8 @@ IView* ViewManager::createView(KCL::Model const& model, QString const& name)
     // Set the connections
     connect(pModelView, &ModelView::selectItemsRequested, this,
             [pModelView, this](QList<Core::Selection> selections) { emit selectItemsRequested(pModelView->model(), selections); });
+    connect(pModelView, &ModelView::editItemsRequested, this,
+            [pModelView, this](QList<Core::Selection> selections) { emit editItemsRequested(pModelView->model(), selections); });
 
     // Add it to the tab
     QString label = name.isEmpty() ? getDefaultViewName(IView::kModel) : name;

@@ -101,6 +101,26 @@ void ProjectBrowser::selectItems(KCL::Model const& model, QList<Backend::Core::S
     }
 }
 
+//! Select hierarchy items and edit them
+void ProjectBrowser::editItems(KCL::Model const& model, QList<Backend::Core::Selection> const& selections)
+{
+    // Select hierarchy items
+    selectItems(model, selections);
+
+    // Retrieve the selected items
+    QList<HierarchyItem*> items = selectedItems();
+    if (items.isEmpty())
+        return;
+
+    // Create editors for all selected items
+    mpEditorManager->clear();
+    createElementEditors(items);
+
+    // Show the editors
+    if (!mpEditorManager->isEmpty())
+        mpEditorManager->show();
+}
+
 //! Create all the widgets and corresponding actions
 void ProjectBrowser::createContent()
 {

@@ -252,6 +252,7 @@ void ModelView::createContent()
 void ModelView::createConnections()
 {
     connect(mStyle->handler, &InteractorHandler::selectItemsRequested, this, &ModelView::selectItemsRequested);
+    connect(mStyle->handler, &InteractorHandler::editItemsRequested, this, &ModelView::editItemsRequested);
 }
 
 //! Represent the model entities
@@ -1214,11 +1215,14 @@ void InteractorStyle::OnRightButtonDown()
 
     // Create the actions
     QAction* pSelectItemsAction = new QAction(QObject::tr("Go to corresponding tree items"));
+    QAction* pEditItemsAction = new QAction(QObject::tr("Edit corresponding tree items"));
 
     // Set the actions signals & slots
     QObject::connect(pSelectItemsAction, &QAction::triggered, handler, [this]() { emit handler->selectItemsRequested(selector->selected()); });
+    QObject::connect(pEditItemsAction, &QAction::triggered, handler, [this]() { emit handler->editItemsRequested(selector->selected()); });
 
     // Add the actions to the menu
+    pMenu->addAction(pEditItemsAction);
     pMenu->addAction(pSelectItemsAction);
 
     // Save the menu pointer

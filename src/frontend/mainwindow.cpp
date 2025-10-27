@@ -210,6 +210,7 @@ void MainWindow::createConnections()
     connect(mpProjectBrowser, &ProjectBrowser::selectionChanged, mpViewManager, &ViewManager::processItems);
     connect(mpProjectBrowser, &ProjectBrowser::editingFinished, mpViewManager, &ViewManager::plot);
     connect(mpViewManager, &ViewManager::selectItemsRequested, mpProjectBrowser, &ProjectBrowser::selectItems);
+    connect(mpViewManager, &ViewManager::editItemsRequested, mpProjectBrowser, &ProjectBrowser::editItems);
 }
 
 //! Create the actions to interact with files
