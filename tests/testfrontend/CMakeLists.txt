@@ -7,6 +7,19 @@ find_package(VTK REQUIRED COMPONENTS
     CommonColor
     CommonCore
     CommonDataModel
+    FiltersHybrid
+    FiltersSources
+    FiltersGeometry
+    InteractionStyle
+    InteractionWidgets
+    RenderingAnnotation
+    RenderingContextOpenGL2
+    RenderingCore
+    RenderingFreeType
+    RenderingGL2PSOpenGL2
+    RenderingOpenGL2
+    GUISupportQt
+    RenderingQt
 )
 
 qt_add_executable(testfrontend

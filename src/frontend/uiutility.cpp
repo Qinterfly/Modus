@@ -11,10 +11,12 @@
 #include <Eigen/Geometry>
 #include <magicenum/magic_enum.hpp>
 #include <vtkColor.h>
+#include <vtkColorTransferFunction.h>
 #include <vtkCylinderSource.h>
 #include <vtkDataSetMapper.h>
 #include <vtkGlyph3DMapper.h>
 #include <vtkHexahedron.h>
+#include <vtkLookupTable.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
@@ -621,6 +623,38 @@ vtkSmartPointer<vtkActor> createShellActor(Transformation const& transform, Matr
     actor->SetMapper(mapper);
 
     return actor;
+}
+
+//! Create the diverging color map from blue to red colors
+vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap()
+{
+    // Constants
+    int const kTableSize = 256;
+
+    // Set the colors
+    vtkNew<vtkColorTransferFunction> ctf;
+    ctf->SetColorSpaceToDiverging();
+    ctf->AddRGBPoint(0.0, 0.230, 0.299, 0.754);
+    ctf->AddRGBPoint(0.5, 0.865, 0.865, 0.865);
+    ctf->AddRGBPoint(1.0, 0.706, 0.016, 0.150);
+
+    // Create the lookup table
+    vtkNew<vtkLookupTable> lut;
+    lut->SetNumberOfTableValues(kTableSize);
+    lut->Build();
+
+    // Set the table values
+    int numColors = lut->GetNumberOfColors();
+    for (auto i = 0; i != numColors; ++i)
+    {
+        std::array<double, 3> rgb;
+        ctf->GetColor(static_cast<double>(i) / lut->GetNumberOfColors(), rgb.data());
+        std::array<double, 4> rgba{0.0, 0.0, 0.0, 1.0};
+        std::copy(std::begin(rgb), std::end(rgb), std::begin(rgba));
+        lut->SetTableValue(static_cast<vtkIdType>(i), rgba.data());
+    }
+
+    return lut;
 }
 
 //! Set global coordinate by the local one

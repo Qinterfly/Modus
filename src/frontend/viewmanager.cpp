@@ -144,20 +144,24 @@ IView* ViewManager::createView(KCL::Model const& model, QString const& name)
 }
 
 //! Create the view associated with a geometry
-IView* ViewManager::createView(Backend::Core::Geometry const& geometry, DisplacementField const& displacement, QString const& name)
+IView* ViewManager::createView(Backend::Core::Geometry const& geometry, VertexField const& field, QString const& name)
 {
     // Set the view as the current one if it has been already created
     IView* pView = findView(geometry);
     if (pView)
     {
+        GeometryView* pGeometryView = (GeometryView*) pView;
+        pGeometryView->insertField(field);
+        pGeometryView->plot();
         mpTabWidget->setCurrentWidget(pView);
         mpTabWidget->setTabText(mpTabWidget->currentIndex(), name);
         return pView;
     }
 
     // Create the geometry view otherwise
-    GeometryView* pGeometryView = new GeometryView(geometry, displacement);
+    GeometryView* pGeometryView = new GeometryView(geometry, field);
     pGeometryView->plot();
+    pGeometryView->setIsometricView();
 
     // Add it to the tab
     QString label = name.isEmpty() ? getDefaultViewName(IView::kGeometry) : name;
@@ -173,6 +177,7 @@ void ViewManager::processItems(QList<HierarchyItem*> const& items)
     // Constants
     QSet<HierarchyItem::Type> kModelTypes = {HierarchyItem::kSubproject, HierarchyItem::kModel, HierarchyItem::kSurface,
                                              HierarchyItem::kGroupElements, HierarchyItem::kElement};
+    QSet<HierarchyItem::Type> kGeometryTypes = {HierarchyItem::kModalSolution, HierarchyItem::kModalPole};
 
     // Check if there are any items to view
     if (items.isEmpty())
@@ -194,6 +199,8 @@ void ViewManager::processItems(QList<HierarchyItem*> const& items)
         QList<HierarchyItem*> typeItems = mapItems[type];
         if (kModelTypes.contains(type))
             processModelItems(typeItems, modifiedViews);
+        else if (kGeometryTypes.contains(type))
+            processGeometryItems(typeItems, modifiedViews);
     }
 
     // Refresh the modified views
@@ -214,7 +221,7 @@ void ViewManager::processModelItems(QList<HierarchyItem*> const& items, QSet<IVi
         {
             SubprojectHierarchyItem* pItem = (SubprojectHierarchyItem*) pBaseItem;
             Core::Subproject& subproject = pItem->subproject();
-            QString label = getModelViewName(&subproject);
+            QString label = getViewName(&subproject, IView::kModel);
             pView = (ModelView*) createView(subproject.model(), label);
             pView->selector().deselectAll();
             modifiedViews.insert(pView);
@@ -223,7 +230,7 @@ void ViewManager::processModelItems(QList<HierarchyItem*> const& items, QSet<IVi
         case HierarchyItem::kModel:
         {
             ModelHierarchyItem* pItem = (ModelHierarchyItem*) pBaseItem;
-            QString label = getModelViewName(pItem->subproject());
+            QString label = getViewName(pItem->subproject(), IView::kModel);
             pView = (ModelView*) createView(pItem->kclModel(), label);
             pView->selector().deselectAll();
             modifiedViews.insert(pView);
@@ -253,13 +260,46 @@ void ViewManager::processModelItems(QList<HierarchyItem*> const& items, QSet<IVi
                 continue;
 
             // Create the view, if necessary
-            QString label = getModelViewName(pItem->subproject());
+            QString label = getViewName(pItem->subproject(), IView::kModel);
             pView = (ModelView*) createView(*pModel, label);
             if (!modifiedViews.contains(pView))
                 pView->selector().deselectAll();
 
             // Add the selection set to the view
             pView->selector().select(selection, ModelViewSelector::kMultipleSelection);
+            break;
+        }
+        default:
+            break;
+        }
+
+        // Add the view to the modified list
+        if (pView)
+            modifiedViews.insert(pView);
+    }
+}
+
+//! Process hierarchy items associated with the GeometryView
+void ViewManager::processGeometryItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews)
+{
+    for (HierarchyItem* pBaseItem : items)
+    {
+        auto type = pBaseItem->type();
+        GeometryView* pView = nullptr;
+        switch (type)
+        {
+        case HierarchyItem::kModalSolution:
+        {
+            processGeometryItems(Utility::childItems(pBaseItem), modifiedViews);
+            break;
+        }
+        case HierarchyItem::kModalPole:
+        {
+            ModalPoleHierarchyItem* pItem = (ModalPoleHierarchyItem*) pBaseItem;
+            QString label = getViewName(pItem->subproject(), IView::kGeometry);
+            VertexField field(pItem->iMode(), pItem->frequency(), pItem->modeShape());
+            pView = (GeometryView*) createView(pItem->geometry(), field, label);
+            modifiedViews.insert(pView);
             break;
         }
         default:
@@ -331,14 +371,14 @@ void ViewManager::initialize()
 //! Construct a default view name
 QString ViewManager::getDefaultViewName(IView::Type type)
 {
-    QString prefix = "View";
+    QString prefix = tr("View");
     switch (type)
     {
     case IView::kModel:
-        prefix = "Model";
+        prefix = tr("Model");
         break;
     case IView::kGeometry:
-        prefix = "Geometry";
+        prefix = tr("Geometry");
         break;
     default:
         break;
@@ -346,11 +386,20 @@ QString ViewManager::getDefaultViewName(IView::Type type)
     return QString("%1 %2").arg(prefix).arg(numViews(type) + 1);
 }
 
-//! Consturt a name for a new model view
-QString ViewManager::getModelViewName(Backend::Core::Subproject* pSubproject)
+//! Consturt a name for a new view
+QString ViewManager::getViewName(Backend::Core::Subproject* pSubproject, IView::Type type)
 {
+    QString suffix;
+    switch (type)
+    {
+    case IView::kModel:
+        suffix = tr("model");
+        break;
+    case IView::kGeometry:
+        suffix = tr("geometry");
+        break;
+    }
     if (pSubproject && !pSubproject->name().isEmpty())
-        return QString("%1 %2").arg(pSubproject->name(), tr("model"));
-    else
-        return getDefaultViewName(IView::kModel);
+        return QString("%1 %2").arg(pSubproject->name(), suffix);
+    return getDefaultViewName(IView::kModel);
 }

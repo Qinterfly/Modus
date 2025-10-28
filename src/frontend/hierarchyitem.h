@@ -208,12 +208,13 @@ public:
     double frequency() const;
     Eigen::MatrixXd const& modeShape() const;
     double damping() const;
+    Backend::Core::Subproject* subproject();
 
 private:
     Backend::Core::Geometry const& mGeometry;
     int mIMode;
     double mFrequency;
-    Eigen::MatrixXd const& mModeShape;
+    Eigen::MatrixXd mModeShape;
     double mDamping;
 };
 

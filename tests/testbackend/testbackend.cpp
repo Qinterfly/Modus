@@ -93,7 +93,7 @@ void TestBackend::testSelector()
 }
 
 //! Obtain the modal solution associated with the simple wing
-void TestBackend::testModalSolver()
+void TestBackend::testModalSolverSimpleWing()
 {
     Example const example = Example::kSimpleWing;
     int const numModes = 15;
@@ -115,7 +115,7 @@ void TestBackend::testModalSolver()
 }
 
 //! Update the model of the simple wing
-void TestBackend::testOptimSolver()
+void TestBackend::testOptimSolverSimpleWing()
 {
     Example const example = Example::kSimpleWing;
     int const numModes = 3;
@@ -172,8 +172,30 @@ void TestBackend::testOptimSolver()
     QVERIFY(pSolver->solutions.last().isSuccess);
 }
 
+//! Obtain the modal solution associated with the simple wing
+void TestBackend::testModalSolverHunterWing()
+{
+    Example const example = Example::kHunterWing;
+    int const numModes = 30;
+
+    // Slice the subproject
+    Subproject& subproject = mProject.subprojects()[example];
+
+    // Initialize the solver
+    ModalSolver* pSolver = (ModalSolver*) subproject.addSolver(ISolver::kModal);
+
+    // Set the solver data
+    pSolver->options.numModes = numModes;
+    pSolver->model = subproject.model();
+
+    // Run the solver
+    pSolver->solve();
+    QVERIFY(!pSolver->solution.isEmpty());
+    QVERIFY(pSolver->solution.numModes() == numModes);
+}
+
 //! Solve flutter problem for the hunter wing
-void TestBackend::testFlutterSolver()
+void TestBackend::testFlutterSolverHunterWing()
 {
     Example const example = Example::kHunterWing;
     int const numModes = 30;

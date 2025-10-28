@@ -14,6 +14,10 @@
 using namespace Backend;
 using namespace Frontend;
 
+// Helper functions
+Core::Subproject* getSubproject(HierarchyItem* pItem);
+KCL::Model* getModel(HierarchyItem* pItem);
+
 HierarchyItem::HierarchyItem(Type itemType)
     : mkType(itemType)
 {
@@ -175,10 +179,7 @@ void ModelHierarchyItem::appendChildren()
 
 Core::Subproject* ModelHierarchyItem::subproject()
 {
-    HierarchyItem* pItem = Utility::findParentByType(this, HierarchyItem::kSubproject);
-    if (pItem)
-        return &static_cast<SubprojectHierarchyItem*>(pItem)->subproject();
-    return nullptr;
+    return getSubproject(this);
 }
 
 KCL::Model& ModelHierarchyItem::kclModel()
@@ -265,10 +266,7 @@ KCL::ElasticSurface& SurfaceHierarchyItem::surface()
 
 KCL::Model* SurfaceHierarchyItem::kclModel()
 {
-    HierarchyItem* pItem = Utility::findParentByType(this, HierarchyItem::kModel);
-    if (pItem)
-        return &static_cast<ModelHierarchyItem*>(pItem)->kclModel();
-    return nullptr;
+    return getModel(this);
 }
 
 //! Select items excluding duplicate entities
@@ -332,18 +330,12 @@ KCL::AbstractElement* ElementHierarchyItem::element()
 
 KCL::Model* ElementHierarchyItem::kclModel()
 {
-    HierarchyItem* pItem = Utility::findParentByType(this, HierarchyItem::kModel);
-    if (pItem)
-        return &static_cast<ModelHierarchyItem*>(pItem)->kclModel();
-    return nullptr;
+    return getModel(this);
 }
 
 Core::Subproject* ElementHierarchyItem::subproject()
 {
-    HierarchyItem* pItem = Utility::findParentByType(this, HierarchyItem::kSubproject);
-    if (pItem)
-        return &static_cast<SubprojectHierarchyItem*>(pItem)->subproject();
-    return nullptr;
+    return getSubproject(this);
 }
 
 ModalSolverHierarchyItem::ModalSolverHierarchyItem(Core::ModalSolver* pSolver, QString const& defaultName)
@@ -435,6 +427,11 @@ Eigen::MatrixXd const& ModalPoleHierarchyItem::modeShape() const
 double ModalPoleHierarchyItem::damping() const
 {
     return mDamping;
+}
+
+Core::Subproject* ModalPoleHierarchyItem::subproject()
+{
+    return getSubproject(this);
 }
 
 FlutterSolverHierarchyItem::FlutterSolverHierarchyItem(Core::FlutterSolver* pSolver, QString const& defaultName)
@@ -680,4 +677,22 @@ void OptimSolutionHierarchyItem::appendChildren()
 {
     appendRow(new ModelHierarchyItem(mSolution.model));
     appendRow(new ModalSolutionHierarchyItem(mSolution.modalSolution));
+}
+
+//! Helper function to find subproject which contains the current item
+Core::Subproject* getSubproject(HierarchyItem* pItem)
+{
+    HierarchyItem* pFoundItem = Utility::findParentByType(pItem, HierarchyItem::kSubproject);
+    if (pFoundItem)
+        return &static_cast<SubprojectHierarchyItem*>(pFoundItem)->subproject();
+    return nullptr;
+}
+
+//! Helper function to find model which contains the current item
+KCL::Model* getModel(HierarchyItem* pItem)
+{
+    HierarchyItem* pFoundItem = Utility::findParentByType(pItem, HierarchyItem::kModel);
+    if (pFoundItem)
+        return &static_cast<ModelHierarchyItem*>(pFoundItem)->kclModel();
+    return nullptr;
 }

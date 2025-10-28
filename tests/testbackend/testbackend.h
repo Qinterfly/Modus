@@ -32,9 +32,10 @@ private slots:
     void testSelector();
 
     // Solvers
-    void testModalSolver();
-    void testOptimSolver();
-    void testFlutterSolver();
+    void testModalSolverSimpleWing();
+    void testOptimSolverSimpleWing();
+    void testModalSolverHunterWing();
+    void testFlutterSolverHunterWing();
 
     // Project
     void testWriteProject();

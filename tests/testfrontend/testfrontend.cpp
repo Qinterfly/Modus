@@ -41,7 +41,7 @@ void TestFrontend::testViewModel()
 void TestFrontend::testViewGeometry()
 {
     int iSubproject = 1;
-    int iMode = 0;
+    int iMode = 8;
     Core::Subproject& subproject = mpMainWindow->project().subprojects()[iSubproject];
     int numSolvers = subproject.solvers().size();
     for (int i = 0; i != numSolvers; ++i)
@@ -50,8 +50,8 @@ void TestFrontend::testViewGeometry()
         if (pBaseSolver->type() == Core::ISolver::kModal)
         {
             auto pSolver = (Core::ModalSolver*) pBaseSolver;
-            DisplacementField displacement(pSolver->solution, iMode);
-            mpMainWindow->viewManager()->createView(pSolver->solution.geometry, displacement);
+            VertexField field(pSolver->solution, iMode);
+            mpMainWindow->viewManager()->createView(pSolver->solution.geometry, field);
         }
     }
 }
