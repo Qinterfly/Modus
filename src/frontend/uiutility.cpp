@@ -657,6 +657,17 @@ vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap()
     return lut;
 }
 
+//! Get maximum view dimension based on already rendered objects
+double getMaximumDimension(vtkSmartPointer<vtkRenderer> renderer)
+{
+    double result = 0.0;
+    double* dimensions = renderer->ComputeVisiblePropBounds();
+    result = std::max(result, std::abs(dimensions[1] - dimensions[0]));
+    result = std::max(result, std::abs(dimensions[3] - dimensions[2]));
+    result = std::max(result, std::abs(dimensions[5] - dimensions[4]));
+    return result;
+}
+
 //! Set global coordinate by the local one
 void setGlobalByLocalEdits(Transformation const& transform, Edit1d* pLocalEdit, Edit1d* pGlobalEdit)
 {

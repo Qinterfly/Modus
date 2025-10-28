@@ -1,5 +1,6 @@
 #include <QVBoxLayout>
 
+#include <vtkCallbackCommand.h>
 #include <vtkCamera.h>
 #include <vtkCameraOrientationWidget.h>
 #include <vtkCellArray.h>
@@ -28,6 +29,42 @@ using namespace Constants::Colors;
 
 // Helper functions
 QString getModeName(int index, double frequency);
+int getRepeatedIndex(int index, int size);
+
+// Alias
+using UpdateFun = std::function<void(double)>;
+
+//! Callback command to be called after each timer event
+class vtkTimerCallback : public vtkCallbackCommand
+{
+public:
+    vtkTimerCallback()
+        : timerMaxCount(60)
+        , updateFun()
+        , mTimerCount(0)
+    {
+    }
+
+    static vtkTimerCallback* New();
+    virtual void Execute(vtkObject* caller, unsigned long eventId, void* vtkNotUsed(callData))
+    {
+        double phase = 2.0 * M_PI * mTimerCount / timerMaxCount;
+        updateFun(phase);
+        if (vtkCommand::TimerEvent == eventId)
+            ++mTimerCount;
+        if (mTimerCount > timerMaxCount)
+            mTimerCount = 0;
+    }
+
+public:
+    int timerMaxCount;
+    UpdateFun updateFun;
+
+private:
+    int mTimerCount;
+};
+
+vtkStandardNewMacro(vtkTimerCallback);
 
 VertexField::VertexField()
     : index(-1)
@@ -86,12 +123,15 @@ GeometryViewOptions::GeometryViewOptions()
     sceneColor2 = vtkColors->GetColor3d("white");
     edgeColor = vtkColors->GetColor3d("gainsboro");
     undeformedColor = vtkColors->GetColor3d("black");
+    deformedColors = {vtkColors->GetColor3d("red"),  vtkColors->GetColor3d("green"),   vtkColors->GetColor3d("blue"),
+                      vtkColors->GetColor3d("cyan"), vtkColors->GetColor3d("magenta"), vtkColors->GetColor3d("yellow")};
 
     // Opacity
     edgeOpacity = 0.5;
     undeformedOpacity = 0.5;
 
     // Flags
+    animate = true;
     showWireframe = false;
     showUndeformed = true;
     showVertices = true;
@@ -99,8 +139,13 @@ GeometryViewOptions::GeometryViewOptions()
     showTriangles = true;
     showQuadrangles = true;
 
+    // Animation
+    animationDuration = 20;
+    numAnimationFrames = 60;
+
     // Dimensions
     sceneScale = {1.0, 1.0, -1.0};
+    deformedScales = {0.1};
 }
 
 GeometryView::GeometryView(Geometry const& geometry, VertexField const& field, GeometryViewOptions const& options)
@@ -119,19 +164,54 @@ GeometryView::~GeometryView()
 //! Clear all the items from the scene
 void GeometryView::clear()
 {
+    auto interactor = mRenderWindow->GetInteractor();
+
+    // Stop the timer
+    if (mTimerId >= 0)
+    {
+        interactor->DestroyTimer(mTimerId);
+        mTimerId = -1;
+    }
+
+    // Remove the observers
+    int numObservers = mObserverTags.size();
+    for (int i = 0; i != numObservers; ++i)
+        interactor->RemoveObserver(mObserverTags[i]);
+    mObserverTags.clear();
+
+    // Remove the actors
     auto actors = mRenderer->GetActors();
     while (actors->GetLastActor())
         mRenderer->RemoveActor(actors->GetLastActor());
+
+    // Remove the view properties
+    auto props = mRenderer->GetViewProps();
+    while (props->GetLastProp())
+        mRenderer->RemoveViewProp(props->GetLastProp());
 }
 
 //! Draw the scene
 void GeometryView::plot()
 {
+    // Clean up the scene
     clear();
+
+    // Render the undeformed state
     mUndeformedPoints = createPoints();
     if (mOptions.showUndeformed)
         drawUndeformed();
+
+    // Render the deformed state
     drawDeformed();
+
+    // Start the timer
+    if (mOptions.animate)
+    {
+        auto interactor = mRenderWindow->GetInteractor();
+        mTimerId = interactor->CreateRepeatingTimer(mOptions.animationDuration);
+    }
+
+    // Render the scene
     mRenderWindow->Render();
 }
 
@@ -225,6 +305,9 @@ void GeometryView::initialize()
     mOrientationWidget->SetParentRenderer(mRenderer);
     mOrientationWidget->On();
     mOrientationWidget->SetAnimatorTotalFrames(kNumAnimationFrames);
+
+    // Initialize the timer
+    mTimerId = -1;
 }
 
 //! Create all the widgets and corresponding actions
@@ -274,7 +357,7 @@ vtkSmartPointer<vtkCellArray> GeometryView::createPolygons(Eigen::MatrixXi const
 }
 
 //! Apply the field transformation to the points
-void GeometryView::deformPoints(vtkSmartPointer<vtkPoints> points, VertexField const& field)
+void GeometryView::deformPoints(vtkSmartPointer<vtkPoints> points, VertexField const& field, double amplitude, double phase)
 {
     // Constants
     int const kNumDirections = 3;
@@ -294,10 +377,11 @@ void GeometryView::deformPoints(vtkSmartPointer<vtkPoints> points, VertexField c
         {
             double value = field.values(i, j);
             if (!std::isnan(value))
-                position[j] += value * mOptions.sceneScale[j];
+                position[j] += amplitude * mOptions.sceneScale[j] * value * cos(phase);
         }
         points->SetPoint(i, position);
     }
+    points->Modified();
 }
 
 //! Get magnitudes at each point
@@ -326,43 +410,93 @@ vtkSmartPointer<vtkDoubleArray> GeometryView::getMagnitudes(VertexField const& f
 void GeometryView::drawUndeformed()
 {
     if (mOptions.showLines)
-        drawElements(mUndeformedPoints, mGeometry.lines, mOptions.undeformedColor, mOptions.undeformedOpacity);
+        drawElements(mUndeformedPoints, mGeometry.lines, mOptions.undeformedColor, mOptions.undeformedOpacity, false);
     if (mOptions.showTriangles)
-        drawElements(mUndeformedPoints, mGeometry.triangles, mOptions.undeformedColor, mOptions.undeformedOpacity);
+        drawElements(mUndeformedPoints, mGeometry.triangles, mOptions.undeformedColor, mOptions.undeformedOpacity, false);
     if (mOptions.showQuadrangles)
-        drawElements(mUndeformedPoints, mGeometry.quadrangles, mOptions.undeformedColor, mOptions.undeformedOpacity);
+        drawElements(mUndeformedPoints, mGeometry.quadrangles, mOptions.undeformedColor, mOptions.undeformedOpacity, false);
 }
 
 //! Represent vertex fields
 void GeometryView::drawDeformed()
 {
+    // Retrieve window interactor
+    auto interactor = mRenderWindow->GetInteractor();
+
+    // Slice dimensions
+    int numColors = mOptions.deformedColors.size();
+    int numScales = mOptions.deformedScales.size();
+    double maxDimension = Utility::getMaximumDimension(mRenderer);
+
+    // Create the colormap
     vtkSmartPointer<vtkLookupTable> lut = Utility::createBlueToRedColorMap();
-    for (int i = 0; i != numFields(); ++i)
+
+    // Loop through all the fields
+    int count = numFields();
+    bool isOverlay = count > 1;
+    for (int iField = 0; iField != count; ++iField)
     {
+        // Construct the points and evaluate scalars
         vtkSmartPointer<vtkPoints> points = createPoints();
-        VertexField const& field = mFields[i];
+        VertexField const& field = mFields[iField];
         vtkSmartPointer<vtkDoubleArray> magnitudes = getMagnitudes(field);
-        deformPoints(points, field);
+
+        // Get the color
+        int iColor = getRepeatedIndex(iField, numColors);
+        vtkColor3d color = mOptions.deformedColors[iColor];
+
+        // Get the amplitude
+        int iScale = getRepeatedIndex(iField, numScales);
+        double amplitude = mOptions.deformedScales[iScale] * maxDimension;
+
+        // Construct the function for drawing elements
+        std::function<void(Eigen::MatrixXi)> drawFun;
+        if (isOverlay)
+            drawFun = [this, points, color](Eigen::MatrixXi indices) { drawElements(points, indices, color); };
+        else
+            drawFun = [this, points, magnitudes, lut](Eigen::MatrixXi indices) { drawElements(points, indices, magnitudes, lut); };
+
+        // Apply the field to the points
+        deformPoints(points, field, amplitude);
+
+        // Draw all the elements
         if (mOptions.showLines)
-            drawElements(points, mGeometry.lines, magnitudes, lut);
+            drawFun(mGeometry.lines);
         if (mOptions.showTriangles)
-            drawElements(points, mGeometry.triangles, magnitudes, lut);
+            drawFun(mGeometry.triangles);
         if (mOptions.showQuadrangles)
-            drawElements(points, mGeometry.quadrangles, magnitudes, lut);
+            drawFun(mGeometry.quadrangles);
+
+        // Set the callback function
+        vtkNew<vtkTimerCallback> callback;
+        callback->timerMaxCount = mOptions.numAnimationFrames;
+        callback->updateFun = [this, points, field, amplitude](double phase)
+        {
+            deformPoints(points, field, amplitude, phase);
+            mRenderWindow->Render();
+        };
+
+        // Add the callback function to the interactor
+        unsigned long tag = interactor->AddObserver(vtkCommand::TimerEvent, callback);
+        mObserverTags.push_back(tag);
     }
 
     // Add the scalar bar
-    vtkNew<vtkScalarBarActor> scalarBar;
-    scalarBar->SetLookupTable(lut);
-    scalarBar->SetTitle(tr("Displacement").toStdString().data());
-    scalarBar->SetNumberOfLabels(5);
-    scalarBar->UnconstrainedFontSizeOn();
-    scalarBar->SetMaximumWidthInPixels(100);
-    mRenderer->AddViewProp(scalarBar);
+    if (!isOverlay)
+    {
+        vtkNew<vtkScalarBarActor> scalarBar;
+        scalarBar->SetLookupTable(lut);
+        scalarBar->SetTitle(tr("Displacement").toStdString().data());
+        scalarBar->SetNumberOfLabels(5);
+        scalarBar->UnconstrainedFontSizeOn();
+        scalarBar->SetMaximumWidthInPixels(100);
+        mRenderer->AddViewProp(scalarBar);
+    }
 }
 
 //! Render elements using one color
-void GeometryView::drawElements(vtkSmartPointer<vtkPoints> points, Eigen::MatrixXi const& indices, vtkColor3d color, double opacity)
+void GeometryView::drawElements(vtkSmartPointer<vtkPoints> points, Eigen::MatrixXi const& indices, vtkColor3d color, double opacity,
+                                bool isEdgeVisible)
 {
     // Check if there are any elements to render
     if (indices.rows() == 0)
@@ -385,6 +519,12 @@ void GeometryView::drawElements(vtkSmartPointer<vtkPoints> points, Eigen::Matrix
     actor->SetMapper(mapper);
     actor->GetProperty()->SetColor(color.GetData());
     actor->GetProperty()->SetOpacity(opacity);
+    if (isEdgeVisible)
+    {
+        actor->GetProperty()->SetEdgeColor(mOptions.edgeColor.GetData());
+        actor->GetProperty()->SetEdgeOpacity(mOptions.edgeOpacity);
+        actor->GetProperty()->EdgeVisibilityOn();
+    }
     if (mOptions.showWireframe)
         actor->GetProperty()->SetRepresentationToWireframe();
 
@@ -428,8 +568,16 @@ void GeometryView::drawElements(vtkSmartPointer<vtkPoints> points, Eigen::Matrix
     mRenderer->AddActor(actor);
 }
 
-// Helper function to construct mode name
+//! Helper function to construct mode name
 QString getModeName(int index, double frequency)
 {
     return QObject::tr("Mode %1 (%2 Hz)").arg(index).arg(QString::number(frequency, 'f', 2));
+}
+
+//! Helper function to get circular index
+int getRepeatedIndex(int index, int size)
+{
+    if (index >= size)
+        return index % size;
+    return index;
 }

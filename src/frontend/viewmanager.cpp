@@ -298,6 +298,12 @@ void ViewManager::processGeometryItems(QList<HierarchyItem*> const& items, QSet<
             ModalPoleHierarchyItem* pItem = (ModalPoleHierarchyItem*) pBaseItem;
             QString label = getViewName(pItem->subproject(), IView::kGeometry);
             VertexField field(pItem->iMode(), pItem->frequency(), pItem->modeShape());
+            IView* pBaseView = findView(pItem->geometry());
+            if (pBaseView)
+            {
+                if (!modifiedViews.contains(pBaseView))
+                    static_cast<GeometryView*>(pBaseView)->clearFields();
+            }
             pView = (GeometryView*) createView(pItem->geometry(), field, label);
             modifiedViews.insert(pView);
             break;

@@ -53,12 +53,14 @@ struct GeometryViewOptions
     vtkColor3d sceneColor2;
     vtkColor3d edgeColor;
     vtkColor3d undeformedColor;
+    QList<vtkColor3d> deformedColors;
 
     // Opacity
     double edgeOpacity;
     double undeformedOpacity;
 
     // Flags
+    bool animate;
     bool showWireframe;
     bool showUndeformed;
     bool showVertices;
@@ -66,8 +68,13 @@ struct GeometryViewOptions
     bool showTriangles;
     bool showQuadrangles;
 
-    // Dimensions
+    // Animation
+    int animationDuration;
+    int numAnimationFrames;
+
+    // Scales
     Eigen::Vector3d sceneScale;
+    QList<double> deformedScales;
 };
 
 //! Class to render geometry as well as modeshapes
@@ -105,11 +112,12 @@ private:
     // Drawing
     vtkSmartPointer<vtkPoints> createPoints();
     vtkSmartPointer<vtkCellArray> createPolygons(Eigen::MatrixXi const& indices);
-    void deformPoints(vtkSmartPointer<vtkPoints> points, VertexField const& field);
+    void deformPoints(vtkSmartPointer<vtkPoints> points, VertexField const& field, double scale, double phase = 0.0);
     vtkSmartPointer<vtkDoubleArray> getMagnitudes(VertexField const& field);
     void drawUndeformed();
     void drawDeformed();
-    void drawElements(vtkSmartPointer<vtkPoints> points, Eigen::MatrixXi const& indices, vtkColor3d color, double opacity = 1.0);
+    void drawElements(vtkSmartPointer<vtkPoints> points, Eigen::MatrixXi const& indices, vtkColor3d color, double opacity = 1.0,
+                      bool isEdgeVisible = true);
     void drawElements(vtkSmartPointer<vtkPoints> points, Eigen::MatrixXi const& indices, vtkSmartPointer<vtkDoubleArray> scalars,
                       vtkSmartPointer<vtkLookupTable> lut);
 
@@ -122,6 +130,8 @@ private:
     vtkSmartPointer<vtkRenderer> mRenderer;
     vtkSmartPointer<vtkCameraOrientationWidget> mOrientationWidget;
     vtkSmartPointer<vtkPoints> mUndeformedPoints;
+    QList<unsigned long> mObserverTags;
+    int mTimerId;
 };
 
 }

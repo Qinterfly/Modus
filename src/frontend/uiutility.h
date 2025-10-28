@@ -21,6 +21,7 @@ QT_FORWARD_DECLARE_CLASS(QComboBox)
 class vtkActor;
 class vtkColor3d;
 class vtkLookupTable;
+class vtkRenderer;
 
 namespace Backend::Core
 {
@@ -81,6 +82,7 @@ vtkSmartPointer<vtkActor> createCylinderActor(Eigen::Vector3d const& startPositi
 vtkSmartPointer<vtkActor> createShellActor(Transformation const& transform, Matrix42d const& coords, Eigen::Vector4d const& depths,
                                            double thickness);
 vtkSmartPointer<vtkLookupTable> createBlueToRedColorMap();
+double getMaximumDimension(vtkSmartPointer<vtkRenderer> renderer);
 
 // Widgets
 void setGlobalByLocalEdits(Transformation const& transform, Edit1d* pLocalEdit, Edit1d* pGlobalEdit);

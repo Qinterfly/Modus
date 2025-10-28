@@ -112,10 +112,10 @@ ModelView::~ModelView()
 void ModelView::clear()
 {
     auto interactor = mRenderWindow->GetInteractor();
-    int numCallbacks = mCallbacks.size();
-    for (int i = 0; i != numCallbacks; ++i)
-        interactor->RemoveObserver(mCallbacks[i]);
-    mCallbacks.clear();
+    int numObservers = mObserverTags.size();
+    for (int i = 0; i != numObservers; ++i)
+        interactor->RemoveObserver(mObserverTags[i]);
+    mObserverTags.clear();
     mSelector.clear();
     mStyle->clear();
     auto actors = mRenderer->GetActors();
@@ -416,7 +416,7 @@ void ModelView::drawBeams3D(Transformation const& transform, int iSurface, KCL::
     vtkColor3d color = mOptions.elementColors[type];
 
     // Compute the cyliner radius
-    double radius = mOptions.beamScale * getMaximumDimension();
+    double radius = mOptions.beamScale * Utility::getMaximumDimension(mRenderer);
 
     // Process all the elements
     int numElements = elements.size();
@@ -691,7 +691,7 @@ void ModelView::drawMasses(Transformation const& transform, int iSurface, KCL::E
 
     // Get the visualization texture
     vtkSmartPointer<vtkTexture> texture = mTextures["mass"];
-    double w = mOptions.massScale * getMaximumDimension();
+    double w = mOptions.massScale * Utility::getMaximumDimension(mRenderer);
 
     // Process all the elements
     int numElements = elements.size();
@@ -810,7 +810,7 @@ void ModelView::drawMasses(Transformation const& transform, int iSurface, KCL::E
         // Attach the follower event to the interactor
         auto interactor = mRenderWindow->GetInteractor();
         unsigned long tag = interactor->AddObserver(vtkCommand::EndInteractionEvent, callback);
-        mCallbacks.push_back(tag);
+        mObserverTags.push_back(tag);
     }
 }
 
@@ -828,7 +828,7 @@ void ModelView::drawSprings(bool isReflect, KCL::ElementType type)
     vtkColor3d color = mOptions.elementColors[type];
 
     // Retrieve the scene parameters
-    double maxDimension = getMaximumDimension();
+    double maxDimension = Utility::getMaximumDimension(mRenderer);
 
     // Process all the elements
     int numElements = elements.size();
@@ -907,17 +907,6 @@ void ModelView::setIsometricView()
     camera->SetViewUp(0, 1, 0);
     mRenderer->ResetCamera();
     mRenderWindow->Render();
-}
-
-//! Get maximum view dimension based on already rendered objects
-double ModelView::getMaximumDimension()
-{
-    double result = 0.0;
-    double* dimensions = mRenderer->ComputeVisiblePropBounds();
-    result = std::max(result, std::abs(dimensions[1] - dimensions[0]));
-    result = std::max(result, std::abs(dimensions[3] - dimensions[2]));
-    result = std::max(result, std::abs(dimensions[5] - dimensions[4]));
-    return result;
 }
 
 ModelViewSelector::ModelViewSelector()

@@ -203,7 +203,6 @@ private:
     void drawAeroTrapeziums(Transformation const& transform, int iSurface, KCL::ElementType type);
     void drawMasses(Transformation const& transform, int iSurface, KCL::ElementType type);
     void drawSprings(bool isReflect, KCL::ElementType type);
-    double getMaximumDimension();
 
     // Widgets
     void showViewEditor();
@@ -218,7 +217,7 @@ private:
     vtkSmartPointer<vtkCameraOrientationWidget> mOrientationWidget;
     QMap<QString, vtkSmartPointer<vtkTexture>> mTextures;
     vtkSmartPointer<InteractorStyle> mStyle;
-    QList<unsigned long> mCallbacks;
+    QList<unsigned long> mObserverTags;
 };
 }
 
