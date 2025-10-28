@@ -41,17 +41,19 @@
 		<file>icons/thickness.png</file>
 		<file>icons/symmetry.png</file>
 		<file>icons/wireframe.png</file>
-		<file>icons/edit-view.png</file>
 		<file>icons/undo.png</file>
 		<file>icons/redo.png</file>
+		<file>icons/select-list.png</file>
 		<file>icons/document-open.svg</file>
 		<file>icons/document-new.svg</file>
 		<file>icons/document-save.svg</file>
 		<file>icons/document-save-as.svg</file>
+		<file>icons/edit-edit.svg</file>
 		<file>icons/edit-copy.svg</file>
 		<file>icons/edit-cut.svg</file>
 		<file>icons/edit-delete.svg</file>
 		<file>icons/edit-paste.svg</file>
+		<file>icons/edit-view.png</file>
 		<file>icons/close-button.svg</file>
 		<file>icons/close-button-disabled.svg</file>
 		<file>icons/close-button-focused.svg</file>

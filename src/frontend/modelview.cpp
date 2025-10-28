@@ -161,6 +161,7 @@ ModelViewSelector& ModelView::selector()
     return mSelector;
 }
 
+//! Set the initial state of widgets
 void ModelView::initialize()
 {
     int const kNumAnimationFrames = 15;
@@ -1214,12 +1215,16 @@ void InteractorStyle::OnRightButtonDown()
     QMenu* pMenu = new QMenu;
 
     // Create the actions
-    QAction* pSelectItemsAction = new QAction(QObject::tr("Go to corresponding tree items"));
     QAction* pEditItemsAction = new QAction(QObject::tr("Edit corresponding tree items"));
+    QAction* pSelectItemsAction = new QAction(QObject::tr("Select corresponding tree items"));
+
+    // Set the icons
+    pEditItemsAction->setIcon(QIcon(":/icons/edit-edit.svg"));
+    pSelectItemsAction->setIcon(QIcon(":/icons/select-list.png"));
 
     // Set the actions signals & slots
-    QObject::connect(pSelectItemsAction, &QAction::triggered, handler, [this]() { emit handler->selectItemsRequested(selector->selected()); });
     QObject::connect(pEditItemsAction, &QAction::triggered, handler, [this]() { emit handler->editItemsRequested(selector->selected()); });
+    QObject::connect(pSelectItemsAction, &QAction::triggered, handler, [this]() { emit handler->selectItemsRequested(selector->selected()); });
 
     // Add the actions to the menu
     pMenu->addAction(pEditItemsAction);

@@ -4,6 +4,8 @@
 
 #include "editormanager.h"
 #include "fileutility.h"
+#include "geometryview.h"
+#include "modalsolver.h"
 #include "projectbrowser.h"
 #include "testfrontend.h"
 #include "viewmanager.h"
@@ -26,13 +28,32 @@ void TestFrontend::testOpenProject()
     mpMainWindow->show();
 }
 
-//! View a model using project browser hierarchy
+//! View a model
 void TestFrontend::testViewModel()
 {
     int iSubproject = 1;
     Core::Subproject& subproject = mpMainWindow->project().subprojects()[iSubproject];
     KCL::Model& model = subproject.model();
     mpMainWindow->viewManager()->createView(model);
+}
+
+//! View a model geometry
+void TestFrontend::testViewGeometry()
+{
+    int iSubproject = 1;
+    int iMode = 0;
+    Core::Subproject& subproject = mpMainWindow->project().subprojects()[iSubproject];
+    int numSolvers = subproject.solvers().size();
+    for (int i = 0; i != numSolvers; ++i)
+    {
+        Core::ISolver* pBaseSolver = subproject.solvers()[i];
+        if (pBaseSolver->type() == Core::ISolver::kModal)
+        {
+            auto pSolver = (Core::ModalSolver*) pBaseSolver;
+            DisplacementField displacement(pSolver->solution, iMode);
+            mpMainWindow->viewManager()->createView(pSolver->solution.geometry, displacement);
+        }
+    }
 }
 
 //! Edit elements of different types through the manager

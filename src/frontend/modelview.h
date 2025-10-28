@@ -130,7 +130,7 @@ private:
     QList<vtkSmartPointer<vtkActor>> mHighlightActors;
 };
 
-//! Rendering options
+//! Rendering options of KCL model
 struct ModelViewOptions
 {
     ModelViewOptions();
@@ -163,7 +163,7 @@ struct ModelViewOptions
     double pickTolerance;
 };
 
-//! Model plotter
+//! Class to plot KCL model
 class ModelView : public IView
 {
     Q_OBJECT

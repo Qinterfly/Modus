@@ -3,6 +3,11 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Test)
+find_package(VTK REQUIRED COMPONENTS
+    CommonColor
+    CommonCore
+    CommonDataModel
+)
 
 qt_add_executable(testfrontend
     testfrontend.h
@@ -20,11 +25,17 @@ target_link_libraries(testfrontend PRIVATE
     Qt::Gui
     Qt::Widgets
     Qt::Test
+    ${VTK_LIBRARIES}
     backend
     frontend
 )
 
 target_include_directories(testfrontend PUBLIC ${CMAKE_BINARY_DIR})
+
+vtk_module_autoinit(
+    TARGETS testfrontend
+    MODULES ${VTK_LIBRARIES}
+)
 
 if (WIN32)
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")

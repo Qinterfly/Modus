@@ -17,6 +17,7 @@ namespace Backend::Core
 {
 struct Selection;
 class Subproject;
+struct Geometry;
 }
 
 namespace Frontend
@@ -25,6 +26,7 @@ namespace Frontend
 class HierarchyItem;
 class ElementHierarchyItem;
 class ModelHierarchyItem;
+struct DisplacementField;
 
 class ViewManager : public QWidget
 {
@@ -43,8 +45,10 @@ public:
     int numViews(IView::Type type);
     bool isEmpty() const;
     IView* findView(KCL::Model const& model);
+    IView* findView(Backend::Core::Geometry const& geometry);
 
     IView* createView(KCL::Model const& model, QString const& name = QString());
+    IView* createView(Backend::Core::Geometry const& geometry, DisplacementField const& displacement, QString const& name = QString());
     void processItems(QList<HierarchyItem*> const& items);
     void refresh();
     void plot();

@@ -8,7 +8,8 @@ class IView : public QWidget
 public:
     enum Type
     {
-        kModel
+        kModel,
+        kGeometry
     };
     virtual ~IView() = default;
     virtual void clear() = 0;

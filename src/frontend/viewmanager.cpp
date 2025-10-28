@@ -5,6 +5,8 @@
 
 #include <kcl/model.h>
 
+#include "geometry.h"
+#include "geometryview.h"
 #include "hierarchyitem.h"
 #include "modelview.h"
 #include "selectionset.h"
@@ -89,6 +91,19 @@ IView* ViewManager::findView(KCL::Model const& model)
     return nullptr;
 }
 
+//! Find the view associated with the current geometry
+IView* ViewManager::findView(Backend::Core::Geometry const& geometry)
+{
+    int count = numViews();
+    for (int i = 0; i != count; ++i)
+    {
+        IView* pView = view(i);
+        if (pView->type() == IView::kGeometry && &static_cast<GeometryView*>(pView)->getGeometry() == &geometry)
+            return pView;
+    }
+    return nullptr;
+}
+
 //! Retrieve the current view
 IView* ViewManager::currentView()
 {
@@ -126,6 +141,30 @@ IView* ViewManager::createView(KCL::Model const& model, QString const& name)
     mpTabWidget->setCurrentWidget(pModelView);
 
     return pModelView;
+}
+
+//! Create the view associated with a geometry
+IView* ViewManager::createView(Backend::Core::Geometry const& geometry, DisplacementField const& displacement, QString const& name)
+{
+    // Set the view as the current one if it has been already created
+    IView* pView = findView(geometry);
+    if (pView)
+    {
+        mpTabWidget->setCurrentWidget(pView);
+        mpTabWidget->setTabText(mpTabWidget->currentIndex(), name);
+        return pView;
+    }
+
+    // Create the geometry view otherwise
+    GeometryView* pGeometryView = new GeometryView(geometry, displacement);
+    pGeometryView->plot();
+
+    // Add it to the tab
+    QString label = name.isEmpty() ? getDefaultViewName(IView::kGeometry) : name;
+    mpTabWidget->addTab(pGeometryView, label);
+    mpTabWidget->setCurrentWidget(pGeometryView);
+
+    return pGeometryView;
 }
 
 //! Create views associated with project hierarchy items
@@ -297,6 +336,9 @@ QString ViewManager::getDefaultViewName(IView::Type type)
     {
     case IView::kModel:
         prefix = "Model";
+        break;
+    case IView::kGeometry:
+        prefix = "Geometry";
         break;
     default:
         break;

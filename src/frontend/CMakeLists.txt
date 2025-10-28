@@ -5,22 +5,22 @@ set(CMAKE_AUTORCC ON)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets OpenGLWidgets)
 find_package(qtadvanceddocking-qt6 CONFIG REQUIRED)
 find_package(VTK REQUIRED COMPONENTS
-  CommonColor
-  CommonCore
-  CommonDataModel
-  FiltersHybrid
-  FiltersSources
-  FiltersGeometry
-  InteractionStyle
-  InteractionWidgets
-  RenderingAnnotation
-  RenderingContextOpenGL2
-  RenderingCore
-  RenderingFreeType
-  RenderingGL2PSOpenGL2
-  RenderingOpenGL2
-  GUISupportQt
-  RenderingQt
+    CommonColor
+    CommonCore
+    CommonDataModel
+    FiltersHybrid
+    FiltersSources
+    FiltersGeometry
+    InteractionStyle
+    InteractionWidgets
+    RenderingAnnotation
+    RenderingContextOpenGL2
+    RenderingCore
+    RenderingFreeType
+    RenderingGL2PSOpenGL2
+    RenderingOpenGL2
+    GUISupportQt
+    RenderingQt
 )
 
 set(FRONTEND_HEADERS
@@ -48,6 +48,7 @@ set(FRONTEND_HEADERS
     customtable.h
     polyexponentseditor.h
     springdampereditor.h
+    geometryview.h
 )
 
 set(FRONTEND_SOURCES
@@ -72,6 +73,7 @@ set(FRONTEND_SOURCES
     customtable.cpp
     polyexponentseditor.cpp
     springdampereditor.cpp
+    geometryview.cpp
 )
 
 qt_add_library(frontend STATIC
@@ -94,8 +96,8 @@ target_include_directories(frontend PUBLIC ${CMAKE_BINARY_DIR})
 target_include_directories(frontend INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 vtk_module_autoinit(
-  TARGETS frontend
-  MODULES ${VTK_LIBRARIES}
+    TARGETS frontend
+    MODULES ${VTK_LIBRARIES}
 )
 
 qt_add_translations(frontend
