@@ -227,9 +227,10 @@ void ModelView::createContent()
     };
 
     // Create the actions
-    QAction* pThicknessAction = createShowAction(QIcon(":/icons/thickness.png"), tr("Show element thickness"), mOptions.showThickness);
-    QAction* pSymmetryAction = createShowAction(QIcon(":/icons/symmetry.png"), tr("Show symmetrical part of the model"), mOptions.showSymmetry);
-    QAction* pWireframeAction = createShowAction(QIcon(":/icons/wireframe.png"), tr("Show wireframe representation"), mOptions.showWireframe);
+    QAction* pThicknessAction = createShowAction(QIcon(":/icons/draw-thickness.png"), tr("Show element thickness"), mOptions.showThickness);
+    QAction* pSymmetryAction = createShowAction(QIcon(":/icons/draw-symmetry.png"), tr("Show symmetrical part of the model"),
+                                                mOptions.showSymmetry);
+    QAction* pWireframeAction = createShowAction(QIcon(":/icons/draw-wireframe.svg"), tr("Show wireframe"), mOptions.showWireframe);
     QAction* pViewEditorAction = new QAction(QIcon(":/icons/edit-view.png"), tr("Edit view options"));
 
     // Create the connections

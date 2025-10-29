@@ -1,3 +1,4 @@
+#include <QToolBar>
 #include <QVBoxLayout>
 
 #include <vtkCallbackCommand.h>
@@ -7,6 +8,7 @@
 #include <vtkColorSeries.h>
 #include <vtkColorTransferFunction.h>
 #include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkLegendBoxActor.h>
 #include <vtkLookupTable.h>
 #include <vtkPointData.h>
 #include <vtkPoints.h>
@@ -15,6 +17,9 @@
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
 #include <vtkScalarBarActor.h>
+#include <vtkSphereSource.h>
+#include <vtkTextActor.h>
+#include <vtkTextProperty.h>
 #include <QVTKOpenGLNativeWidget.h>
 
 #include "geometry.h"
@@ -124,7 +129,7 @@ GeometryViewOptions::GeometryViewOptions()
     edgeColor = vtkColors->GetColor3d("gainsboro");
     undeformedColor = vtkColors->GetColor3d("black");
     deformedColors = {vtkColors->GetColor3d("red"),  vtkColors->GetColor3d("green"),   vtkColors->GetColor3d("blue"),
-                      vtkColors->GetColor3d("cyan"), vtkColors->GetColor3d("magenta"), vtkColors->GetColor3d("yellow")};
+                      vtkColors->GetColor3d("cyan"), vtkColors->GetColor3d("magenta"), vtkColors->GetColor3d("orange")};
 
     // Opacity
     edgeOpacity = 0.5;
@@ -143,9 +148,10 @@ GeometryViewOptions::GeometryViewOptions()
     animationDuration = 20;
     numAnimationFrames = 60;
 
-    // Dimensions
+    // Scales
     sceneScale = {1.0, 1.0, -1.0};
     deformedScales = {0.1};
+    deformedInitPhases = {0};
 }
 
 GeometryView::GeometryView(Geometry const& geometry, VertexField const& field, GeometryViewOptions const& options)
@@ -203,6 +209,9 @@ void GeometryView::plot()
 
     // Render the deformed state
     drawDeformed();
+
+    // Display legend related to the rendered fields
+    drawLegend();
 
     // Start the timer
     if (mOptions.animate)
@@ -318,7 +327,65 @@ void GeometryView::createContent()
     // Create the VTK widget
     mRenderWidget = new QVTKOpenGLNativeWidget;
 
+    // Create auxiliary function
+    auto createShowAction = [this](QIcon const& icon, QString const& name, bool& option)
+    {
+        QAction* pAction = new QAction(icon, name);
+        pAction->setCheckable(true);
+        pAction->setChecked(option);
+        connect(pAction, &QAction::triggered, this,
+                [this, &option](bool flag)
+                {
+                    option = flag;
+                    plot();
+                });
+        return pAction;
+    };
+
+    // Create the show actions
+    QAction* pLinesAction = createShowAction(QIcon(":/icons/draw-line.svg"), tr("Show lines"), mOptions.showLines);
+    QAction* pTrianlesAction = createShowAction(QIcon(":/icons/draw-triangle.svg"), tr("Show triangles"), mOptions.showTriangles);
+    QAction* pQuadrangleAction = createShowAction(QIcon(":/icons/draw-quadrangle.png"), tr("Show quadrangles"), mOptions.showQuadrangles);
+    QAction* pWireframeAction = createShowAction(QIcon(":/icons/draw-wireframe.svg"), tr("Show wireframe"), mOptions.showWireframe);
+    QAction* pUndeformedAction = createShowAction(QIcon(":/icons/draw-undeformed.png"), tr("Show undeformed"), mOptions.showUndeformed);
+
+    // Create the animation actions
+    QAction* pStartAction = new QAction(QIcon(":/icons/process-start.svg"), tr("Start animation"));
+    QAction* pStopAction = new QAction(QIcon(":/icons/process-stop.svg"), tr("Stop animation"));
+    auto animateFun = [this, pStartAction, pStopAction]()
+    {
+        mOptions.animate = !mOptions.animate;
+        pStartAction->setVisible(!mOptions.animate);
+        pStopAction->setVisible(mOptions.animate);
+        plot();
+    };
+
+    // Set initial state of actions
+    pStartAction->setVisible(!mOptions.animate);
+    pStopAction->setVisible(mOptions.animate);
+
+    // Set shortcuts
+    pStartAction->setShortcut(Qt::Key_Space);
+    pStopAction->setShortcut(Qt::Key_Space);
+
+    // Set the connections
+    connect(pStartAction, &QAction::triggered, this, animateFun);
+    connect(pStopAction, &QAction::triggered, this, animateFun);
+
+    // Create the toolbar
+    QToolBar* pToolBar = new QToolBar;
+    pToolBar->addAction(pStartAction);
+    pToolBar->addAction(pStopAction);
+    pToolBar->addSeparator();
+    pToolBar->addAction(pLinesAction);
+    pToolBar->addAction(pTrianlesAction);
+    pToolBar->addAction(pQuadrangleAction);
+    pToolBar->addAction(pWireframeAction);
+    pToolBar->addAction(pUndeformedAction);
+    Utility::setShortcutHints(pToolBar);
+
     // Combine the widgets
+    pLayout->addWidget(pToolBar);
     pLayout->addWidget(mRenderWidget);
     setLayout(pLayout);
 }
@@ -426,6 +493,7 @@ void GeometryView::drawDeformed()
     // Slice dimensions
     int numColors = mOptions.deformedColors.size();
     int numScales = mOptions.deformedScales.size();
+    int numPhases = mOptions.deformedInitPhases.size();
     double maxDimension = Utility::getMaximumDimension(mRenderer);
 
     // Create the colormap
@@ -433,7 +501,7 @@ void GeometryView::drawDeformed()
 
     // Loop through all the fields
     int count = numFields();
-    bool isOverlay = count > 1;
+    bool isCompare = count > 1;
     for (int iField = 0; iField != count; ++iField)
     {
         // Construct the points and evaluate scalars
@@ -449,15 +517,19 @@ void GeometryView::drawDeformed()
         int iScale = getRepeatedIndex(iField, numScales);
         double amplitude = mOptions.deformedScales[iScale] * maxDimension;
 
+        // Get the initial phase
+        int iPhase = getRepeatedIndex(iField, numPhases);
+        double initPhase = mOptions.deformedInitPhases[iPhase];
+
         // Construct the function for drawing elements
         std::function<void(Eigen::MatrixXi)> drawFun;
-        if (isOverlay)
+        if (isCompare)
             drawFun = [this, points, color](Eigen::MatrixXi indices) { drawElements(points, indices, color); };
         else
             drawFun = [this, points, magnitudes, lut](Eigen::MatrixXi indices) { drawElements(points, indices, magnitudes, lut); };
 
         // Apply the field to the points
-        deformPoints(points, field, amplitude);
+        deformPoints(points, field, amplitude, initPhase);
 
         // Draw all the elements
         if (mOptions.showLines)
@@ -470,9 +542,9 @@ void GeometryView::drawDeformed()
         // Set the callback function
         vtkNew<vtkTimerCallback> callback;
         callback->timerMaxCount = mOptions.numAnimationFrames;
-        callback->updateFun = [this, points, field, amplitude](double phase)
+        callback->updateFun = [this, points, field, amplitude, initPhase](double phase)
         {
-            deformPoints(points, field, amplitude, phase);
+            deformPoints(points, field, amplitude, initPhase + phase);
             mRenderWindow->Render();
         };
 
@@ -482,14 +554,19 @@ void GeometryView::drawDeformed()
     }
 
     // Add the scalar bar
-    if (!isOverlay)
+    if (!isCompare)
     {
+        int maxWidth = ceil((double) Utility::getScreenSize().width() / 15);
         vtkNew<vtkScalarBarActor> scalarBar;
+        scalarBar->SetLabelFormat("%5.3f");
+        scalarBar->GetLabelTextProperty()->SetShadow(false);
+        scalarBar->GetLabelTextProperty()->SetBold(false);
+        scalarBar->GetLabelTextProperty()->SetColor(vtkColors->GetColor3d("black").GetData());
         scalarBar->SetLookupTable(lut);
-        scalarBar->SetTitle(tr("Displacement").toStdString().data());
-        scalarBar->SetNumberOfLabels(5);
-        scalarBar->UnconstrainedFontSizeOn();
-        scalarBar->SetMaximumWidthInPixels(100);
+        scalarBar->SetNumberOfLabels(4);
+        scalarBar->SetMaximumWidthInPixels(maxWidth);
+        scalarBar->SetPosition(0.9, 0.05);
+        scalarBar->SetPosition2(0.95, 0.6);
         mRenderer->AddViewProp(scalarBar);
     }
 }
@@ -568,10 +645,63 @@ void GeometryView::drawElements(vtkSmartPointer<vtkPoints> points, Eigen::Matrix
     mRenderer->AddActor(actor);
 }
 
+//! Display field names which are plotted
+void GeometryView::drawLegend()
+{
+    // Constants
+    Eigen::Vector2d const kTopRightCorner = {-0.6, 0.95};
+    double const kWidth = 0.35;
+    double const kStep = 0.2;
+
+    // Check if there are any fields
+    if (mFields.empty())
+        return;
+    int count = numFields();
+
+    // Create the symbol actor
+    vtkNew<vtkSphereSource> symbol;
+    symbol->SetCenter(0.0, 0.5, 0.0);
+    symbol->Update();
+
+    // Create the legend actor
+    vtkNew<vtkLegendBoxActor> legend;
+    legend->SetNumberOfEntries(count);
+    legend->UseBackgroundOff();
+    legend->BorderOff();
+
+    // Loop through all the fields
+    for (int iField = 0; iField != count; ++iField)
+    {
+        VertexField const& field = mFields[iField];
+
+        // Get the color
+        int iColor = getRepeatedIndex(iField, mOptions.deformedColors.size());
+        vtkColor3d color = mOptions.deformedColors[iColor];
+        if (count == 1)
+            color = vtkColors->GetColor3d("black");
+
+        // Add the entry
+        legend->SetEntry(iField, symbol->GetOutput(), field.name.toStdString().c_str(), color.GetData());
+    }
+
+    // Set the bottom left corner
+    Eigen::Vector2d bottomLeftCorner = {kTopRightCorner[0] - kWidth, kTopRightCorner[1] - count * kStep};
+    bottomLeftCorner[1] = std::max(-1.0, bottomLeftCorner[1]);
+    legend->GetPositionCoordinate()->SetCoordinateSystemToView();
+    legend->GetPositionCoordinate()->SetValue(bottomLeftCorner[0], bottomLeftCorner[1]);
+
+    // Set the top right corner
+    legend->GetPosition2Coordinate()->SetCoordinateSystemToView();
+    legend->GetPosition2Coordinate()->SetValue(kTopRightCorner[0], kTopRightCorner[1]);
+
+    // Add the legend to the scene
+    mRenderer->AddActor(legend);
+}
+
 //! Helper function to construct mode name
 QString getModeName(int index, double frequency)
 {
-    return QObject::tr("Mode %1 (%2 Hz)").arg(index).arg(QString::number(frequency, 'f', 2));
+    return QObject::tr("Mode %1 (%2 Hz)").arg(1 + index).arg(QString::number(frequency, 'f', 2));
 }
 
 //! Helper function to get circular index

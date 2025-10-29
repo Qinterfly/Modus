@@ -37,13 +37,17 @@
 		<file>icons/selector.svg</file>
 		<file>icons/constraints.png</file>
 		<file>icons/mode.png</file>
-		<file>icons/optimization.png</file>
-		<file>icons/thickness.png</file>
-		<file>icons/symmetry.png</file>
-		<file>icons/wireframe.png</file>
-		<file>icons/undo.png</file>
-		<file>icons/redo.png</file>
+		<file>icons/optimization.png</file>		
 		<file>icons/select-list.png</file>
+		<file>icons/draw-line.svg</file>
+		<file>icons/draw-triangle.svg</file>
+		<file>icons/draw-quadrangle.png</file>
+		<file>icons/draw-symmetry.png</file>
+		<file>icons/draw-thickness.png</file>
+		<file>icons/draw-wireframe.svg</file>
+		<file>icons/draw-undeformed.png</file>
+		<file>icons/process-start.svg</file>
+		<file>icons/process-stop.svg</file>
 		<file>icons/document-open.svg</file>
 		<file>icons/document-new.svg</file>
 		<file>icons/document-save.svg</file>
@@ -54,6 +58,8 @@
 		<file>icons/edit-delete.svg</file>
 		<file>icons/edit-paste.svg</file>
 		<file>icons/edit-view.png</file>
+		<file>icons/edit-undo.svg</file>
+		<file>icons/edit-redo.svg</file>
 		<file>icons/close-button.svg</file>
 		<file>icons/close-button-disabled.svg</file>
 		<file>icons/close-button-focused.svg</file>

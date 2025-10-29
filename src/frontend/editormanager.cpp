@@ -204,8 +204,8 @@ void EditorManager::createContent()
     QAction* pRedoAction = mpUndoStack->createRedoAction(this, tr("&Redo"));
 
     // Set the icons of the actions
-    pUndoAction->setIcon(QIcon(":/icons/undo.png"));
-    pRedoAction->setIcon(QIcon(":/icons/redo.png"));
+    pUndoAction->setIcon(QIcon(":/icons/edit-undo.svg"));
+    pRedoAction->setIcon(QIcon(":/icons/edit-redo.svg"));
 
     // Set the shortcuts
     pUndoAction->setShortcuts(QKeySequence::Undo);

@@ -95,6 +95,13 @@ void fullScreenResize(QWidget* pWidget)
     pWidget->resize(screenGeometry.width(), screenGeometry.height());
 }
 
+//! Get primary screen size
+QSize getScreenSize()
+{
+    QRect screenGeometry = QApplication::QGuiApplication::primaryScreen()->availableGeometry();
+    return screenGeometry.size();
+}
+
 //! Add shortcurt hints to all items contained in a tool bar
 void setShortcutHints(QToolBar* pToolBar)
 {

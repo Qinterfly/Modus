@@ -75,6 +75,7 @@ struct GeometryViewOptions
     // Scales
     Eigen::Vector3d sceneScale;
     QList<double> deformedScales;
+    QList<double> deformedInitPhases;
 };
 
 //! Class to render geometry as well as modeshapes
@@ -120,6 +121,7 @@ private:
                       bool isEdgeVisible = true);
     void drawElements(vtkSmartPointer<vtkPoints> points, Eigen::MatrixXi const& indices, vtkSmartPointer<vtkDoubleArray> scalars,
                       vtkSmartPointer<vtkLookupTable> lut);
+    void drawLegend();
 
 private:
     Backend::Core::Geometry const& mGeometry;

@@ -40,6 +40,7 @@ QColor getColor(vtkColor3d color);
 vtkColor3d getColor(QColor color);
 int showSaveDialog(QWidget* pWidget, QString const& title, QString const& message);
 void fullScreenResize(QWidget* pWidget);
+QSize getScreenSize();
 void setShortcutHints(QToolBar* pToolBar);
 QString errorColorName(double value, double acceptThreshold, double criticalThreshold);
 QString getLabel(Backend::Core::Selection selection);
