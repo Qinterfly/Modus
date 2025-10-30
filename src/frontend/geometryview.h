@@ -69,8 +69,8 @@ struct GeometryViewOptions
     bool showQuadrangles;
 
     // Animation
-    int animationDuration;
     int numAnimationFrames;
+    double animationFrequency;
 
     // Scales
     Eigen::Vector3d sceneScale;
@@ -115,8 +115,9 @@ private:
     vtkSmartPointer<vtkCellArray> createPolygons(Eigen::MatrixXi const& indices);
     void deformPoints(vtkSmartPointer<vtkPoints> points, VertexField const& field, double scale, double phase = 0.0);
     vtkSmartPointer<vtkDoubleArray> getMagnitudes(VertexField const& field);
-    void drawUndeformed();
-    void drawDeformed();
+    void drawGeometry();
+    void drawUndeformedState();
+    void drawDeformedState();
     void drawElements(vtkSmartPointer<vtkPoints> points, Eigen::MatrixXi const& indices, vtkColor3d color, double opacity = 1.0,
                       bool isEdgeVisible = true);
     void drawElements(vtkSmartPointer<vtkPoints> points, Eigen::MatrixXi const& indices, vtkSmartPointer<vtkDoubleArray> scalars,

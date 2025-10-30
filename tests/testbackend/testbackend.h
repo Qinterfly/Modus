@@ -31,10 +31,16 @@ private slots:
     void testLoadModalSolution();
     void testSelector();
 
-    // Solvers
+    // Modal solvers
     void testModalSolverSimpleWing();
-    void testOptimSolverSimpleWing();
     void testModalSolverHunterWing();
+    void testModalSolverFullHunterSym();
+    void testModalSolverFullHunterASym();
+
+    // Optimization solvers
+    void testOptimSolverSimpleWing();
+
+    // Flutter solvers
     void testFlutterSolverHunterWing();
 
     // Project
@@ -42,6 +48,7 @@ private slots:
 
 private:
     double generateDouble(QPair<double, double> const& limits);
+    void testModalSolver(Example example, int numModes);
 
 private:
     Backend::Core::Project mProject;

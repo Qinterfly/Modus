@@ -1,4 +1,5 @@
 #include <QColorDialog>
+#include <QElapsedTimer>
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QToolBar>
@@ -46,34 +47,39 @@ int getRepeatedIndex(int index, int size);
 // Alias
 using UpdateFun = std::function<void(double)>;
 
+// Constants
+static double const skMillisecondsToSeconds = 1e-3;
+
 //! Callback command to be called after each timer event
 class vtkTimerCallback : public vtkCallbackCommand
 {
 public:
     vtkTimerCallback()
-        : timerMaxCount(60)
-        , updateFun()
-        , mTimerCount(0)
+        : updateFun()
+        , frequency(1)
     {
     }
 
     static vtkTimerCallback* New();
     virtual void Execute(vtkObject* caller, unsigned long eventId, void* vtkNotUsed(callData))
     {
-        double phase = 2.0 * M_PI * mTimerCount / timerMaxCount;
+        if (eventId != vtkCommand::TimerEvent)
+            return;
+        double time = 0.0;
+        if (mElapsedTimer.isValid())
+            time = mElapsedTimer.elapsed() * skMillisecondsToSeconds;
+        else
+            mElapsedTimer.start();
+        double phase = 2.0 * M_PI * frequency * time;
         updateFun(phase);
-        if (vtkCommand::TimerEvent == eventId)
-            ++mTimerCount;
-        if (mTimerCount > timerMaxCount)
-            mTimerCount = 0;
     }
 
 public:
-    int timerMaxCount;
     UpdateFun updateFun;
+    double frequency;
 
 private:
-    int mTimerCount;
+    QElapsedTimer mElapsedTimer;
 };
 
 vtkStandardNewMacro(vtkTimerCallback);
@@ -114,6 +120,7 @@ bool VertexField::isEmpty() const
     return values.size() == 0;
 }
 
+//! Normalize vector field to absolute maximum value
 void VertexField::normalize()
 {
     double norm = 0.0;
@@ -152,8 +159,8 @@ GeometryViewOptions::GeometryViewOptions()
     showQuadrangles = true;
 
     // Animation
-    animationDuration = 20;
-    numAnimationFrames = 60;
+    numAnimationFrames = 30;
+    animationFrequency = 1.0;
 
     // Scales
     sceneScale = {1.0, 1.0, -1.0};
@@ -206,28 +213,8 @@ void GeometryView::clear()
 //! Draw the scene
 void GeometryView::plot()
 {
-    // Clean up the scene
     clear();
-
-    // Render the undeformed state
-    mUndeformedPoints = createPoints();
-    if (mOptions.showUndeformed)
-        drawUndeformed();
-
-    // Render the deformed state
-    drawDeformed();
-
-    // Display legend related to the rendered fields
-    drawLegend();
-
-    // Start the timer
-    if (mOptions.animate)
-    {
-        auto interactor = mRenderWindow->GetInteractor();
-        mTimerId = interactor->CreateRepeatingTimer(mOptions.animationDuration);
-    }
-
-    // Render the scene
+    drawGeometry();
     mRenderWindow->Render();
 }
 
@@ -360,7 +347,7 @@ void GeometryView::createContent()
     // Create the animation actions
     QAction* pStartAction = new QAction(QIcon(":/icons/process-start.svg"), tr("Start animation"));
     QAction* pStopAction = new QAction(QIcon(":/icons/process-stop.svg"), tr("Stop animation"));
-    QAction* pDurationAction = new QAction(QIcon(":/icons/draw-duration.png"), tr("Animation duration"));
+    QAction* pFrequencyAction = new QAction(QIcon(":/icons/draw-duration.png"), tr("Animation frequency"));
     auto animateFun = [this, pStartAction, pStopAction]()
     {
         mOptions.animate = !mOptions.animate;
@@ -368,12 +355,13 @@ void GeometryView::createContent()
         pStopAction->setVisible(mOptions.animate);
         plot();
     };
-    auto durationFun = [this]()
+    auto frequencyFun = [this]()
     {
         bool isOk = false;
-        int value = QInputDialog::getInt(this, tr("Set animation duration"), tr("Duration"), mOptions.animationDuration, 0, 10000, 1, &isOk);
+        double value = QInputDialog::getDouble(this, tr("Set animation frequency"), tr("Frequency, Hz"), mOptions.animationFrequency, 0.1,
+                                               1000.0, 1, &isOk);
         if (isOk)
-            mOptions.animationDuration = value;
+            mOptions.animationFrequency = value;
         plot();
     };
 
@@ -388,14 +376,14 @@ void GeometryView::createContent()
     // Set the connections
     connect(pStartAction, &QAction::triggered, this, animateFun);
     connect(pStopAction, &QAction::triggered, this, animateFun);
-    connect(pDurationAction, &QAction::triggered, this, durationFun);
+    connect(pFrequencyAction, &QAction::triggered, this, frequencyFun);
     connect(pSettingsAction, &QAction::triggered, this, &GeometryView::showSettingsEditor);
 
     // Create the toolbar
     QToolBar* pToolBar = new QToolBar;
     pToolBar->addAction(pStartAction);
     pToolBar->addAction(pStopAction);
-    pToolBar->addAction(pDurationAction);
+    pToolBar->addAction(pFrequencyAction);
     pToolBar->addSeparator();
     pToolBar->addAction(pLinesAction);
     pToolBar->addAction(pTrianlesAction);
@@ -494,8 +482,32 @@ vtkSmartPointer<vtkDoubleArray> GeometryView::getMagnitudes(VertexField const& f
     return magnitudes;
 }
 
+//! Represent geomerty as well as fields
+void GeometryView::drawGeometry()
+{
+    // Render the undeformed state
+    mUndeformedPoints = createPoints();
+    if (mOptions.showUndeformed)
+        drawUndeformedState();
+
+    // Render the deformed state
+    drawDeformedState();
+
+    // Display legend related to the rendered fields
+    drawLegend();
+
+    // Start the timer
+    if (mOptions.animate)
+    {
+        auto interactor = mRenderWindow->GetInteractor();
+        int duration = ceil(1.0 / (skMillisecondsToSeconds * mOptions.numAnimationFrames));
+        duration = std::max(1, duration);
+        mTimerId = interactor->CreateRepeatingTimer(duration);
+    }
+}
+
 //! Represent the geometry
-void GeometryView::drawUndeformed()
+void GeometryView::drawUndeformedState()
 {
     if (mOptions.showLines)
         drawElements(mUndeformedPoints, mGeometry.lines, mOptions.undeformedColor, mOptions.undeformedOpacity, false);
@@ -506,7 +518,7 @@ void GeometryView::drawUndeformed()
 }
 
 //! Represent vertex fields
-void GeometryView::drawDeformed()
+void GeometryView::drawDeformedState()
 {
     // Retrieve window interactor
     auto interactor = mRenderWindow->GetInteractor();
@@ -562,12 +574,12 @@ void GeometryView::drawDeformed()
 
         // Set the callback function
         vtkNew<vtkTimerCallback> callback;
-        callback->timerMaxCount = mOptions.numAnimationFrames;
         callback->updateFun = [this, points, field, amplitude, initPhase](double phase)
         {
             deformPoints(points, field, amplitude, initPhase + phase);
             mRenderWindow->Render();
         };
+        callback->frequency = mOptions.animationFrequency;
 
         // Add the callback function to the interactor
         unsigned long tag = interactor->AddObserver(vtkCommand::TimerEvent, callback);
@@ -737,24 +749,31 @@ void GeometryView::showSettingsEditor()
     int numRows = mFields.size();
     pTable->setRowCount(numRows);
     pTable->setColumnCount(kNumColumns);
-    pTable->setHorizontalHeaderLabels({tr("Name"), tr("Color"), tr("Scale"), tr("Initial phase")});
+    pTable->setHorizontalHeaderLabels({tr("Name"), tr("Color"), tr("Scale"), tr("Initial phase, °")});
 
     // Create the helper function to update options
     auto updateFun = [this, pTable]()
     {
         int numRows = pTable->rowCount();
-        mOptions.deformedColors.resize(numRows);
-        mOptions.deformedScales.resize(numRows);
-        mOptions.deformedInitPhases.resize(numRows);
+        if (mOptions.deformedColors.size() < numRows)
+            mOptions.deformedColors.resize(numRows);
+        if (mOptions.deformedScales.size() < numRows)
+            mOptions.deformedScales.resize(numRows);
+        if (mOptions.deformedInitPhases.size() < numRows)
+            mOptions.deformedInitPhases.resize(numRows);
         for (int i = 0; i != numRows; ++i)
         {
+            // Name
             QString name = pTable->item(i, 0)->text();
-            QColor color = pTable->item(i, 1)->background().color();
-            double scale = static_cast<Edit1d*>(pTable->cellWidget(i, 2))->value();
-            double phase = static_cast<Edit1d*>(pTable->cellWidget(i, 3))->value();
             mFields[i].name = name;
+            // Color
+            QColor color = pTable->item(i, 1)->background().color();
             mOptions.deformedColors[i] = Utility::getColor(color);
+            // Scale
+            double scale = static_cast<Edit1d*>(pTable->cellWidget(i, 2))->value();
             mOptions.deformedScales[i] = scale;
+            // Initial phase
+            double phase = qDegreesToRadians(static_cast<Edit1d*>(pTable->cellWidget(i, 3))->value());
             mOptions.deformedInitPhases[i] = phase;
         }
         plot();
@@ -789,7 +808,7 @@ void GeometryView::showSettingsEditor()
         int iPhase = getRepeatedIndex(i, mOptions.deformedInitPhases.size());
         double phase = mOptions.deformedInitPhases[iPhase];
         Edit1d* pPhaseEdit = new Edit1d;
-        pPhaseEdit->setValue(phase);
+        pPhaseEdit->setValue(qRadiansToDegrees(phase));
         pPhaseEdit->setAlignment(Qt::AlignCenter);
         pPhaseEdit->setStyleSheet(pPhaseEdit->styleSheet().append("border: none;"));
         connect(pPhaseEdit, &Edit1d::valueChanged, this, updateFun);
