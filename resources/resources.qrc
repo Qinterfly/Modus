@@ -46,6 +46,8 @@
 		<file>icons/draw-thickness.png</file>
 		<file>icons/draw-wireframe.svg</file>
 		<file>icons/draw-undeformed.png</file>
+		<file>icons/draw-duration.png</file>
+		<file>icons/draw-table.png</file>
 		<file>icons/process-start.svg</file>
 		<file>icons/process-stop.svg</file>
 		<file>icons/document-open.svg</file>

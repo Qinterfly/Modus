@@ -1,3 +1,6 @@
+#include <QColorDialog>
+#include <QHeaderView>
+#include <QInputDialog>
 #include <QToolBar>
 #include <QVBoxLayout>
 
@@ -22,15 +25,19 @@
 #include <vtkTextProperty.h>
 #include <QVTKOpenGLNativeWidget.h>
 
+#include "customtable.h"
 #include "geometry.h"
 #include "geometryview.h"
+#include "lineedit.h"
 #include "modalsolver.h"
+#include "uialiasdata.h"
 #include "uiconstants.h"
 #include "uiutility.h"
 
 using namespace Backend::Core;
 using namespace Frontend;
 using namespace Constants::Colors;
+using namespace Eigen;
 
 // Helper functions
 QString getModeName(int index, double frequency);
@@ -78,7 +85,7 @@ VertexField::VertexField()
 {
 }
 
-VertexField::VertexField(int iMode, double modeFrequency, Eigen::MatrixXd const& modeShape)
+VertexField::VertexField(int iMode, double modeFrequency, MatrixXd const& modeShape)
     : index(iMode)
     , frequency(modeFrequency)
     , values(modeShape)
@@ -348,15 +355,25 @@ void GeometryView::createContent()
     QAction* pQuadrangleAction = createShowAction(QIcon(":/icons/draw-quadrangle.png"), tr("Show quadrangles"), mOptions.showQuadrangles);
     QAction* pWireframeAction = createShowAction(QIcon(":/icons/draw-wireframe.svg"), tr("Show wireframe"), mOptions.showWireframe);
     QAction* pUndeformedAction = createShowAction(QIcon(":/icons/draw-undeformed.png"), tr("Show undeformed"), mOptions.showUndeformed);
+    QAction* pSettingsAction = new QAction(QIcon(":/icons/draw-table.png"), tr("Modify settings"));
 
     // Create the animation actions
     QAction* pStartAction = new QAction(QIcon(":/icons/process-start.svg"), tr("Start animation"));
     QAction* pStopAction = new QAction(QIcon(":/icons/process-stop.svg"), tr("Stop animation"));
+    QAction* pDurationAction = new QAction(QIcon(":/icons/draw-duration.png"), tr("Animation duration"));
     auto animateFun = [this, pStartAction, pStopAction]()
     {
         mOptions.animate = !mOptions.animate;
         pStartAction->setVisible(!mOptions.animate);
         pStopAction->setVisible(mOptions.animate);
+        plot();
+    };
+    auto durationFun = [this]()
+    {
+        bool isOk = false;
+        int value = QInputDialog::getInt(this, tr("Set animation duration"), tr("Duration"), mOptions.animationDuration, 0, 10000, 1, &isOk);
+        if (isOk)
+            mOptions.animationDuration = value;
         plot();
     };
 
@@ -371,17 +388,21 @@ void GeometryView::createContent()
     // Set the connections
     connect(pStartAction, &QAction::triggered, this, animateFun);
     connect(pStopAction, &QAction::triggered, this, animateFun);
+    connect(pDurationAction, &QAction::triggered, this, durationFun);
+    connect(pSettingsAction, &QAction::triggered, this, &GeometryView::showSettingsEditor);
 
     // Create the toolbar
     QToolBar* pToolBar = new QToolBar;
     pToolBar->addAction(pStartAction);
     pToolBar->addAction(pStopAction);
+    pToolBar->addAction(pDurationAction);
     pToolBar->addSeparator();
     pToolBar->addAction(pLinesAction);
     pToolBar->addAction(pTrianlesAction);
     pToolBar->addAction(pQuadrangleAction);
     pToolBar->addAction(pWireframeAction);
     pToolBar->addAction(pUndeformedAction);
+    pToolBar->addAction(pSettingsAction);
     Utility::setShortcutHints(pToolBar);
 
     // Combine the widgets
@@ -397,7 +418,7 @@ vtkSmartPointer<vtkPoints> GeometryView::createPoints()
     int numVertices = mGeometry.numVertices();
     for (int i = 0; i != numVertices; ++i)
     {
-        Eigen::Vector3d position = mGeometry.vertices[i].position;
+        Vector3d position = mGeometry.vertices[i].position;
         position = position.cwiseProduct(mOptions.sceneScale);
         points->InsertPoint(i, position[0], position[1], position[2]);
     }
@@ -405,7 +426,7 @@ vtkSmartPointer<vtkPoints> GeometryView::createPoints()
 }
 
 //! Create polygons using given indices
-vtkSmartPointer<vtkCellArray> GeometryView::createPolygons(Eigen::MatrixXi const& indices)
+vtkSmartPointer<vtkCellArray> GeometryView::createPolygons(MatrixXi const& indices)
 {
     vtkNew<vtkCellArray> polygons;
     int numElements = indices.rows();
@@ -522,11 +543,11 @@ void GeometryView::drawDeformed()
         double initPhase = mOptions.deformedInitPhases[iPhase];
 
         // Construct the function for drawing elements
-        std::function<void(Eigen::MatrixXi)> drawFun;
+        std::function<void(MatrixXi)> drawFun;
         if (isCompare)
-            drawFun = [this, points, color](Eigen::MatrixXi indices) { drawElements(points, indices, color); };
+            drawFun = [this, points, color](MatrixXi indices) { drawElements(points, indices, color); };
         else
-            drawFun = [this, points, magnitudes, lut](Eigen::MatrixXi indices) { drawElements(points, indices, magnitudes, lut); };
+            drawFun = [this, points, magnitudes, lut](MatrixXi indices) { drawElements(points, indices, magnitudes, lut); };
 
         // Apply the field to the points
         deformPoints(points, field, amplitude, initPhase);
@@ -572,8 +593,7 @@ void GeometryView::drawDeformed()
 }
 
 //! Render elements using one color
-void GeometryView::drawElements(vtkSmartPointer<vtkPoints> points, Eigen::MatrixXi const& indices, vtkColor3d color, double opacity,
-                                bool isEdgeVisible)
+void GeometryView::drawElements(vtkSmartPointer<vtkPoints> points, MatrixXi const& indices, vtkColor3d color, double opacity, bool isEdgeVisible)
 {
     // Check if there are any elements to render
     if (indices.rows() == 0)
@@ -610,7 +630,7 @@ void GeometryView::drawElements(vtkSmartPointer<vtkPoints> points, Eigen::Matrix
 }
 
 //! Render color interpolated elements
-void GeometryView::drawElements(vtkSmartPointer<vtkPoints> points, Eigen::MatrixXi const& indices, vtkSmartPointer<vtkDoubleArray> scalars,
+void GeometryView::drawElements(vtkSmartPointer<vtkPoints> points, MatrixXi const& indices, vtkSmartPointer<vtkDoubleArray> scalars,
                                 vtkSmartPointer<vtkLookupTable> lut)
 {
     // Check if there are any elements to render
@@ -649,7 +669,7 @@ void GeometryView::drawElements(vtkSmartPointer<vtkPoints> points, Eigen::Matrix
 void GeometryView::drawLegend()
 {
     // Constants
-    Eigen::Vector2d const kTopRightCorner = {-0.6, 0.95};
+    Vector2d const kTopRightCorner = {-0.6, 0.95};
     double const kWidth = 0.35;
     double const kStep = 0.2;
 
@@ -685,7 +705,7 @@ void GeometryView::drawLegend()
     }
 
     // Set the bottom left corner
-    Eigen::Vector2d bottomLeftCorner = {kTopRightCorner[0] - kWidth, kTopRightCorner[1] - count * kStep};
+    Vector2d bottomLeftCorner = {kTopRightCorner[0] - kWidth, kTopRightCorner[1] - count * kStep};
     bottomLeftCorner[1] = std::max(-1.0, bottomLeftCorner[1]);
     legend->GetPositionCoordinate()->SetCoordinateSystemToView();
     legend->GetPositionCoordinate()->SetValue(bottomLeftCorner[0], bottomLeftCorner[1]);
@@ -696,6 +716,122 @@ void GeometryView::drawLegend()
 
     // Add the legend to the scene
     mRenderer->AddActor(legend);
+}
+
+//! Show dialog to modify view settings
+void GeometryView::showSettingsEditor()
+{
+    // Constants
+    int const kNumColumns = 4;
+
+    // Create the dialog window
+    QDialog* pDialog = new QDialog(this);
+    pDialog->setWindowTitle(tr("Settings Editor"));
+
+    // Create the table
+    CustomTable* pTable = new CustomTable;
+    pTable->setSizeAdjustPolicy(QTableWidget::AdjustToContents);
+    pTable->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+
+    // Initialize the table
+    int numRows = mFields.size();
+    pTable->setRowCount(numRows);
+    pTable->setColumnCount(kNumColumns);
+    pTable->setHorizontalHeaderLabels({tr("Name"), tr("Color"), tr("Scale"), tr("Initial phase")});
+
+    // Create the helper function to update options
+    auto updateFun = [this, pTable]()
+    {
+        int numRows = pTable->rowCount();
+        mOptions.deformedColors.resize(numRows);
+        mOptions.deformedScales.resize(numRows);
+        mOptions.deformedInitPhases.resize(numRows);
+        for (int i = 0; i != numRows; ++i)
+        {
+            QString name = pTable->item(i, 0)->text();
+            QColor color = pTable->item(i, 1)->background().color();
+            double scale = static_cast<Edit1d*>(pTable->cellWidget(i, 2))->value();
+            double phase = static_cast<Edit1d*>(pTable->cellWidget(i, 3))->value();
+            mFields[i].name = name;
+            mOptions.deformedColors[i] = Utility::getColor(color);
+            mOptions.deformedScales[i] = scale;
+            mOptions.deformedInitPhases[i] = phase;
+        }
+        plot();
+    };
+
+    // Set the table content
+    for (int i = 0; i != numRows; ++i)
+    {
+        // Name
+        QTableWidgetItem* pNameItem = new QTableWidgetItem(mFields[i].name);
+        pTable->setItem(i, 0, pNameItem);
+
+        // Color
+        int iColor = getRepeatedIndex(i, mOptions.deformedColors.size());
+        QColor color = Utility::getColor(mOptions.deformedColors[iColor]);
+        QTableWidgetItem* pColorItem = new QTableWidgetItem;
+        pColorItem->setFlags(Qt::ItemIsEnabled);
+        pColorItem->setBackground(color);
+        pTable->setItem(i, 1, pColorItem);
+
+        // Scale
+        int iScale = getRepeatedIndex(i, mOptions.deformedScales.size());
+        double scale = mOptions.deformedScales[iScale];
+        Edit1d* pScaleEdit = new Edit1d;
+        pScaleEdit->setValue(scale);
+        pScaleEdit->setAlignment(Qt::AlignCenter);
+        pScaleEdit->setStyleSheet(pScaleEdit->styleSheet().append("border: none;"));
+        connect(pScaleEdit, &Edit1d::valueChanged, this, updateFun);
+        pTable->setCellWidget(i, 2, pScaleEdit);
+
+        // Initial phase
+        int iPhase = getRepeatedIndex(i, mOptions.deformedInitPhases.size());
+        double phase = mOptions.deformedInitPhases[iPhase];
+        Edit1d* pPhaseEdit = new Edit1d;
+        pPhaseEdit->setValue(phase);
+        pPhaseEdit->setAlignment(Qt::AlignCenter);
+        pPhaseEdit->setStyleSheet(pPhaseEdit->styleSheet().append("border: none;"));
+        connect(pPhaseEdit, &Edit1d::valueChanged, this, updateFun);
+        pTable->setCellWidget(i, 3, pPhaseEdit);
+    }
+    pTable->resizeColumnsToContents();
+
+    // Set the connectinos
+    connect(pTable, &CustomTable::itemChanged, this,
+            [this, updateFun](QTableWidgetItem* pItem)
+            {
+                if (pItem->column() == 0)
+                    updateFun();
+            });
+    connect(pTable, &CustomTable::doubleClicked, this,
+            [this, pTable, updateFun](QModelIndex const& index)
+            {
+                int iRow = index.row();
+                int iColumn = index.column();
+                if (iColumn == 1)
+                {
+                    auto pItem = pTable->itemFromIndex(index);
+                    QColor color = pItem->data(Qt::DecorationRole).value<QColor>();
+                    color = QColorDialog::getColor(color, this, tr("Set color"));
+                    pItem->setBackground(color);
+                    updateFun();
+                }
+            });
+
+    // Add the table to layout
+    QVBoxLayout* pLayout = new QVBoxLayout;
+    pLayout->addWidget(pTable);
+    pDialog->setLayout(pLayout);
+
+    // Show the dialog window
+    pDialog->show();
+    pDialog->raise();
+    pDialog->activateWindow();
+
+    // Position the dialog on the screen
+    QPoint center = mapToGlobal(rect().center());
+    pDialog->move(center.x() - pDialog->width() / 2, center.y() - pDialog->height() / 2);
 }
 
 //! Helper function to construct mode name

@@ -123,6 +123,9 @@ private:
                       vtkSmartPointer<vtkLookupTable> lut);
     void drawLegend();
 
+    // Editing
+    void showSettingsEditor();
+
 private:
     Backend::Core::Geometry const& mGeometry;
     QList<VertexField> mFields;
