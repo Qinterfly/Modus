@@ -27,6 +27,7 @@ namespace Backend::Utility
 {
 
 QSharedPointer<QFile> openFile(QString const& pathFile, QString const& expectedSuffix, QIODevice::OpenModeFlag const& mode);
+void setupModel(KCL::Model& model);
 
 //! Base case for combining a filepath
 template<typename T>
