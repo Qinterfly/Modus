@@ -71,6 +71,7 @@ bool isAeroMeshable(KCL::ElementType type);
 Transformation computeTransformation(KCL::ElasticSurface const& surface, bool isAero = false);
 Transformation computeTransformation(KCL::Vec3 const& coords, double dihedralAngle, double sweepAngle, double zAngle);
 Transformation reflectTransformation(Transformation const& transform);
+void setupModel(KCL::Model& model);
 
 // Rendering
 QList<int> jarvisMarch(QList<Point> const& points);

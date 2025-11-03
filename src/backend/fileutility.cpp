@@ -33,39 +33,6 @@ QSharedPointer<QFile> openFile(QString const& pathFile, QString const& expectedS
     return pFile;
 }
 
-//! Distribute model properties
-void setupModel(KCL::Model& model)
-{
-    int numSurfaces = model.surfaces.size();
-
-    // Copy data to the first aerodynamic trapezium
-    for (int i = 0; i != numSurfaces; ++i)
-    {
-        KCL::ElasticSurface& surface = model.surfaces[i];
-
-        // Obtain elements
-        if (!surface.containsElement(KCL::OD))
-            continue;
-        if (!surface.containsElement(KCL::CO))
-            continue;
-        if (!surface.containsElement(KCL::AE) || surface.element(KCL::AE)->subType() != KCL::AE1)
-            continue;
-        KCL::GeneralData* pData = (KCL::GeneralData*) surface.element(KCL::OD);
-        KCL::Constants* pConstants = (KCL::Constants*) surface.element(KCL::CO);
-        KCL::AerodynamicTrapezium1* pTrapezium = (KCL::AerodynamicTrapezium1*) surface.element(KCL::AE);
-
-        // Set the data (TODO)
-        pTrapezium->machNumber = pConstants->machNumber;
-        pTrapezium->soundSpeed = pConstants->soundSpeed;
-        pTrapezium->airDensity = pConstants->airDensity;
-        pTrapezium->referenceLength = pConstants->referenceLength;
-        pTrapezium->strouhalNumber = pConstants->strouhalNumber;
-        // pTrapezium->locationSymmetryAxis = ??;
-        pTrapezium->iSymmetry = pData->iSymmetry;
-        pTrapezium->sweepAngle = pData->sweepAngle;
-    }
-}
-
 QString toString(QVariant const& variant)
 {
     int const kPrecision = 10;

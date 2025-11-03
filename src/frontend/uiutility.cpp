@@ -325,6 +325,37 @@ Transformation reflectTransformation(Transformation const& transform)
     return Transformation(matrix * transform.matrix());
 }
 
+//! Distribute model properties
+void setupModel(KCL::Model& model)
+{
+    int numSurfaces = model.surfaces.size();
+
+    // Copy data to the first aerodynamic trapezium
+    for (int i = 0; i != numSurfaces; ++i)
+    {
+        KCL::ElasticSurface& surface = model.surfaces[i];
+
+        // Obtain elements
+        if (!surface.containsElement(KCL::OD) || !surface.containsElement(KCL::CO) || !surface.containsElement(KCL::AE))
+            continue;
+        if (surface.element(KCL::AE)->subType() != KCL::AE1)
+            continue;
+        KCL::GeneralData* pData = (KCL::GeneralData*) surface.element(KCL::OD);
+        KCL::Constants* pConstants = (KCL::Constants*) surface.element(KCL::CO);
+        KCL::AerodynamicTrapezium1* pTrapezium = (KCL::AerodynamicTrapezium1*) surface.element(KCL::AE);
+
+        // Set the data
+        pTrapezium->machNumber = pConstants->machNumber;
+        pTrapezium->soundSpeed = pConstants->soundSpeed;
+        pTrapezium->airDensity = pConstants->airDensity;
+        pTrapezium->referenceLength = pConstants->referenceLength;
+        pTrapezium->strouhalNumber = pConstants->strouhalNumber;
+        pTrapezium->locationSymmetryAxis = 0.0;
+        pTrapezium->iSymmetry = pData->iSymmetry;
+        pTrapezium->sweepAngle = pData->sweepAngle;
+    }
+}
+
 //! Check whether three points are located clockwise or counterclockwise
 int orientation(Point const& p, Point const& q, Point const& r)
 {

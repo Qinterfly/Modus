@@ -25,6 +25,7 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkTexture.h>
+#include <vtkTransform.h>
 #include <vtkUnstructuredGrid.h>
 #include <QVTKOpenGLNativeWidget.h>
 
@@ -85,11 +86,13 @@ ModelViewOptions::ModelViewOptions()
     springScale = 0.005;
     pointScale = 0.003;
     beamScale = 0.003;
+    axesScale = 0.03;
 
     // Flags
     showThickness = false;
     showSymmetry = true;
     showWireframe = false;
+    showLocalAxes = true;
 
     // Tolerance
     pickTolerance = 0.005;
@@ -112,22 +115,48 @@ ModelView::~ModelView()
 void ModelView::clear()
 {
     auto interactor = mRenderWindow->GetInteractor();
+
+    // Remove the obsertvers
     int numObservers = mObserverTags.size();
     for (int i = 0; i != numObservers; ++i)
         interactor->RemoveObserver(mObserverTags[i]);
     mObserverTags.clear();
+
+    // Clean up the style
     mSelector.clear();
     mStyle->clear();
+
+    // Remove the actors
     auto actors = mRenderer->GetActors();
     while (actors->GetLastActor())
         mRenderer->RemoveActor(actors->GetLastActor());
+
+    // Remove the view properties
+    auto props = mRenderer->GetViewProps();
+    while (props->GetLastProp())
+        mRenderer->RemoveViewProp(props->GetLastProp());
 }
 
 //! Draw the scene
 void ModelView::plot()
 {
+    // Add the model to the scene to compute visible boundaries, if neceassary
+    bool isEmptyScene = mRenderer->GetActors()->GetNumberOfItems() == 0;
+    if (isEmptyScene)
+        drawModel();
+
+    // Compute the model maximum dimension
+    mMaximumDimension = Utility::getMaximumDimension(mRenderer);
+    if (mMaximumDimension < std::numeric_limits<double>::epsilon())
+        mMaximumDimension = 1.0;
+
+    // Clear the scene
     clear();
+
+    // Add the model to the scene
     drawModel();
+
+    // Render the model
     mRenderWindow->Render();
 }
 
@@ -195,6 +224,9 @@ void ModelView::initialize()
     mStyle->pickTolerance = mOptions.pickTolerance;
     mStyle->handler = new InteractorHandler(this);
     interactor->SetInteractorStyle(mStyle);
+
+    // Set the maximum dimension
+    mMaximumDimension = 0.0;
 }
 
 //! Load the textures from the resource file
@@ -231,6 +263,7 @@ void ModelView::createContent()
     QAction* pSymmetryAction = createShowAction(QIcon(":/icons/draw-symmetry.png"), tr("Show symmetrical part of the model"),
                                                 mOptions.showSymmetry);
     QAction* pWireframeAction = createShowAction(QIcon(":/icons/draw-wireframe.svg"), tr("Show wireframe"), mOptions.showWireframe);
+    QAction* pAxesAction = createShowAction(QIcon(":/icons/draw-axes.svg"), tr("Show local axes"), mOptions.showLocalAxes);
     QAction* pViewEditorAction = new QAction(QIcon(":/icons/edit-view.png"), tr("Edit view options"));
 
     // Create the connections
@@ -241,6 +274,7 @@ void ModelView::createContent()
     pToolBar->addAction(pThicknessAction);
     pToolBar->addAction(pSymmetryAction);
     pToolBar->addAction(pWireframeAction);
+    pToolBar->addAction(pAxesAction);
     pToolBar->addAction(pViewEditorAction);
     Utility::setShortcutHints(pToolBar);
 
@@ -333,6 +367,14 @@ void ModelView::drawModel()
             if (isSymmetry && mOptions.showSymmetry)
                 drawMasses(reflectTransform, iSurface, type);
         }
+
+        // Draw the local coordinate axes
+        if (mOptions.showLocalAxes)
+        {
+            drawLocalAxes(transform);
+            if (isSymmetry && mOptions.showSymmetry)
+                drawLocalAxes(reflectTransform);
+        }
     }
 
     // Process the special surface
@@ -417,7 +459,7 @@ void ModelView::drawBeams3D(Transformation const& transform, int iSurface, KCL::
     vtkColor3d color = mOptions.elementColors[type];
 
     // Compute the cyliner radius
-    double radius = mOptions.beamScale * Utility::getMaximumDimension(mRenderer);
+    double radius = mOptions.beamScale * mMaximumDimension;
 
     // Process all the elements
     int numElements = elements.size();
@@ -692,7 +734,7 @@ void ModelView::drawMasses(Transformation const& transform, int iSurface, KCL::E
 
     // Get the visualization texture
     vtkSmartPointer<vtkTexture> texture = mTextures["mass"];
-    double w = mOptions.massScale * Utility::getMaximumDimension(mRenderer);
+    double w = mOptions.massScale * mMaximumDimension;
 
     // Process all the elements
     int numElements = elements.size();
@@ -829,7 +871,7 @@ void ModelView::drawSprings(bool isReflect, KCL::ElementType type)
     vtkColor3d color = mOptions.elementColors[type];
 
     // Retrieve the scene parameters
-    double maxDimension = Utility::getMaximumDimension(mRenderer);
+    double maxDimension = mMaximumDimension;
 
     // Process all the elements
     int numElements = elements.size();
@@ -899,6 +941,48 @@ void ModelView::drawSprings(bool isReflect, KCL::ElementType type)
     }
 }
 
+//! Display local coordinate axes
+void ModelView::drawLocalAxes(Transformation const& transform)
+{
+    // Constants
+    double kXAxisColor[3] = {0.870, 0.254, 0.188};
+    double kYAxisColor[3] = {0.952, 0.752, 0.090};
+    double kZAxisColor[3] = {0.654, 0.823, 0.549};
+
+    // Compute the axes length
+    double length = mOptions.axesScale * mMaximumDimension;
+
+    // Copy the transformation matrix
+    vtkNew<vtkMatrix4x4> matrixTransform;
+    int numRows = transform.matrix().rows();
+    int numCols = transform.matrix().cols();
+    for (int i = 0; i != numRows; ++i)
+    {
+        for (int j = 0; j != numCols; ++j)
+            matrixTransform->SetElement(i, j, transform.matrix()(i, j));
+    }
+
+    // Create the transformation
+    vtkNew<vtkTransform> axesTransform;
+    axesTransform->SetMatrix(matrixTransform);
+
+    // Create the actor
+    vtkNew<vtkAxesActor> axesActor;
+    axesActor->SetUserTransform(axesTransform);
+    axesActor->SetTotalLength(length, length, length);
+    axesActor->AxisLabelsOff();
+    axesActor->UseBoundsOff();
+    axesActor->GetXAxisShaftProperty()->SetColor(kXAxisColor);
+    axesActor->GetYAxisShaftProperty()->SetColor(kYAxisColor);
+    axesActor->GetZAxisShaftProperty()->SetColor(kZAxisColor);
+    axesActor->GetXAxisTipProperty()->SetColor(kXAxisColor);
+    axesActor->GetYAxisTipProperty()->SetColor(kYAxisColor);
+    axesActor->GetZAxisTipProperty()->SetColor(kZAxisColor);
+
+    // Add the actor to the scene
+    mRenderer->AddActor(axesActor);
+}
+
 //! Set the isometric view
 void ModelView::setIsometricView()
 {
@@ -907,6 +991,7 @@ void ModelView::setIsometricView()
     camera->SetFocalPoint(0, 0, 0);
     camera->SetViewUp(0, 1, 0);
     mRenderer->ResetCamera();
+    camera->Zoom(1.5);
     mRenderWindow->Render();
 }
 

@@ -153,11 +153,13 @@ struct ModelViewOptions
     double springScale;
     double pointScale;
     double beamScale;
+    double axesScale;
 
     // Flags
     bool showThickness;
     bool showSymmetry;
     bool showWireframe;
+    bool showLocalAxes;
 
     // Tolerance
     double pickTolerance;
@@ -203,6 +205,7 @@ private:
     void drawAeroTrapeziums(Transformation const& transform, int iSurface, KCL::ElementType type);
     void drawMasses(Transformation const& transform, int iSurface, KCL::ElementType type);
     void drawSprings(bool isReflect, KCL::ElementType type);
+    void drawLocalAxes(Transformation const& transform);
 
     // Widgets
     void showViewEditor();
@@ -218,6 +221,7 @@ private:
     QMap<QString, vtkSmartPointer<vtkTexture>> mTextures;
     vtkSmartPointer<InteractorStyle> mStyle;
     QList<unsigned long> mObserverTags;
+    double mMaximumDimension;
 };
 }
 
