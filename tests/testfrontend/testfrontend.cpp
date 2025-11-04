@@ -87,7 +87,7 @@ void TestFrontend::testEditorManager()
     pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::AE, 1));
     pManager->createEditor(*mpModel, Core::Selection(-1, KCL::TE));
     pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::PK));
-    pManager->createEditor(*mpModel, Core::Selection(-1, KCL::PR));
+    pManager->createEditor(*mpModel);
     pManager->setCurrentEditor(pManager->numEditors() - 1);
     if (!mpMainWindow->isVisible())
         pManager->show();

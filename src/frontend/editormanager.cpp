@@ -12,6 +12,7 @@
 #include "editormanager.h"
 #include "generaldataeditor.h"
 #include "masseditor.h"
+#include "modeleditor.h"
 #include "paneleditor.h"
 #include "polyexponentseditor.h"
 #include "rawdataeditor.h"
@@ -154,6 +155,13 @@ void EditorManager::createEditor(KCL::Model& model, Core::Selection const& selec
         pEditor = new SpringDamperEditor(model.surfaces, (KCL::SpringDamper*) pElement, name);
     else
         pEditor = new RawDataEditor(pElement, name);
+    addEditor(pEditor);
+}
+
+//! Create a model editor
+void EditorManager::createEditor(KCL::Model& model)
+{
+    Editor* pEditor = new ModelEditor(model, tr("Model"));
     addEditor(pEditor);
 }
 

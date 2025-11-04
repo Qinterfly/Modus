@@ -56,7 +56,8 @@ public:
         kAnalysisParameters,
         kAeroTrapezium,
         kPolyExponents,
-        kSpringDamper
+        kSpringDamper,
+        kModel
     };
 
     Editor() = delete;
@@ -94,6 +95,7 @@ public:
 
     void clear();
     void createEditor(KCL::Model& model, Backend::Core::Selection const& selection);
+    void createEditor(KCL::Model& model);
     void setCurrentEditor(int index);
     void refreshCurrentEditor();
 

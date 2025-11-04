@@ -324,7 +324,7 @@ void GeometryView::createContent()
     // Create auxiliary function
     auto createShowAction = [this](QIcon const& icon, QString const& name, bool& option)
     {
-        QAction* pAction = new QAction(icon, name);
+        QAction* pAction = new QAction(icon, name, this);
         pAction->setCheckable(true);
         pAction->setChecked(option);
         connect(pAction, &QAction::triggered, this,
@@ -342,12 +342,12 @@ void GeometryView::createContent()
     QAction* pQuadrangleAction = createShowAction(QIcon(":/icons/draw-quadrangle.png"), tr("Show quadrangles"), mOptions.showQuadrangles);
     QAction* pWireframeAction = createShowAction(QIcon(":/icons/draw-wireframe.svg"), tr("Show wireframe"), mOptions.showWireframe);
     QAction* pUndeformedAction = createShowAction(QIcon(":/icons/draw-undeformed.png"), tr("Show undeformed"), mOptions.showUndeformed);
-    QAction* pSettingsAction = new QAction(QIcon(":/icons/draw-table.png"), tr("Modify settings"));
+    QAction* pSettingsAction = new QAction(QIcon(":/icons/draw-table.png"), tr("Modify settings"), this);
 
     // Create the animation actions
-    QAction* pStartAction = new QAction(QIcon(":/icons/process-start.svg"), tr("Start animation"));
-    QAction* pStopAction = new QAction(QIcon(":/icons/process-stop.svg"), tr("Stop animation"));
-    QAction* pFrequencyAction = new QAction(QIcon(":/icons/draw-duration.png"), tr("Animation frequency"));
+    QAction* pStartAction = new QAction(QIcon(":/icons/process-start.svg"), tr("Start animation"), this);
+    QAction* pStopAction = new QAction(QIcon(":/icons/process-stop.svg"), tr("Stop animation"), this);
+    QAction* pFrequencyAction = new QAction(QIcon(":/icons/draw-duration.png"), tr("Animation frequency"), this);
     auto animateFun = [this, pStartAction, pStopAction]()
     {
         mOptions.animate = !mOptions.animate;

@@ -1,0 +1,61 @@
+#ifndef MODELEDITOR_H
+#define MODELEDITOR_H
+
+#include <QRegularExpression>
+#include <QSyntaxHighlighter>
+
+#include "editormanager.h"
+
+QT_FORWARD_DECLARE_CLASS(QTextEdit);
+
+namespace Frontend
+{
+
+class ModelHighlighter : public QSyntaxHighlighter
+{
+    Q_OBJECT
+
+public:
+    ModelHighlighter(QTextDocument* pParent = 0);
+    ~ModelHighlighter() = default;
+
+protected:
+    void highlightBlock(QString const& text) override;
+
+private:
+    void addRule(QString const& pattern, QTextCharFormat const& format);
+    void addRules(QStringList const& patterns, QTextCharFormat const& format);
+
+private:
+    struct HighlightingRule
+    {
+        QRegularExpression pattern;
+        QTextCharFormat format;
+    };
+    QVector<HighlightingRule> mHighlightingRules;
+};
+
+//! Class to edit properties of entire model
+class ModelEditor : public Editor
+{
+    Q_OBJECT
+
+public:
+    ModelEditor(KCL::Model& model, QString const& name, QWidget* pParent = nullptr);
+    ~ModelEditor() = default;
+
+    QSize sizeHint() const override;
+    void refresh() override;
+
+private:
+    void createContent();
+
+private:
+    KCL::Model& mModel;
+    QTextEdit* mpEdit;
+    ModelHighlighter* mpHighlighter;
+};
+
+}
+
+#endif // MODELEDITOR_H

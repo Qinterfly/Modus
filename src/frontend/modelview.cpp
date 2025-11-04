@@ -246,7 +246,7 @@ void ModelView::createContent()
     // Create auxiliary function
     auto createShowAction = [this](QIcon const& icon, QString const& name, bool& option)
     {
-        QAction* pAction = new QAction(icon, name);
+        QAction* pAction = new QAction(icon, name, this);
         pAction->setCheckable(true);
         pAction->setChecked(option);
         connect(pAction, &QAction::triggered, this,
@@ -264,7 +264,7 @@ void ModelView::createContent()
                                                 mOptions.showSymmetry);
     QAction* pWireframeAction = createShowAction(QIcon(":/icons/draw-wireframe.svg"), tr("Show wireframe"), mOptions.showWireframe);
     QAction* pAxesAction = createShowAction(QIcon(":/icons/draw-axes.svg"), tr("Show local axes"), mOptions.showLocalAxes);
-    QAction* pViewEditorAction = new QAction(QIcon(":/icons/edit-view.png"), tr("Edit view options"));
+    QAction* pViewEditorAction = new QAction(QIcon(":/icons/edit-view.png"), tr("Edit view options"), this);
 
     // Create the connections
     connect(pViewEditorAction, &QAction::triggered, this, &ModelView::showViewEditor);
@@ -1290,8 +1290,8 @@ void InteractorStyle::OnRightButtonDown()
     QMenu* pMenu = new QMenu;
 
     // Create the actions
-    QAction* pEditItemsAction = new QAction(QObject::tr("Edit corresponding tree items"));
-    QAction* pSelectItemsAction = new QAction(QObject::tr("Select corresponding tree items"));
+    QAction* pEditItemsAction = new QAction(QObject::tr("Edit corresponding tree items"), handler);
+    QAction* pSelectItemsAction = new QAction(QObject::tr("Select corresponding tree items"), handler);
 
     // Set the icons
     pEditItemsAction->setIcon(QIcon(":/icons/edit-edit.svg"));
@@ -1382,7 +1382,7 @@ void InteractorStyle::createSelectionWidget(vtkActorCollection* actors)
         // Create the action
         QString label = Utility::getLabel(selection);
         QIcon icon = Utility::getIcon(selection.type);
-        QAction* action = new QAction(icon, label);
+        QAction* action = new QAction(icon, label, handler);
         action->setData(QVariant::fromValue(selection));
 
         // Add the action to the widget

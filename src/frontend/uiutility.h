@@ -80,6 +80,7 @@ Transformation reflectTransformation(Transformation const& transform);
 void setupModel(KCL::Model& model);
 KCL::Model readModel(QString const& pathFile);
 bool writeModel(QString const& pathFile, KCL::Model const& model);
+QString toString(KCL::Model const& model);
 
 // Rendering
 QList<int> jarvisMarch(QList<Point> const& points);

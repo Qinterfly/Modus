@@ -417,6 +417,21 @@ bool writeModel(QString const& pathFile, KCL::Model const& model)
     return true;
 }
 
+//! Convert model to a text
+QString toString(KCL::Model const& model)
+{
+    QString result;
+    try
+    {
+        result = model.toString().data();
+    }
+    catch (...)
+    {
+        qWarning() << QObject::tr("Unexpected error occurred while converting model to text");
+    }
+    return result;
+}
+
 //! Check whether three points are located clockwise or counterclockwise
 int orientation(Point const& p, Point const& q, Point const& r)
 {

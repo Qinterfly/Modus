@@ -49,6 +49,7 @@ set(FRONTEND_HEADERS
     polyexponentseditor.h
     springdampereditor.h
     geometryview.h
+    modeleditor.h
 )
 
 set(FRONTEND_SOURCES
@@ -74,6 +75,7 @@ set(FRONTEND_SOURCES
     polyexponentseditor.cpp
     springdampereditor.cpp
     geometryview.cpp
+    modeleditor.cpp
 )
 
 qt_add_library(frontend STATIC

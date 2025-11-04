@@ -135,7 +135,7 @@ void ProjectBrowser::editItems(KCL::Model const& model, QList<Backend::Core::Sel
 
     // Create editors for all selected items
     mpEditorManager->clear();
-    createElementEditors(items);
+    createItemEditors(items);
 
     // Show the editors
     if (!mpEditorManager->isEmpty())
@@ -241,7 +241,7 @@ void ProjectBrowser::processContextMenuRequest(QPoint const& point)
 
     // Create editors for all selected items
     mpEditorManager->clear();
-    createElementEditors(items);
+    createItemEditors(items);
 
     // Create the edit action
     if (!mpEditorManager->isEmpty())
@@ -317,8 +317,8 @@ void ProjectBrowser::createElementEditor(HierarchyItem* pBaseItem)
         mpEditorManager->createEditor(*pModel, selection);
 }
 
-//! Create multiple element editors for hierarchy items
-void ProjectBrowser::createElementEditors(QList<HierarchyItem*>& items)
+//! Create multiple editors for hierarchy items
+void ProjectBrowser::createItemEditors(QList<HierarchyItem*>& items)
 {
     int numItems = items.size();
     for (int iItem = 0; iItem != numItems; ++iItem)
@@ -337,6 +337,9 @@ void ProjectBrowser::createElementEditors(QList<HierarchyItem*>& items)
         }
         case HierarchyItem::kElement:
             createElementEditor(pBaseItem);
+            break;
+        case HierarchyItem::kModel:
+            mpEditorManager->createEditor(static_cast<ModelHierarchyItem*>(pBaseItem)->kclModel());
             break;
         default:
             break;
@@ -359,13 +362,20 @@ void ProjectBrowser::createModelActions(QMenu* pMenu, QList<HierarchyItem*>& ite
     KCL::Model* pModel = &pItem->kclModel();
     QString subprojectName = pItem->subproject()->name();
 
-    // Create the action to import model
-    QAction* pReadAction = new QAction(tr("&Read from a file"));
-    connect(pReadAction, &QAction::triggered, mpEditorManager,
+    // Create the actions
+    QAction* pOpenAction = new QAction(tr("&Open..."), this);
+    QAction* pSaveAsAction = new QAction(tr("&Save as..."), this);
+
+    // Set the icons
+    pOpenAction->setIcon(QIcon(":/icons/document-open.svg"));
+    pSaveAsAction->setIcon(QIcon(":/icons/document-save-as.svg"));
+
+    // Set the connections
+    connect(pOpenAction, &QAction::triggered, this,
             [this, pModel]()
             {
                 QString defaultDir = Utility::getLastDirectory(mSettings).absolutePath();
-                QString pathFile = QFileDialog::getOpenFileName(this, tr("Read Model"), defaultDir, tr("Model file format (*.dat *.txt)"));
+                QString pathFile = QFileDialog::getOpenFileName(this, tr("Open Model"), defaultDir, tr("Model file format (*.dat *.txt)"));
                 if (pathFile.isEmpty())
                     return;
                 *pModel = Utility::readModel(pathFile);
@@ -373,10 +383,7 @@ void ProjectBrowser::createModelActions(QMenu* pMenu, QList<HierarchyItem*>& ite
                 refresh();
                 emit modelSubstituted(*pModel);
             });
-
-    // Create the action to export model
-    QAction* pWriteAction = new QAction(tr("&Write to a file"));
-    connect(pWriteAction, &QAction::triggered, mpEditorManager,
+    connect(pSaveAsAction, &QAction::triggered, this,
             [this, pModel, subprojectName]()
             {
                 int const kMaxLength = 4;
@@ -386,7 +393,7 @@ void ProjectBrowser::createModelActions(QMenu* pMenu, QList<HierarchyItem*>& ite
                     name = name.first(kMaxLength);
                 QString defaultFileName = QString("DAT%1.dat").arg(name);
                 QString defaultPathFile = Utility::getLastDirectory(mSettings).absoluteFilePath(defaultFileName);
-                QString pathFile = QFileDialog::getSaveFileName(this, tr("Write Model"), defaultPathFile, tr("Model file format (*.dat *.txt)"));
+                QString pathFile = QFileDialog::getSaveFileName(this, tr("Save Model"), defaultPathFile, tr("Model file format (*.dat *.txt)"));
                 if (pathFile.isEmpty())
                     return;
                 Utility::writeModel(pathFile, *pModel);
@@ -394,8 +401,10 @@ void ProjectBrowser::createModelActions(QMenu* pMenu, QList<HierarchyItem*>& ite
             });
 
     // Add the actions to the menu
-    pMenu->addAction(pReadAction);
-    pMenu->addAction(pWriteAction);
+    if (!pMenu->actions().isEmpty())
+        pMenu->addSeparator();
+    pMenu->addAction(pOpenAction);
+    pMenu->addAction(pSaveAsAction);
 }
 
 //! Set selected and expanded states of the tree model
