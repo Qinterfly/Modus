@@ -19,7 +19,7 @@ const QString skDockingState = "dockingState";
 const QString skRecent = "recent";
 const QString skFileName = "Settings.ini";
 const QString skMainWindow = "mainWindow";
-
+const QString skLastPathFile = "lastPathFile";
 }
 
 namespace Colors

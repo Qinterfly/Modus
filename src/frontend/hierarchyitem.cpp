@@ -36,11 +36,6 @@ HierarchyItem::HierarchyItem(Type itemType, QIcon const& icon, QString const& te
     setIcon(icon);
 }
 
-QUuid HierarchyItem::id() const
-{
-    return QUuid();
-}
-
 int HierarchyItem::type() const
 {
     return mkType;
@@ -128,11 +123,6 @@ void SubprojectHierarchyItem::appendChildren()
             break;
         }
     }
-}
-
-QUuid SubprojectHierarchyItem::id() const
-{
-    return mSubproject.id();
 }
 
 Core::Subproject& SubprojectHierarchyItem::subproject()

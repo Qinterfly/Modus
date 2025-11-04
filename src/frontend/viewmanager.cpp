@@ -334,6 +334,18 @@ void ViewManager::plot()
         view(i)->plot();
 }
 
+//! Replot the model associated view
+void ViewManager::replot(KCL::Model const& model)
+{
+    IView* pBaseView = findView(model);
+    if (!pBaseView)
+        return;
+    auto pView = (ModelView*) pBaseView;
+    pView->clear();
+    pView->plot();
+    pView->setIsometricView();
+}
+
 //! Destroy all views
 void ViewManager::clear()
 {

@@ -1,3 +1,4 @@
+#include <QFileDialog>
 #include <QLineEdit>
 #include <QMenu>
 #include <QSortFilterProxyModel>
@@ -45,6 +46,23 @@ EditorManager* ProjectBrowser::editorManager()
     return mpEditorManager;
 }
 
+//! Retrieve the currently selected items
+QList<HierarchyItem*> ProjectBrowser::selectedItems()
+{
+    QModelIndexList indices = mpView->selectionModel()->selectedIndexes();
+    QList<HierarchyItem*> result;
+    uint numIndices = indices.size();
+    result.reserve(numIndices);
+    for (int i = 0; i != numIndices; ++i)
+    {
+        QModelIndex const& proxyIndex = indices[i];
+        QModelIndex sourceIndex = mpFilterModel->mapToSource(proxyIndex);
+        HierarchyItem* pItem = (HierarchyItem*) mpSourceModel->itemFromIndex(sourceIndex);
+        result.push_back(pItem);
+    }
+    return result;
+}
+
 //! Update the viewer content
 void ProjectBrowser::refresh()
 {
@@ -57,6 +75,9 @@ void ProjectBrowser::refresh()
     mpFilterModel->setSourceModel(mpSourceModel);
     mpView->setModel(mpFilterModel);
     delete pOldSelectionModel;
+
+    // Restore the model state
+    setModelState();
 
     // Specify the connections between the model and view widget
     connect(mpView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &ProjectBrowser::processSelection);
@@ -141,6 +162,8 @@ void ProjectBrowser::createContent()
     mpView->setContextMenuPolicy(Qt::CustomContextMenu);
 
     // Connect the view widget
+    connect(mpView, &QTreeView::expanded, this, &ProjectBrowser::processExpansion);
+    connect(mpView, &QTreeView::collapsed, this, &ProjectBrowser::processExpansion);
     connect(mpView, &QTreeView::customContextMenuRequested, this, &ProjectBrowser::processContextMenuRequest);
     connect(mpView, &QTreeView::doubleClicked, this, &ProjectBrowser::processDoubleClick);
 
@@ -220,13 +243,16 @@ void ProjectBrowser::processContextMenuRequest(QPoint const& point)
     mpEditorManager->clear();
     createElementEditors(items);
 
-    // Create the actions
+    // Create the edit action
     if (!mpEditorManager->isEmpty())
     {
-        QAction* pEditAction = new QAction(tr("&Edit"));
+        QAction* pEditAction = new QAction(QIcon(":/icons/edit-edit.svg"), tr("&Edit"));
         connect(pEditAction, &QAction::triggered, mpEditorManager, &EditorManager::show);
         pMenu->addAction(pEditAction);
     }
+
+    // Create the item associated actions
+    createModelActions(pMenu, items);
 
     // Fill up the menu with the common actions
     if (!pMenu->actions().isEmpty())
@@ -242,6 +268,18 @@ void ProjectBrowser::processContextMenuRequest(QPoint const& point)
 //! Process selection of hierarchy items
 void ProjectBrowser::processSelection(QItemSelection const& selected, QItemSelection const& deselected)
 {
+    mSelectedState.clear();
+
+    // Save the selected state
+    QModelIndexList const indices = mpView->selectionModel()->selectedIndexes();
+    for (auto const& index : indices)
+    {
+        QModelIndex proxyIndex = mpFilterModel->mapToSource(index);
+        HierarchyItem* pItem = (HierarchyItem*) mpSourceModel->itemFromIndex(proxyIndex);
+        mSelectedState[Utility::getIdentificationName(pItem)] = true;
+    }
+
+    // Send the selected items
     emit selectionChanged(selectedItems());
 }
 
@@ -259,6 +297,14 @@ void ProjectBrowser::processDoubleClick(QModelIndex const& index)
         createElementEditor(pItem);
         mpEditorManager->show();
     }
+}
+
+//! Process a collapsed or expanded item
+void ProjectBrowser::processExpansion(QModelIndex const& index)
+{
+    QModelIndex proxyIndex = mpFilterModel->mapToSource(index);
+    HierarchyItem* pItem = (HierarchyItem*) mpSourceModel->itemFromIndex(proxyIndex);
+    mExpandedState[Utility::getIdentificationName(pItem)] = mpView->isExpanded(index);
 }
 
 //! Construct an element editor for a hierarchy item
@@ -298,21 +344,88 @@ void ProjectBrowser::createElementEditors(QList<HierarchyItem*>& items)
     }
 }
 
-//! Retrieve the currently selected items
-QList<HierarchyItem*> ProjectBrowser::selectedItems()
+//! Create model associated actions
+void ProjectBrowser::createModelActions(QMenu* pMenu, QList<HierarchyItem*>& items)
 {
-    QModelIndexList indices = mpView->selectionModel()->selectedIndexes();
-    QList<HierarchyItem*> result;
-    uint numIndices = indices.size();
-    result.reserve(numIndices);
-    for (int i = 0; i != numIndices; ++i)
-    {
-        QModelIndex const& proxyIndex = indices[i];
-        QModelIndex sourceIndex = mpFilterModel->mapToSource(proxyIndex);
-        HierarchyItem* pItem = (HierarchyItem*) mpSourceModel->itemFromIndex(sourceIndex);
-        result.push_back(pItem);
-    }
-    return result;
+    // Obtain the model hierarchy item
+    if (items.size() != 1)
+        return;
+    HierarchyItem* pBaseItem = items.first();
+    if (pBaseItem->type() != HierarchyItem::kModel)
+        return;
+    ModelHierarchyItem* pItem = (ModelHierarchyItem*) pBaseItem;
+
+    // Get the data
+    KCL::Model* pModel = &pItem->kclModel();
+    QString subprojectName = pItem->subproject()->name();
+
+    // Create the action to import model
+    QAction* pReadAction = new QAction(tr("&Read from a file"));
+    connect(pReadAction, &QAction::triggered, mpEditorManager,
+            [this, pModel]()
+            {
+                QString defaultDir = Utility::getLastDirectory(mSettings).absolutePath();
+                QString pathFile = QFileDialog::getOpenFileName(this, tr("Read Model"), defaultDir, tr("Model file format (*.dat *.txt)"));
+                if (pathFile.isEmpty())
+                    return;
+                *pModel = Utility::readModel(pathFile);
+                Utility::setLastPathFile(mSettings, pathFile);
+                refresh();
+                emit modelSubstituted(*pModel);
+            });
+
+    // Create the action to export model
+    QAction* pWriteAction = new QAction(tr("&Write to a file"));
+    connect(pWriteAction, &QAction::triggered, mpEditorManager,
+            [this, pModel, subprojectName]()
+            {
+                int const kMaxLength = 4;
+                QString name = subprojectName;
+                name = name.replace(" ", "-").toUpper();
+                if (name.length() > kMaxLength)
+                    name = name.first(kMaxLength);
+                QString defaultFileName = QString("DAT%1.dat").arg(name);
+                QString defaultPathFile = Utility::getLastDirectory(mSettings).absoluteFilePath(defaultFileName);
+                QString pathFile = QFileDialog::getSaveFileName(this, tr("Write Model"), defaultPathFile, tr("Model file format (*.dat *.txt)"));
+                if (pathFile.isEmpty())
+                    return;
+                Utility::writeModel(pathFile, *pModel);
+                Utility::setLastPathFile(mSettings, pathFile);
+            });
+
+    // Add the actions to the menu
+    pMenu->addAction(pReadAction);
+    pMenu->addAction(pWriteAction);
+}
+
+//! Set selected and expanded states of the tree model
+void ProjectBrowser::setModelState()
+{
+    uint numRows = mpFilterModel->rowCount();
+    for (uint iRow = 0; iRow != numRows; ++iRow)
+        setItemModelState(mpFilterModel->index(iRow, 0));
+}
+
+//! Specify selected and expanded states of a tree model item
+void ProjectBrowser::setItemModelState(QModelIndex const& index)
+{
+    // Check if the index is valid
+    if (!index.isValid())
+        return;
+
+    // Set the item state
+    QModelIndex proxyIndex = mpFilterModel->mapToSource(index);
+    HierarchyItem* pItem = (HierarchyItem*) mpSourceModel->itemFromIndex(proxyIndex);
+    QString id = Utility::getIdentificationName(pItem);
+    if (mSelectedState.contains(id) && mSelectedState[id])
+        mpView->selectionModel()->select(index, QItemSelectionModel::Select);
+    if (mExpandedState.contains(id))
+        mpView->setExpanded(index, mExpandedState[id]);
+
+    // Process the children
+    uint numRows = mpFilterModel->rowCount(index);
+    for (uint iRow = 0; iRow != numRows; ++iRow)
+        setItemModelState(mpFilterModel->index(iRow, 0, index));
 }
 
 //! Expand or collapse selected items recursively

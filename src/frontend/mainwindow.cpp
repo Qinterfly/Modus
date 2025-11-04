@@ -55,6 +55,7 @@ bool MainWindow::openProject(QString const& pathFile)
         setModified(false);
         addToRecentProjects();
         mpProjectBrowser->refresh();
+        Utility::setLastPathFile(mSettings, pathFile);
         return true;
     }
     return false;
@@ -84,6 +85,7 @@ void MainWindow::saveAsProject(QString const& pathFile)
         qInfo() << tr("The project was saved as the following file %1").arg(pathFile);
         addToRecentProjects();
         setModified(false);
+        Utility::setLastPathFile(mSettings, pathFile);
     }
 }
 
@@ -207,8 +209,22 @@ ads::CDockWidget* MainWindow::createLogger()
 //! Connect the widgets between each other
 void MainWindow::createConnections()
 {
+    // Project browser
     connect(mpProjectBrowser, &ProjectBrowser::selectionChanged, mpViewManager, &ViewManager::processItems);
-    connect(mpProjectBrowser, &ProjectBrowser::editingFinished, mpViewManager, &ViewManager::plot);
+    connect(mpProjectBrowser, &ProjectBrowser::editingFinished, this,
+            [this]()
+            {
+                setModified(true);
+                mpViewManager->plot();
+            });
+    connect(mpProjectBrowser, &ProjectBrowser::modelSubstituted, this,
+            [this](KCL::Model& model)
+            {
+                setModified(true);
+                mpViewManager->replot(model);
+            });
+
+    // View manager
     connect(mpViewManager, &ViewManager::selectItemsRequested, mpProjectBrowser, &ProjectBrowser::selectItems);
     connect(mpViewManager, &ViewManager::editItemsRequested, mpProjectBrowser, &ProjectBrowser::editItems);
 }

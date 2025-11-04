@@ -1,8 +1,11 @@
 #include <QApplication>
 #include <QComboBox>
+#include <QDebug>
+#include <QDir>
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QScreen>
+#include <QSettings>
 #include <QToolBar>
 #include <QWidget>
 
@@ -30,6 +33,7 @@
 #include "isolver.h"
 #include "lineedit.h"
 #include "selectionset.h"
+#include "uiconstants.h"
 #include "uiutility.h"
 
 using namespace Eigen;
@@ -175,6 +179,24 @@ void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix)
         pathFile.replace(currentSuffix, expectedSuffix);
 }
 
+//! Retrieve last used directory
+QDir getLastDirectory(QSettings const& settings)
+{
+    return QFileInfo(getLastPathFile(settings)).dir();
+}
+
+//! Retrieve last used path file
+QString getLastPathFile(QSettings const& settings)
+{
+    return settings.value(Constants::Settings::skLastPathFile, QString()).toString();
+}
+
+//! Set last used path file
+void setLastPathFile(QSettings& settings, QString const& pathFile)
+{
+    settings.setValue(Constants::Settings::skLastPathFile, pathFile);
+}
+
 //! Cast the container consisted of pointers to hierarchy items
 template<typename Item>
 QList<Item*> castHierarchyItems(QList<HierarchyItem*> const& items)
@@ -201,12 +223,19 @@ bool isSameType(QList<HierarchyItem*> const& items)
 {
     if (items.isEmpty())
         return false;
-    int type = items.first()->type();
+    auto type = (HierarchyItem::Type) items.first()->type();
+    return isSameType(items, type);
+}
+
+//! Check if the have the same specified type
+bool isSameType(QList<HierarchyItem*> const& items, HierarchyItem::Type type)
+{
+    if (items.isEmpty())
+        return false;
     uint numItems = items.size();
-    bool isEqual;
     for (uint i = 1; i != numItems; ++i)
     {
-        isEqual = items[i]->type() == type;
+        bool isEqual = items[i]->type() == type;
         if (!isEqual)
             return false;
     }
@@ -224,6 +253,24 @@ HierarchyItem* findParentByType(HierarchyItem* pItem, HierarchyItem::Type type)
         pParent = pParent->parent();
     }
     return nullptr;
+}
+
+//! Combine the unique name of the item for the identification purpose
+QString getIdentificationName(HierarchyItem* pItem)
+{
+    // Retrieve the parent identifier
+    QString parentKey;
+    QStandardItem* pParent = pItem->parent();
+    while (pParent)
+    {
+        parentKey = pParent->text() + "/" + parentKey;
+        pParent = pParent->parent();
+    }
+
+    // Retrieve the object identifier
+    QString objectKey = pItem->text();
+
+    return QString("%1/%2").arg(parentKey, objectKey);
 }
 
 //! Retrieve the KCL types which can be rendered
@@ -354,6 +401,38 @@ void setupModel(KCL::Model& model)
         pTrapezium->iSymmetry = pData->iSymmetry;
         pTrapezium->sweepAngle = pData->sweepAngle;
     }
+}
+
+//! Read a model from a file
+KCL::Model readModel(QString const& pathFile)
+{
+    KCL::Model model;
+    try
+    {
+        model.read(pathFile.toStdString());
+    }
+    catch (...)
+    {
+        qWarning() << QObject::tr("Unexpected error occurred while reading the file: %1").arg(pathFile);
+    }
+    qInfo() << QObject::tr("Model was read from the file %1").arg(pathFile);
+    return model;
+}
+
+//! Write a model to a file
+bool writeModel(QString const& pathFile, KCL::Model const& model)
+{
+    try
+    {
+        model.write(pathFile.toStdString());
+    }
+    catch (...)
+    {
+        qWarning() << QObject::tr("Unexpected error occurred while writing the file: %1").arg(pathFile);
+        return false;
+    }
+    qInfo() << QObject::tr("Model was written to the file %1").arg(pathFile);
+    return true;
 }
 
 //! Check whether three points are located clockwise or counterclockwise

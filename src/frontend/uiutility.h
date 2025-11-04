@@ -15,8 +15,10 @@ QT_FORWARD_DECLARE_CLASS(QWidget);
 QT_FORWARD_DECLARE_CLASS(QToolBar);
 QT_FORWARD_DECLARE_CLASS(QColor);
 QT_FORWARD_DECLARE_CLASS(QPalette);
-QT_FORWARD_DECLARE_CLASS(QIcon)
-QT_FORWARD_DECLARE_CLASS(QComboBox)
+QT_FORWARD_DECLARE_CLASS(QIcon);
+QT_FORWARD_DECLARE_CLASS(QComboBox);
+QT_FORWARD_DECLARE_CLASS(QSettings);
+QT_FORWARD_DECLARE_CLASS(QDir);
 
 class vtkActor;
 class vtkColor3d;
@@ -49,13 +51,18 @@ QList<HierarchyItem*> findItems(HierarchyItem* pRootItem, HierarchyItem::Type ty
 
 // File
 void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix);
+QDir getLastDirectory(QSettings const& settings);
+QString getLastPathFile(QSettings const& settings);
+void setLastPathFile(QSettings& settings, QString const& pathFile);
 
 // Hierarchy
 template<typename Item>
 QList<Item*> castHierarchyItems(QList<HierarchyItem*> const& items);
 QList<HierarchyItem*> childItems(HierarchyItem* pItem);
 bool isSameType(QList<HierarchyItem*> const& items);
+bool isSameType(QList<HierarchyItem*> const& items, HierarchyItem::Type type);
 HierarchyItem* findParentByType(HierarchyItem* pItem, HierarchyItem::Type type);
+QString getIdentificationName(HierarchyItem* pItem);
 
 // KCL
 QList<KCL::ElementType> drawableTypes();
@@ -72,6 +79,8 @@ Transformation computeTransformation(KCL::ElasticSurface const& surface, bool is
 Transformation computeTransformation(KCL::Vec3 const& coords, double dihedralAngle, double sweepAngle, double zAngle);
 Transformation reflectTransformation(Transformation const& transform);
 void setupModel(KCL::Model& model);
+KCL::Model readModel(QString const& pathFile);
+bool writeModel(QString const& pathFile, KCL::Model const& model);
 
 // Rendering
 QList<int> jarvisMarch(QList<Point> const& points);

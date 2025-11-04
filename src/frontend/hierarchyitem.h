@@ -74,8 +74,6 @@ public:
     HierarchyItem(Type itemType, QIcon const& icon, QString const& text);
     virtual ~HierarchyItem() = default;
 
-    virtual QUuid id() const;
-
     int type() const override final;
     void setExpanded(bool flag = true);
     void setSelected(bool flag = true);
@@ -90,7 +88,6 @@ public:
     SubprojectHierarchyItem(Backend::Core::Subproject& subproject);
     ~SubprojectHierarchyItem() = default;
 
-    QUuid id() const override;
     Backend::Core::Subproject& subproject();
 
     void selectItems(KCL::Model const& kclModel, QList<Backend::Core::Selection> const& selections);

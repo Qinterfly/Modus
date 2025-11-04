@@ -41,6 +41,7 @@ public:
 
     Backend::Core::Project& project();
     EditorManager* editorManager();
+    QList<HierarchyItem*> selectedItems();
 
     void refresh();
     void selectItems(KCL::Model const& model, QList<Backend::Core::Selection> const& selections);
@@ -49,19 +50,27 @@ public:
 signals:
     void selectionChanged(QList<HierarchyItem*>);
     void editingFinished();
+    void modelSubstituted(KCL::Model& model);
 
 private:
     // Content
     void createContent();
     void filterContent(QString const& pattern);
+
+    // Signals & slots
     void processContextMenuRequest(QPoint const& point);
     void processSelection(QItemSelection const& selected, QItemSelection const& deselected);
     void processDoubleClick(QModelIndex const& index);
+    void processExpansion(QModelIndex const& index);
+
+    // Constructors
     void createElementEditor(HierarchyItem* pBaseItem);
     void createElementEditors(QList<HierarchyItem*>& items);
+    void createModelActions(QMenu* pMenu, QList<HierarchyItem*>& items);
 
     // Subproject management
-    QList<HierarchyItem*> selectedItems();
+    void setModelState();
+    void setItemModelState(QModelIndex const& index);
     void setSelectedItemsExpandedState(bool flag);
 
 private:
@@ -72,6 +81,8 @@ private:
     ProjectHierarchyModel* mpSourceModel;
     QSortFilterProxyModel* mpFilterModel;
     EditorManager* mpEditorManager;
+    QMap<QString, bool> mExpandedState;
+    QMap<QString, bool> mSelectedState;
 };
 
 }

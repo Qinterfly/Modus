@@ -53,6 +53,7 @@ public:
     void processItems(QList<HierarchyItem*> const& items);
     void refresh();
     void plot();
+    void replot(KCL::Model const& model);
     void clear();
 
 signals:
