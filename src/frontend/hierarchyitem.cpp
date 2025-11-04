@@ -36,9 +36,35 @@ HierarchyItem::HierarchyItem(Type itemType, QIcon const& icon, QString const& te
     setIcon(icon);
 }
 
+QString const& HierarchyItem::id()
+{
+    if (mID.isEmpty())
+        evaluateID();
+    return mID;
+}
+
 int HierarchyItem::type() const
 {
     return mkType;
+}
+
+//! Compute item identifier (might not be unique)
+void HierarchyItem::evaluateID()
+{
+    // Constants
+    QString const kDelimiter = "/";
+
+    // Retrieve the parent identifier
+    QString parentKey;
+    QStandardItem* pParent = parent();
+    if (pParent && HierarchyItem::isValid(pParent->type()))
+        parentKey = static_cast<HierarchyItem*>(pParent)->id();
+
+    // Retrieve the object identifier
+    QString objectKey = data(Qt::DisplayRole).toString();
+
+    // Build up the id
+    mID = QString("%1%3%2").arg(parentKey, objectKey, kDelimiter);
 }
 
 //! Set the expanded state of the hierarchy item
@@ -82,6 +108,12 @@ void HierarchyItem::setSelected(bool flag)
         pSelectionModel->select(proxyIndex, QItemSelectionModel::Select);
     else
         pSelectionModel->select(proxyIndex, QItemSelectionModel::Deselect);
+}
+
+//! Check if the type is hierarchial
+bool HierarchyItem::isValid(int iType)
+{
+    return iType >= Qt::UserRole;
 }
 
 SubprojectHierarchyItem::SubprojectHierarchyItem(Backend::Core::Subproject& subproject)

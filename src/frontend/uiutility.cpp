@@ -255,24 +255,6 @@ HierarchyItem* findParentByType(HierarchyItem* pItem, HierarchyItem::Type type)
     return nullptr;
 }
 
-//! Combine the unique name of the item for the identification purpose
-QString getIdentificationName(HierarchyItem* pItem)
-{
-    // Retrieve the parent identifier
-    QString parentKey;
-    QStandardItem* pParent = pItem->parent();
-    while (pParent)
-    {
-        parentKey = pParent->text() + "/" + parentKey;
-        pParent = pParent->parent();
-    }
-
-    // Retrieve the object identifier
-    QString objectKey = pItem->text();
-
-    return QString("%1/%2").arg(parentKey, objectKey);
-}
-
 //! Retrieve the KCL types which can be rendered
 QList<KCL::ElementType> drawableTypes()
 {

@@ -74,12 +74,19 @@ public:
     HierarchyItem(Type itemType, QIcon const& icon, QString const& text);
     virtual ~HierarchyItem() = default;
 
+    QString const& id();
     int type() const override final;
     void setExpanded(bool flag = true);
     void setSelected(bool flag = true);
 
+    static bool isValid(int iType);
+
+private:
+    void evaluateID();
+
 protected:
     Type const mkType;
+    QString mID;
 };
 
 class SubprojectHierarchyItem : public HierarchyItem

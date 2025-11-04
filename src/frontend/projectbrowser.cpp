@@ -276,7 +276,7 @@ void ProjectBrowser::processSelection(QItemSelection const& selected, QItemSelec
     {
         QModelIndex proxyIndex = mpFilterModel->mapToSource(index);
         HierarchyItem* pItem = (HierarchyItem*) mpSourceModel->itemFromIndex(proxyIndex);
-        mSelectedState[Utility::getIdentificationName(pItem)] = true;
+        mSelectedState[pItem->id()] = true;
     }
 
     // Send the selected items
@@ -304,7 +304,7 @@ void ProjectBrowser::processExpansion(QModelIndex const& index)
 {
     QModelIndex proxyIndex = mpFilterModel->mapToSource(index);
     HierarchyItem* pItem = (HierarchyItem*) mpSourceModel->itemFromIndex(proxyIndex);
-    mExpandedState[Utility::getIdentificationName(pItem)] = mpView->isExpanded(index);
+    mExpandedState[pItem->id()] = mpView->isExpanded(index);
 }
 
 //! Construct an element editor for a hierarchy item
@@ -416,7 +416,7 @@ void ProjectBrowser::setItemModelState(QModelIndex const& index)
     // Set the item state
     QModelIndex proxyIndex = mpFilterModel->mapToSource(index);
     HierarchyItem* pItem = (HierarchyItem*) mpSourceModel->itemFromIndex(proxyIndex);
-    QString id = Utility::getIdentificationName(pItem);
+    QString id = pItem->id();
     if (mSelectedState.contains(id) && mSelectedState[id])
         mpView->selectionModel()->select(index, QItemSelectionModel::Select);
     if (mExpandedState.contains(id))

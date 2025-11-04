@@ -216,6 +216,7 @@ void MainWindow::createConnections()
             {
                 setModified(true);
                 mpViewManager->plot();
+                mpViewManager->processItems(mpProjectBrowser->selectedItems());
             });
     connect(mpProjectBrowser, &ProjectBrowser::modelSubstituted, this,
             [this](KCL::Model& model)

@@ -62,7 +62,6 @@ QList<HierarchyItem*> childItems(HierarchyItem* pItem);
 bool isSameType(QList<HierarchyItem*> const& items);
 bool isSameType(QList<HierarchyItem*> const& items, HierarchyItem::Type type);
 HierarchyItem* findParentByType(HierarchyItem* pItem, HierarchyItem::Type type);
-QString getIdentificationName(HierarchyItem* pItem);
 
 // KCL
 QList<KCL::ElementType> drawableTypes();
