@@ -25,7 +25,7 @@ void TestFrontend::testOpenProject()
     QString fileName = QString("tests.%1").arg(Core::Project::fileSuffix());
     QString pathFile = Utility::combineFilePath(EXAMPLES_DIR, fileName);
     QVERIFY(mpMainWindow->openProject(pathFile));
-    mpMainWindow->show();
+    // mpMainWindow->show();
 }
 
 //! View a model
@@ -65,6 +65,12 @@ void TestFrontend::testEditorManager()
     Core::Subproject& subproject = mpMainWindow->project().subprojects()[iSubproject];
     mpModel = new KCL::Model(subproject.model());
     KCL::ElasticSurface& surface = mpModel->surfaces[iSurface];
+    Core::ModalSolver* pModalSolver = nullptr;
+    for (Backend::Core::ISolver* pSolver : std::as_const(subproject.solvers()))
+    {
+        if (pSolver->type() == Core::ISolver::kModal)
+            pModalSolver = (Core::ModalSolver*) pSolver;
+    }
     surface.insertElement(KCL::BK);
     surface.insertElement(KCL::PN);
     surface.insertElement(KCL::P4);
@@ -88,6 +94,8 @@ void TestFrontend::testEditorManager()
     pManager->createEditor(*mpModel, Core::Selection(-1, KCL::TE));
     pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::PK));
     pManager->createEditor(*mpModel);
+    if (pModalSolver)
+        pManager->createEditor(pModalSolver->options);
     pManager->setCurrentEditor(pManager->numEditors() - 1);
     if (!mpMainWindow->isVisible())
         pManager->show();

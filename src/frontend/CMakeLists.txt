@@ -50,6 +50,7 @@ set(FRONTEND_HEADERS
     springdampereditor.h
     geometryview.h
     modeleditor.h
+    modaloptionseditor.h
 )
 
 set(FRONTEND_SOURCES
@@ -76,6 +77,7 @@ set(FRONTEND_SOURCES
     springdampereditor.cpp
     geometryview.cpp
     modeleditor.cpp
+    modaloptionseditor.cpp
 )
 
 qt_add_library(frontend STATIC
@@ -91,6 +93,7 @@ target_link_libraries(frontend PRIVATE
     Qt::OpenGLWidgets
     ads::qtadvanceddocking-qt6
     ${VTK_LIBRARIES}
+    qtpropertybrowser
     backend
 )
 

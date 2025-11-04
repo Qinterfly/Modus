@@ -626,6 +626,7 @@ OptimTargetHierarchyItem::OptimTargetHierarchyItem(Eigen::VectorXi& indices, Eig
     , mSolution(solution)
     , mMatches(matches)
 {
+    appendRow(new ModalSolutionHierarchyItem(solution));
 }
 
 Eigen::VectorXi& OptimTargetHierarchyItem::indices()

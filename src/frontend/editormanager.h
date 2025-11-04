@@ -2,6 +2,7 @@
 #define EDITORMANAGER_H
 
 #include <QDialog>
+#include <QMetaProperty>
 #include <QUndoCommand>
 
 #include "kcl/alias.h"
@@ -18,11 +19,13 @@ struct Model;
 namespace Backend::Core
 {
 struct Selection;
+struct ModalOptions;
 }
 
 namespace Frontend
 {
 
+//! Command to edit elements using datasets
 class EditElements : public QUndoCommand
 {
 public:
@@ -37,6 +40,24 @@ private:
     QList<KCL::AbstractElement*> mElements;
     QList<KCL::VecN> mOldDataSet;
     QList<KCL::VecN> mNewDataSet;
+};
+
+//! Command to edit property of a QObject
+template<typename T>
+class EditProperty : public QUndoCommand
+{
+public:
+    EditProperty(T& object, QString const& name, QVariant const& value);
+    ~EditProperty() = default;
+
+    void undo() override;
+    void redo() override;
+
+private:
+    T& mObject;
+    QMetaProperty mProperty;
+    QVariant mOldValue;
+    QVariant mNewValue;
 };
 
 //! Base class for all editors
@@ -57,7 +78,8 @@ public:
         kAeroTrapezium,
         kPolyExponents,
         kSpringDamper,
-        kModel
+        kModel,
+        kModalOptions
     };
 
     Editor() = delete;
@@ -96,6 +118,7 @@ public:
     void clear();
     void createEditor(KCL::Model& model, Backend::Core::Selection const& selection);
     void createEditor(KCL::Model& model);
+    void createEditor(Backend::Core::ModalOptions& options);
     void setCurrentEditor(int index);
     void refreshCurrentEditor();
 

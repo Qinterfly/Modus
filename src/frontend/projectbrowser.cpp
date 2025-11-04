@@ -168,16 +168,12 @@ void ProjectBrowser::createContent()
     connect(mpView, &QTreeView::doubleClicked, this, &ProjectBrowser::processDoubleClick);
 
     // Create the actions
-    QAction* pExpandAction = new QAction(tr("E&xpand all"), this);
-    QAction* pCollapseAction = new QAction(tr("&Collapse all"), this);
+    QAction* pExpandAction = new QAction(QIcon(":/icons/arrows-expand.svg"), tr("E&xpand all"), this);
+    QAction* pCollapseAction = new QAction(QIcon(":/icons/arrows-collapse.svg"), tr("&Collapse all"), this);
 
     // Set the shortcuts
     pExpandAction->setShortcut(Qt::CTRL | Qt::Key_E);
     pCollapseAction->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_E);
-
-    // Set the icons
-    pExpandAction->setIcon(QIcon(":/icons/arrows-expand.svg"));
-    pCollapseAction->setIcon(QIcon(":/icons/arrows-collapse.svg"));
 
     // Connect the actions
     connect(pExpandAction, &QAction::triggered, mpView, &QTreeView::expandAll);
@@ -257,8 +253,8 @@ void ProjectBrowser::processContextMenuRequest(QPoint const& point)
     // Fill up the menu with the common actions
     if (!pMenu->actions().isEmpty())
         pMenu->addSeparator();
-    pMenu->addAction(tr("Expand"), this, [this]() { setSelectedItemsExpandedState(true); });
-    pMenu->addAction(tr("Collapse"), this, [this]() { setSelectedItemsExpandedState(false); });
+    pMenu->addAction(QIcon(":/icons/arrows-expand.svg"), tr("Expand"), this, [this]() { setSelectedItemsExpandedState(true); });
+    pMenu->addAction(QIcon(":/icons/arrows-collapse.svg"), tr("Collapse"), this, [this]() { setSelectedItemsExpandedState(false); });
 
     // Show the menu
     QPoint position = mpView->mapToGlobal(point);
@@ -340,6 +336,9 @@ void ProjectBrowser::createItemEditors(QList<HierarchyItem*>& items)
             break;
         case HierarchyItem::kModel:
             mpEditorManager->createEditor(static_cast<ModelHierarchyItem*>(pBaseItem)->kclModel());
+            break;
+        case HierarchyItem::kModalOptions:
+            mpEditorManager->createEditor(static_cast<ModalOptionsHierarchyItem*>(pBaseItem)->options());
             break;
         default:
             break;

@@ -12,6 +12,7 @@
 #include "editormanager.h"
 #include "generaldataeditor.h"
 #include "masseditor.h"
+#include "modaloptionseditor.h"
 #include "modeleditor.h"
 #include "paneleditor.h"
 #include "polyexponentseditor.h"
@@ -57,6 +58,36 @@ void EditElements::redo()
     int numElements = mElements.size();
     for (int i = 0; i != numElements; ++i)
         mElements[i]->set(mNewDataSet[i]);
+}
+
+template<typename T>
+EditProperty<T>::EditProperty(T& object, QString const& name, QVariant const& value)
+    : mObject(object)
+{
+    QMetaObject const& metaObject = mObject.staticMetaObject;
+    int iProperty = metaObject.indexOfProperty(name.toStdString().c_str());
+    if (iProperty > -1)
+    {
+        mProperty = metaObject.property(iProperty);
+        mOldValue = mProperty.readOnGadget(&mObject);
+    }
+    mNewValue = value;
+}
+
+//! Revert the changes
+template<typename T>
+void EditProperty<T>::undo()
+{
+    if (mProperty.isValid())
+        mProperty.writeOnGadget(&mObject, mOldValue);
+}
+
+//! Apply the changes
+template<typename T>
+void EditProperty<T>::redo()
+{
+    if (mProperty.isValid())
+        mProperty.writeOnGadget(&mObject, mNewValue);
 }
 
 Editor::Editor(Type type, QString const& name, QIcon const& icon, QWidget* pParent)
@@ -165,6 +196,13 @@ void EditorManager::createEditor(KCL::Model& model)
     addEditor(pEditor);
 }
 
+//! Create editor of modal options
+void EditorManager::createEditor(Backend::Core::ModalOptions& options)
+{
+    Editor* pEditor = new ModalOptionsEditor(options, tr("Modal options"));
+    addEditor(pEditor);
+}
+
 //! Set the current editor to work with
 void EditorManager::setCurrentEditor(int index)
 {
@@ -251,3 +289,6 @@ void EditorManager::addEditor(Editor* pEditor)
     mpEditorsList->addItem(pEditor->icon(), pEditor->name());
     connect(pEditor, &Editor::commandExecuted, this, [this](QUndoCommand* pCommand) { mpUndoStack->push(pCommand); });
 }
+
+// Explicit template instantiation
+template class Frontend::EditProperty<Backend::Core::ModalOptions>;
