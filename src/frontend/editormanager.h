@@ -20,6 +20,8 @@ namespace Backend::Core
 {
 struct Selection;
 struct ModalOptions;
+struct FlutterOptions;
+struct OptimOptions;
 }
 
 namespace Frontend
@@ -79,7 +81,9 @@ public:
         kPolyExponents,
         kSpringDamper,
         kModel,
-        kModalOptions
+        kModalOptions,
+        kFlutterOptions,
+        kOptimOptions
     };
 
     Editor() = delete;
@@ -119,6 +123,8 @@ public:
     void createEditor(KCL::Model& model, Backend::Core::Selection const& selection);
     void createEditor(KCL::Model& model);
     void createEditor(Backend::Core::ModalOptions& options);
+    void createEditor(Backend::Core::FlutterOptions& options);
+    void createEditor(Backend::Core::OptimOptions& options);
     void setCurrentEditor(int index);
     void refreshCurrentEditor();
 

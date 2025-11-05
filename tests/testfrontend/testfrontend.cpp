@@ -4,6 +4,7 @@
 
 #include "editormanager.h"
 #include "fileutility.h"
+#include "fluttersolver.h"
 #include "geometryview.h"
 #include "modalsolver.h"
 #include "projectbrowser.h"
@@ -25,7 +26,7 @@ void TestFrontend::testOpenProject()
     QString fileName = QString("tests.%1").arg(Core::Project::fileSuffix());
     QString pathFile = Utility::combineFilePath(EXAMPLES_DIR, fileName);
     QVERIFY(mpMainWindow->openProject(pathFile));
-    // mpMainWindow->show();
+    mpMainWindow->show();
 }
 
 //! View a model
@@ -65,18 +66,17 @@ void TestFrontend::testEditorManager()
     Core::Subproject& subproject = mpMainWindow->project().subprojects()[iSubproject];
     mpModel = new KCL::Model(subproject.model());
     KCL::ElasticSurface& surface = mpModel->surfaces[iSurface];
-    Core::ModalSolver* pModalSolver = nullptr;
-    for (Backend::Core::ISolver* pSolver : std::as_const(subproject.solvers()))
-    {
-        if (pSolver->type() == Core::ISolver::kModal)
-            pModalSolver = (Core::ModalSolver*) pSolver;
-    }
+    auto pModalSolver = (Core::ModalSolver*) subproject.solver(Core::ISolver::kModal);
+    auto pFlutterSolver = (Core::FlutterSolver*) subproject.solver(Core::ISolver::kFlutter);
+    auto pOptimSolver = (Core::OptimSolver*) subproject.solver(Core::ISolver::kOptim);
+    // Introduce dummy elements
     surface.insertElement(KCL::BK);
     surface.insertElement(KCL::PN);
     surface.insertElement(KCL::P4);
     surface.insertElement(KCL::SM);
     surface.insertElement(KCL::DA);
     surface.insertElement(KCL::GS);
+    // Create editors of elements
     pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::OD));
     pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::BI));
     pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::BK));
@@ -93,9 +93,15 @@ void TestFrontend::testEditorManager()
     pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::AE, 1));
     pManager->createEditor(*mpModel, Core::Selection(-1, KCL::TE));
     pManager->createEditor(*mpModel, Core::Selection(iSurface, KCL::PK));
+    // Create a model editor
     pManager->createEditor(*mpModel);
+    // Create editors of solvers
     if (pModalSolver)
         pManager->createEditor(pModalSolver->options);
+    if (pFlutterSolver)
+        pManager->createEditor(pFlutterSolver->options);
+    if (pOptimSolver)
+        pManager->createEditor(pOptimSolver->options);
     pManager->setCurrentEditor(pManager->numEditors() - 1);
     if (!mpMainWindow->isVisible())
         pManager->show();

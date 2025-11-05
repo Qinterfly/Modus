@@ -65,8 +65,9 @@ private:
 
     // Constructors
     void createElementEditor(HierarchyItem* pBaseItem);
-    void createItemEditors(QList<HierarchyItem*>& items);
-    void createModelActions(QMenu* pMenu, QList<HierarchyItem*>& items);
+    void createItemEditor(HierarchyItem* pBaseItem);
+    void createItemEditors(QList<HierarchyItem*> const& items);
+    void createModelActions(QMenu* pMenu, QList<HierarchyItem*> const& items);
 
     // Subproject management
     void setModelState();

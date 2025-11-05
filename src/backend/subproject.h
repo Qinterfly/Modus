@@ -37,8 +37,10 @@ public:
     QString& name();
     KCL::Model& model();
     QList<ISolver*>& solvers();
+    QList<ISolver*> solvers(ISolver::Type type);
 
     ISolver* solver(int index);
+    ISolver* solver(ISolver::Type type, int index = 0);
     ISolver* addSolver(ISolver::Type type);
     void removeSolver(int index);
     void removeAllSolvers();

@@ -12,8 +12,8 @@ namespace Backend::Core
 struct FlutterOptions : public ISerializable
 {
     Q_GADGET
-    Q_PROPERTY(double timeout MEMBER timeout)
     Q_PROPERTY(int numModes MEMBER numModes)
+    Q_PROPERTY(double timeout MEMBER timeout)
 
 public:
     FlutterOptions();
@@ -25,11 +25,11 @@ public:
     void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
 
-    //! Maximum duration of solution
-    double timeout;
-
     //! Number of modes to compute
     int numModes;
+
+    //! Maximum duration of solution
+    double timeout;
 };
 
 struct FlutterSolution : public ISerializable

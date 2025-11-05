@@ -81,12 +81,32 @@ QList<ISolver*>& Subproject::solvers()
     return mSolvers;
 }
 
+QList<ISolver*> Subproject::solvers(ISolver::Type type)
+{
+    QList<ISolver*> result;
+    int count = numSolvers();
+    for (int i = 0; i != count; ++i)
+    {
+        if (mSolvers[i]->type() == type)
+            result.push_back(mSolvers[i]);
+    }
+    return result;
+}
+
 ISolver* Subproject::solver(int index)
 {
     ISolver* pSolver = nullptr;
     if (index >= 0 && index < mSolvers.size())
         pSolver = mSolvers[index];
     return pSolver;
+}
+
+ISolver* Subproject::solver(ISolver::Type type, int index)
+{
+    auto typeSolvers = solvers(type);
+    if (index >= 0 && index < typeSolvers.size())
+        return typeSolvers[index];
+    return nullptr;
 }
 
 ISolver* Subproject::addSolver(ISolver::Type type)

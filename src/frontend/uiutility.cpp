@@ -406,7 +406,9 @@ bool writeModel(QString const& pathFile, KCL::Model const& model)
 {
     try
     {
-        model.write(pathFile.toStdString());
+        KCL::Model filterModel = model;
+        setupModel(filterModel);
+        filterModel.write(pathFile.toStdString());
     }
     catch (...)
     {
@@ -423,7 +425,9 @@ QString toString(KCL::Model const& model)
     QString result;
     try
     {
-        result = model.toString().data();
+        KCL::Model filterModel = model;
+        setupModel(filterModel);
+        result = filterModel.toString().data();
     }
     catch (...)
     {

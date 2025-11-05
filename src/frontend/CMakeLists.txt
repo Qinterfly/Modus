@@ -51,6 +51,8 @@ set(FRONTEND_HEADERS
     geometryview.h
     modeleditor.h
     modaloptionseditor.h
+    flutteroptionseditor.h
+    optimoptionseditor.cpp
 )
 
 set(FRONTEND_SOURCES
@@ -78,6 +80,8 @@ set(FRONTEND_SOURCES
     geometryview.cpp
     modeleditor.cpp
     modaloptionseditor.cpp
+    flutteroptionseditor.cpp
+    optimoptionseditor.cpp
 )
 
 qt_add_library(frontend STATIC

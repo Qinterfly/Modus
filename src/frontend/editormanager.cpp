@@ -10,10 +10,12 @@
 #include "beameditor.h"
 #include "constantseditor.h"
 #include "editormanager.h"
+#include "flutteroptionseditor.h"
 #include "generaldataeditor.h"
 #include "masseditor.h"
 #include "modaloptionseditor.h"
 #include "modeleditor.h"
+#include "optimoptionseditor.h"
 #include "paneleditor.h"
 #include "polyexponentseditor.h"
 #include "rawdataeditor.h"
@@ -203,6 +205,20 @@ void EditorManager::createEditor(Backend::Core::ModalOptions& options)
     addEditor(pEditor);
 }
 
+//! Create editor of flutter options
+void EditorManager::createEditor(Backend::Core::FlutterOptions& options)
+{
+    Editor* pEditor = new FlutterOptionsEditor(options, tr("Flutter options"));
+    addEditor(pEditor);
+}
+
+//! Create editor of optimization options
+void EditorManager::createEditor(Backend::Core::OptimOptions& options)
+{
+    Editor* pEditor = new OptimOptionsEditor(options, tr("Optimization options"));
+    addEditor(pEditor);
+}
+
 //! Set the current editor to work with
 void EditorManager::setCurrentEditor(int index)
 {
@@ -241,6 +257,7 @@ void EditorManager::createContent()
     // Create the layout to select edtors
     QHBoxLayout* pSelectLayout = new QHBoxLayout;
     mpEditorsList = new QComboBox;
+    mpEditorsList->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     pSelectLayout->addWidget(new QLabel(tr("Editors: ")));
     pSelectLayout->addWidget(mpEditorsList);
     pSelectLayout->addStretch();
@@ -292,3 +309,5 @@ void EditorManager::addEditor(Editor* pEditor)
 
 // Explicit template instantiation
 template class Frontend::EditProperty<Backend::Core::ModalOptions>;
+template class Frontend::EditProperty<Backend::Core::FlutterOptions>;
+template class Frontend::EditProperty<Backend::Core::OptimOptions>;

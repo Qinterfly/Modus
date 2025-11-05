@@ -287,12 +287,10 @@ void ProjectBrowser::processDoubleClick(QModelIndex const& index)
     HierarchyItem* pItem = (HierarchyItem*) mpSourceModel->itemFromIndex(sourceIndex);
 
     // Create the editor
-    if (pItem->type() == HierarchyItem::kElement)
-    {
-        mpEditorManager->clear();
-        createElementEditor(pItem);
+    mpEditorManager->clear();
+    createItemEditor(pItem);
+    if (!mpEditorManager->isEmpty())
         mpEditorManager->show();
-    }
 }
 
 //! Process a collapsed or expanded item
@@ -313,41 +311,53 @@ void ProjectBrowser::createElementEditor(HierarchyItem* pBaseItem)
         mpEditorManager->createEditor(*pModel, selection);
 }
 
+//! Create an editor for hierarchy item
+void ProjectBrowser::createItemEditor(HierarchyItem* pBaseItem)
+{
+    auto type = pBaseItem->type();
+    switch (type)
+    {
+    case HierarchyItem::kGroupElements:
+    {
+        QList<HierarchyItem*> childItems = Utility::childItems(pBaseItem);
+        int numChildren = childItems.size();
+        for (int iChild = 0; iChild != numChildren; ++iChild)
+            createElementEditor(childItems[iChild]);
+        break;
+    }
+    case HierarchyItem::kElement:
+        createElementEditor(pBaseItem);
+        break;
+    case HierarchyItem::kModel:
+        mpEditorManager->createEditor(static_cast<ModelHierarchyItem*>(pBaseItem)->kclModel());
+        break;
+    case HierarchyItem::kModalOptions:
+        mpEditorManager->createEditor(static_cast<ModalOptionsHierarchyItem*>(pBaseItem)->options());
+        break;
+    case HierarchyItem::kFlutterOptions:
+        mpEditorManager->createEditor(static_cast<FlutterOptionsHierarchyItem*>(pBaseItem)->options());
+        break;
+    case HierarchyItem::kOptimOptions:
+        mpEditorManager->createEditor(static_cast<OptimOptionsHierarchyItem*>(pBaseItem)->options());
+        break;
+    default:
+        break;
+    }
+}
+
 //! Create multiple editors for hierarchy items
-void ProjectBrowser::createItemEditors(QList<HierarchyItem*>& items)
+void ProjectBrowser::createItemEditors(QList<HierarchyItem*> const& items)
 {
     int numItems = items.size();
-    for (int iItem = 0; iItem != numItems; ++iItem)
+    for (int i = 0; i != numItems; ++i)
     {
-        HierarchyItem* pBaseItem = items[iItem];
-        auto type = pBaseItem->type();
-        switch (type)
-        {
-        case HierarchyItem::kGroupElements:
-        {
-            QList<HierarchyItem*> childItems = Utility::childItems(pBaseItem);
-            int numChildren = childItems.size();
-            for (int iChild = 0; iChild != numChildren; ++iChild)
-                createElementEditor(childItems[iChild]);
-            break;
-        }
-        case HierarchyItem::kElement:
-            createElementEditor(pBaseItem);
-            break;
-        case HierarchyItem::kModel:
-            mpEditorManager->createEditor(static_cast<ModelHierarchyItem*>(pBaseItem)->kclModel());
-            break;
-        case HierarchyItem::kModalOptions:
-            mpEditorManager->createEditor(static_cast<ModalOptionsHierarchyItem*>(pBaseItem)->options());
-            break;
-        default:
-            break;
-        }
+        HierarchyItem* pBaseItem = items[i];
+        createItemEditor(pBaseItem);
     }
 }
 
 //! Create model associated actions
-void ProjectBrowser::createModelActions(QMenu* pMenu, QList<HierarchyItem*>& items)
+void ProjectBrowser::createModelActions(QMenu* pMenu, QList<HierarchyItem*> const& items)
 {
     // Obtain the model hierarchy item
     if (items.size() != 1)
