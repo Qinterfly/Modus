@@ -55,7 +55,7 @@ void GeneralDataEditor::refresh()
     QSignalBlocker blockerGroup(mpGroupEdit);
     QSignalBlocker blockerTorsional(mpTorsionalEdit);
     QSignalBlocker blockerBending(mpBendingEdit);
-    mpSymmetryCheckBox->setCheckState(mpElement->iSymmetry == 0 ? Qt::Checked : Qt::Unchecked);
+    mpSymmetryCheckBox->setChecked(mpElement->iSymmetry == 0);
     mpLiftSurfacesEdit->setValue(mpElement->iLiftSurfaces);
     mpGroupEdit->setValue(mpElement->iGroup);
     mpTorsionalEdit->setValue(mpElement->torsionalFactor);

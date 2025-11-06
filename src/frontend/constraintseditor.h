@@ -31,7 +31,8 @@ private:
     void createContent();
     void createConnections();
     void setData();
-    void updateBounds();
+    bool validateCheckEdits();
+    void updateBoundEdits();
 
 private:
     Backend::Core::Constraints& mConstraints;

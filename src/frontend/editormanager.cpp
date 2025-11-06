@@ -29,71 +29,6 @@ using namespace Backend;
 using namespace Frontend;
 using namespace Eigen;
 
-EditElements::EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::VecN> const& dataSet, QString const& name)
-    : mElements(elements)
-{
-    int numElements = mElements.size();
-    mOldDataSet.resize(numElements);
-    for (int i = 0; i != numElements; ++i)
-        mOldDataSet[i] = mElements[i]->get();
-    mNewDataSet = dataSet;
-    setText(QObject::tr("Multiple edits %1").arg(name));
-}
-
-EditElements::EditElements(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name)
-{
-    mElements.push_back(pElement);
-    mOldDataSet.push_back(pElement->get());
-    mNewDataSet.push_back(data);
-    setText(QObject::tr("Edit %1").arg(name));
-}
-
-//! Revert the changes
-void EditElements::undo()
-{
-    int numElements = mElements.size();
-    for (int i = 0; i != numElements; ++i)
-        mElements[i]->set(mOldDataSet[i]);
-}
-
-//! Apply the changes
-void EditElements::redo()
-{
-    int numElements = mElements.size();
-    for (int i = 0; i != numElements; ++i)
-        mElements[i]->set(mNewDataSet[i]);
-}
-
-template<typename T>
-EditProperty<T>::EditProperty(T& object, QString const& name, QVariant const& value)
-    : mObject(object)
-{
-    QMetaObject const& metaObject = mObject.staticMetaObject;
-    int iProperty = metaObject.indexOfProperty(name.toStdString().c_str());
-    if (iProperty > -1)
-    {
-        mProperty = metaObject.property(iProperty);
-        mOldValue = mProperty.readOnGadget(&mObject);
-    }
-    mNewValue = value;
-}
-
-//! Revert the changes
-template<typename T>
-void EditProperty<T>::undo()
-{
-    if (mProperty.isValid())
-        mProperty.writeOnGadget(&mObject, mOldValue);
-}
-
-//! Apply the changes
-template<typename T>
-void EditProperty<T>::redo()
-{
-    if (mProperty.isValid())
-        mProperty.writeOnGadget(&mObject, mNewValue);
-}
-
 Editor::Editor(Type type, QString const& name, QIcon const& icon, QWidget* pParent)
     : QWidget(pParent)
     , mkType(type)
@@ -316,7 +251,97 @@ void EditorManager::addEditor(Editor* pEditor)
     connect(pEditor, &Editor::commandExecuted, this, [this](QUndoCommand* pCommand) { mpUndoStack->push(pCommand); });
 }
 
+EditElements::EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::VecN> const& dataSet, QString const& name)
+    : mElements(elements)
+{
+    int numElements = mElements.size();
+    mOldDataSet.resize(numElements);
+    for (int i = 0; i != numElements; ++i)
+        mOldDataSet[i] = mElements[i]->get();
+    mNewDataSet = dataSet;
+    setText(QObject::tr("Multiple edits %1").arg(name));
+}
+
+EditElements::EditElements(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name)
+{
+    mElements.push_back(pElement);
+    mOldDataSet.push_back(pElement->get());
+    mNewDataSet.push_back(data);
+    setText(QObject::tr("Edit %1").arg(name));
+}
+
+//! Revert the changes
+void EditElements::undo()
+{
+    int numElements = mElements.size();
+    for (int i = 0; i != numElements; ++i)
+        mElements[i]->set(mOldDataSet[i]);
+}
+
+//! Apply the changes
+void EditElements::redo()
+{
+    int numElements = mElements.size();
+    for (int i = 0; i != numElements; ++i)
+        mElements[i]->set(mNewDataSet[i]);
+}
+
+template<typename T>
+EditProperty<T>::EditProperty(T& object, QString const& name, QVariant const& value)
+    : mObject(object)
+{
+    QMetaObject const& metaObject = mObject.staticMetaObject;
+    int iProperty = metaObject.indexOfProperty(name.toStdString().c_str());
+    if (iProperty > -1)
+    {
+        mProperty = metaObject.property(iProperty);
+        mOldValue = mProperty.readOnGadget(&mObject);
+    }
+    mNewValue = value;
+    setText(QObject::tr("Edit property %1").arg(name));
+}
+
+//! Revert the changes
+template<typename T>
+void EditProperty<T>::undo()
+{
+    if (mProperty.isValid())
+        mProperty.writeOnGadget(&mObject, mOldValue);
+}
+
+//! Apply the changes
+template<typename T>
+void EditProperty<T>::redo()
+{
+    if (mProperty.isValid())
+        mProperty.writeOnGadget(&mObject, mNewValue);
+}
+
+template<typename T>
+EditObject<T>::EditObject(T& object, QString const& name, T const& value)
+    : mObject(object)
+    , mOldValue(object)
+    , mNewValue(value)
+{
+    setText(QObject::tr("Edit %1").arg(name));
+}
+
+//! Revert the changes
+template<typename T>
+void EditObject<T>::undo()
+{
+    mObject = mOldValue;
+}
+
+//! Apply the changes
+template<typename T>
+void EditObject<T>::redo()
+{
+    mObject = mNewValue;
+}
+
 // Explicit template instantiation
 template class Frontend::EditProperty<Backend::Core::ModalOptions>;
 template class Frontend::EditProperty<Backend::Core::FlutterOptions>;
 template class Frontend::EditProperty<Backend::Core::OptimOptions>;
+template class Frontend::EditObject<Backend::Core::Constraints>;

@@ -28,41 +28,6 @@ class Constraints;
 namespace Frontend
 {
 
-//! Command to edit elements using datasets
-class EditElements : public QUndoCommand
-{
-public:
-    EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::VecN> const& dataSet, QString const& name);
-    EditElements(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name);
-    ~EditElements() = default;
-
-    void undo() override;
-    void redo() override;
-
-private:
-    QList<KCL::AbstractElement*> mElements;
-    QList<KCL::VecN> mOldDataSet;
-    QList<KCL::VecN> mNewDataSet;
-};
-
-//! Command to edit property of a QObject
-template<typename T>
-class EditProperty : public QUndoCommand
-{
-public:
-    EditProperty(T& object, QString const& name, QVariant const& value);
-    ~EditProperty() = default;
-
-    void undo() override;
-    void redo() override;
-
-private:
-    T& mObject;
-    QMetaProperty mProperty;
-    QVariant mOldValue;
-    QVariant mNewValue;
-};
-
 //! Base class for all editors
 class Editor : public QWidget
 {
@@ -141,6 +106,58 @@ private:
     QComboBox* mpEditorsList;
     QList<Editor*> mEditors;
     QUndoStack* mpUndoStack;
+};
+
+//! Command to edit elements using datasets
+class EditElements : public QUndoCommand
+{
+public:
+    EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::VecN> const& dataSet, QString const& name);
+    EditElements(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name);
+    ~EditElements() = default;
+
+    void undo() override;
+    void redo() override;
+
+private:
+    QList<KCL::AbstractElement*> mElements;
+    QList<KCL::VecN> mOldDataSet;
+    QList<KCL::VecN> mNewDataSet;
+};
+
+//! Command to edit property of a QObject
+template<typename T>
+class EditProperty : public QUndoCommand
+{
+public:
+    EditProperty(T& object, QString const& name, QVariant const& value);
+    ~EditProperty() = default;
+
+    void undo() override;
+    void redo() override;
+
+private:
+    T& mObject;
+    QMetaProperty mProperty;
+    QVariant mOldValue;
+    QVariant mNewValue;
+};
+
+//! Command to edit value
+template<typename T>
+class EditObject : public QUndoCommand
+{
+public:
+    EditObject(T& object, QString const& name, T const& value);
+    ~EditObject() = default;
+
+    void undo() override;
+    void redo() override;
+
+private:
+    T& mObject;
+    T mOldValue;
+    T mNewValue;
 };
 }
 

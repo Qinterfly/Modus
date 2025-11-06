@@ -160,6 +160,7 @@ void DoubleLineEdit::processTextChanged()
     QString newText = text();
     if (newText.contains(","))
     {
+        QSignalBlocker blocker(this);
         newText.replace(",", ".");
         setText(newText);
     }

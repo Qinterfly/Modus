@@ -2,6 +2,7 @@
 #include <QGridLayout>
 #include <QHeaderView>
 #include <QLabel>
+#include <QMessageBox>
 
 #include <magicenum/magic_enum.hpp>
 
@@ -33,21 +34,20 @@ QSize ConstraintsEditor::sizeHint() const
 //! Update data of widgets from the element source
 void ConstraintsEditor::refresh()
 {
-    auto getCheckState = [](bool flag) { return flag ? Qt::Checked : Qt::Unchecked; };
     for (auto variable : skVariables)
     {
         // Enabled
         QSignalBlocker blockerEnabled(mEnabledEdits[variable]);
-        mEnabledEdits[variable]->setCheckState(getCheckState(mConstraints.isEnabled(variable)));
+        mEnabledEdits[variable]->setChecked(mConstraints.isEnabled(variable));
         // United
         QSignalBlocker blockerUnited(mUnitedEdits[variable]);
-        mUnitedEdits[variable]->setCheckState(getCheckState(mConstraints.isUnited(variable)));
+        mUnitedEdits[variable]->setChecked(mConstraints.isUnited(variable));
         // Multiplied
         QSignalBlocker blockerMultiplied(mMultipliedEdits[variable]);
-        mMultipliedEdits[variable]->setCheckState(getCheckState(mConstraints.isMultiplied(variable)));
+        mMultipliedEdits[variable]->setChecked(mConstraints.isMultiplied(variable));
         // Nonzero
         QSignalBlocker blockerNonzero(mNonzeroEdits[variable]);
-        mNonzeroEdits[variable]->setCheckState(getCheckState(mConstraints.isNonzero(variable)));
+        mNonzeroEdits[variable]->setChecked(mConstraints.isNonzero(variable));
         // Scale
         QSignalBlocker blockerScale(mScaleEdits[variable]);
         mScaleEdits[variable]->setValue(mConstraints.scale(variable));
@@ -160,12 +160,60 @@ void ConstraintsEditor::createConnections()
 //! Set the constraints
 void ConstraintsEditor::setData()
 {
-    updateBounds();
-    // TODO
+    // Check if the flags are correct
+    if (!validateCheckEdits())
+    {
+        refresh();
+        return;
+    }
+
+    // Update value boundaries
+    updateBoundEdits();
+
+    // Set the new values of constraints
+    Constraints newConstraints = mConstraints;
+    for (auto variable : skVariables)
+    {
+        newConstraints.setEnabled(variable, mEnabledEdits[variable]->isChecked());
+        newConstraints.setUnited(variable, mUnitedEdits[variable]->isChecked());
+        newConstraints.setMultiplied(variable, mMultipliedEdits[variable]->isChecked());
+        newConstraints.setNonzero(variable, mNonzeroEdits[variable]->isChecked());
+        newConstraints.setScale(variable, mScaleEdits[variable]->value());
+        newConstraints.setBounds(variable, {mMinBoundEdits[variable]->value(), mMaxBoundEdits[variable]->value()});
+    }
+
+    // Apply the changes
+    emit commandExecuted(new EditObject<Constraints>(mConstraints, tr("Constraints"), newConstraints));
 }
 
-//! Update value boundaries
-void ConstraintsEditor::updateBounds()
+//! Update edits which set flags
+bool ConstraintsEditor::validateCheckEdits()
+{
+    for (auto variable : skVariables)
+    {
+        // Obtain the current flags
+        bool isUnited = mUnitedEdits[variable]->isChecked();
+        bool isMultiplied = mMultipliedEdits[variable]->isChecked();
+        bool isNonzero = mNonzeroEdits[variable]->isChecked();
+
+        // Validate flags
+        if (isUnited && isMultiplied)
+        {
+            QMessageBox::warning(this, tr("Constraints Warning"), tr("Unification and multiplication flags cannot be both enabled at once"));
+            return false;
+        }
+        if (isNonzero && (isUnited || isMultiplied))
+        {
+            QMessageBox::warning(this, tr("Constraints Warning"),
+                                 tr("Nonzero flag cannot be used with unification or multiplication flags at once"));
+            return false;
+        }
+    }
+    return true;
+}
+
+//! Update edits which set boundaries
+void ConstraintsEditor::updateBoundEdits()
 {
     for (auto variable : skVariables)
     {
