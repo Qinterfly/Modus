@@ -6,3 +6,4 @@ examples
 lib
 CMakeLists.txt.user*
 TODO.txt
+.qtcreator
