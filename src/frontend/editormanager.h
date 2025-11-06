@@ -22,6 +22,7 @@ struct Selection;
 struct ModalOptions;
 struct FlutterOptions;
 struct OptimOptions;
+class Constraints;
 }
 
 namespace Frontend
@@ -83,7 +84,8 @@ public:
         kModel,
         kModalOptions,
         kFlutterOptions,
-        kOptimOptions
+        kOptimOptions,
+        kConstraints
     };
 
     Editor() = delete;
@@ -125,6 +127,7 @@ public:
     void createEditor(Backend::Core::ModalOptions& options);
     void createEditor(Backend::Core::FlutterOptions& options);
     void createEditor(Backend::Core::OptimOptions& options);
+    void createEditor(Backend::Core::Constraints& constraints);
     void setCurrentEditor(int index);
     void refreshCurrentEditor();
 

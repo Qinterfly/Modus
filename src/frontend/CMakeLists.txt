@@ -50,9 +50,8 @@ set(FRONTEND_HEADERS
     springdampereditor.h
     geometryview.h
     modeleditor.h
-    modaloptionseditor.h
-    flutteroptionseditor.h
-    optimoptionseditor.cpp
+    solveroptionseditor.h
+    constraintseditor.h
 )
 
 set(FRONTEND_SOURCES
@@ -79,9 +78,8 @@ set(FRONTEND_SOURCES
     springdampereditor.cpp
     geometryview.cpp
     modeleditor.cpp
-    modaloptionseditor.cpp
-    flutteroptionseditor.cpp
-    optimoptionseditor.cpp
+    solveroptionseditor.cpp
+    constraintseditor.cpp
 )
 
 qt_add_library(frontend STATIC

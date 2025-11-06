@@ -9,13 +9,15 @@
 #include "analysisparameterseditor.h"
 #include "beameditor.h"
 #include "constantseditor.h"
+#include "constraintseditor.h"
 #include "editormanager.h"
-#include "flutteroptionseditor.h"
+#include "fluttersolver.h"
 #include "generaldataeditor.h"
 #include "masseditor.h"
-#include "modaloptionseditor.h"
+#include "solveroptionseditor.h"
+#include "modalsolver.h"
 #include "modeleditor.h"
-#include "optimoptionseditor.h"
+#include "optimsolver.h"
 #include "paneleditor.h"
 #include "polyexponentseditor.h"
 #include "rawdataeditor.h"
@@ -216,6 +218,13 @@ void EditorManager::createEditor(Backend::Core::FlutterOptions& options)
 void EditorManager::createEditor(Backend::Core::OptimOptions& options)
 {
     Editor* pEditor = new OptimOptionsEditor(options, tr("Optimization options"));
+    addEditor(pEditor);
+}
+
+//! Create editor of optimization constraints
+void EditorManager::createEditor(Backend::Core::Constraints& constraints)
+{
+    Editor* pEditor = new ConstraintsEditor(constraints, tr("Optimization constraints"));
     addEditor(pEditor);
 }
 

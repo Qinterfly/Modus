@@ -80,7 +80,7 @@ DoubleLineEdit::DoubleLineEdit(QWidget* pParent)
     double const kRangeValue = 1e9;
 
     mpValidator = new QDoubleValidator(this);
-    mpValidator->setNotation(QDoubleValidator::StandardNotation);
+    mpValidator->setNotation(QDoubleValidator::ScientificNotation);
     mpValidator->setRange(-kRangeValue, kRangeValue, kNumDecimals);
     mpValidator->setLocale(QLocale::C);
     setValidator(mpValidator);
@@ -126,7 +126,6 @@ void DoubleLineEdit::setValue(double value)
     if (isReadOnly())
         return;
     QString newText = QString::number(value, 'g');
-    mpValidator->fixup(newText);
     setText(newText);
 }
 

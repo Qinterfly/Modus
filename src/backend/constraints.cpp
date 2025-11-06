@@ -287,6 +287,7 @@ void Constraints::setDefaultBounds()
     mBounds[VariableType::kYoungsModulus1] = {1e2, 1e13};
     mBounds[VariableType::kYoungsModulus2] = mBounds[VariableType::kYoungsModulus1];
     mBounds[VariableType::kShearModulus] = mBounds[VariableType::kYoungsModulus1];
+    mBounds[VariableType::kPoissonRatio] = {0, 1};
     // Springs
     mBounds[VariableType::kSpringStiffness] = {1e-9, 1e9};
 }
