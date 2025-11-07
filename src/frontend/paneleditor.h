@@ -19,7 +19,7 @@ class PanelEditor : public Editor
 
 public:
     PanelEditor(KCL::ElasticSurface const& surface, KCL::AbstractElement* pElement, QString const& name, QWidget* pParent = nullptr);
-    ~PanelEditor() = default;
+    virtual ~PanelEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;

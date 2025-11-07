@@ -21,7 +21,7 @@ class SpringDamperEditor : public Editor
 public:
     SpringDamperEditor(std::vector<KCL::ElasticSurface> const& surfaces, KCL::SpringDamper* pElement, QString const& name,
                        QWidget* pParent = nullptr);
-    ~SpringDamperEditor() = default;
+    virtual ~SpringDamperEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;

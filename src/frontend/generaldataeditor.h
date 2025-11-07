@@ -22,7 +22,7 @@ class GeneralDataEditor : public Editor
 
 public:
     GeneralDataEditor(KCL::ElasticSurface const& surface, KCL::GeneralData* pElement, QString const& name, QWidget* pParent = nullptr);
-    ~GeneralDataEditor() = default;
+    virtual ~GeneralDataEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;

@@ -57,11 +57,16 @@ void Editor::setIcon(QIcon const& icon)
     mIcon = icon;
 }
 
+void Editor::setEdited()
+{
+    emit edited();
+}
+
 EditorManager::EditorManager(QWidget* pParent)
     : QDialog(pParent)
 {
     setWindowTitle(tr("Editor Manager"));
-    setModal(true);
+    setModal(false);
     createContent();
     createConnections();
 }
@@ -90,6 +95,7 @@ void EditorManager::clear()
     for (int i = 0; i != numItems; ++i)
         mEditors[i]->deleteLater();
     mEditors.clear();
+    mpUndoStack->clear();
     mpCurrentEditor = nullptr;
 }
 
@@ -125,6 +131,8 @@ void EditorManager::createEditor(KCL::Model& model, Core::Selection const& selec
         pEditor = new SpringDamperEditor(model.surfaces, (KCL::SpringDamper*) pElement, name);
     else
         pEditor = new RawDataEditor(pElement, name);
+    if (pEditor)
+        connect(pEditor, &Editor::edited, this, [this, &model]() { emit modelEdited(model); });
     addEditor(pEditor);
 }
 
@@ -251,8 +259,24 @@ void EditorManager::addEditor(Editor* pEditor)
     connect(pEditor, &Editor::commandExecuted, this, [this](QUndoCommand* pCommand) { mpUndoStack->push(pCommand); });
 }
 
-EditElements::EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::VecN> const& dataSet, QString const& name)
-    : mElements(elements)
+EditCommand::EditCommand(Editor* pEditor)
+    : mpEditor(pEditor)
+{
+}
+
+EditCommand::~EditCommand()
+{
+}
+
+void EditCommand::triggerEditor()
+{
+    if (mpEditor)
+        mpEditor->setEdited();
+}
+
+EditElements::EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::VecN> const& dataSet, QString const& name, Editor* pEditor)
+    : EditCommand(pEditor)
+    , mElements(elements)
 {
     int numElements = mElements.size();
     mOldDataSet.resize(numElements);
@@ -262,7 +286,8 @@ EditElements::EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::Vec
     setText(QObject::tr("Multiple edits %1").arg(name));
 }
 
-EditElements::EditElements(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name)
+EditElements::EditElements(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name, Editor* pEditor)
+    : EditCommand(pEditor)
 {
     mElements.push_back(pElement);
     mOldDataSet.push_back(pElement->get());
@@ -276,6 +301,7 @@ void EditElements::undo()
     int numElements = mElements.size();
     for (int i = 0; i != numElements; ++i)
         mElements[i]->set(mOldDataSet[i]);
+    triggerEditor();
 }
 
 //! Apply the changes
@@ -284,11 +310,13 @@ void EditElements::redo()
     int numElements = mElements.size();
     for (int i = 0; i != numElements; ++i)
         mElements[i]->set(mNewDataSet[i]);
+    triggerEditor();
 }
 
 template<typename T>
-EditProperty<T>::EditProperty(T& object, QString const& name, QVariant const& value)
-    : mObject(object)
+EditProperty<T>::EditProperty(T& object, QString const& name, QVariant const& value, Editor* pEditor)
+    : EditCommand(pEditor)
+    , mObject(object)
 {
     QMetaObject const& metaObject = mObject.staticMetaObject;
     int iProperty = metaObject.indexOfProperty(name.toStdString().c_str());
@@ -306,7 +334,10 @@ template<typename T>
 void EditProperty<T>::undo()
 {
     if (mProperty.isValid())
+    {
         mProperty.writeOnGadget(&mObject, mOldValue);
+        triggerEditor();
+    }
 }
 
 //! Apply the changes
@@ -314,12 +345,16 @@ template<typename T>
 void EditProperty<T>::redo()
 {
     if (mProperty.isValid())
+    {
         mProperty.writeOnGadget(&mObject, mNewValue);
+        triggerEditor();
+    }
 }
 
 template<typename T>
-EditObject<T>::EditObject(T& object, QString const& name, T const& value)
-    : mObject(object)
+EditObject<T>::EditObject(T& object, QString const& name, T const& value, Editor* pEditor)
+    : EditCommand(pEditor)
+    , mObject(object)
     , mOldValue(object)
     , mNewValue(value)
 {
@@ -331,6 +366,7 @@ template<typename T>
 void EditObject<T>::undo()
 {
     mObject = mOldValue;
+    triggerEditor();
 }
 
 //! Apply the changes
@@ -338,6 +374,7 @@ template<typename T>
 void EditObject<T>::redo()
 {
     mObject = mNewValue;
+    triggerEditor();
 }
 
 // Explicit template instantiation

@@ -149,7 +149,7 @@ void ProjectBrowser::createContent()
 
     // Create the editor manager
     mpEditorManager = new EditorManager(this);
-    connect(mpEditorManager, &EditorManager::finished, this, &ProjectBrowser::editingFinished);
+    connect(mpEditorManager, &EditorManager::modelEdited, this, &ProjectBrowser::modelEdited);
 
     // Create the view widget
     mpView = new QTreeView;

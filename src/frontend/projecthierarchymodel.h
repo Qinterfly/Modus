@@ -23,7 +23,7 @@ class ProjectHierarchyModel : public QStandardItemModel
 
 public:
     ProjectHierarchyModel(Backend::Core::Project& project, QObject* pParent = nullptr);
-    ~ProjectHierarchyModel() = default;
+    virtual ~ProjectHierarchyModel() = default;
 
     void selectItems(KCL::Model const& model, QList<Backend::Core::Selection> const& selections);
 

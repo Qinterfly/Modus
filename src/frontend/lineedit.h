@@ -17,7 +17,7 @@ class IntLineEdit : public QLineEdit
 public:
     IntLineEdit(QWidget* pParent = nullptr);
     IntLineEdit(int minimum, int maximum, QWidget* pParent = nullptr);
-    ~IntLineEdit() = default;
+    virtual ~IntLineEdit() = default;
 
     int value() const;
     int minimum() const;
@@ -46,7 +46,7 @@ class DoubleLineEdit : public QLineEdit
 public:
     DoubleLineEdit(QWidget* pParent = nullptr);
     DoubleLineEdit(double minimum, double maximum, int decimals, QWidget* pParent = nullptr);
-    ~DoubleLineEdit() = default;
+    virtual ~DoubleLineEdit() = default;
 
     double value() const;
     double minimum() const;

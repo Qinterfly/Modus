@@ -19,7 +19,7 @@ class ConstantsEditor : public Editor
 
 public:
     ConstantsEditor(KCL::Constants* pElement, QString const& name, QWidget* pParent = nullptr);
-    ~ConstantsEditor() = default;
+    virtual ~ConstantsEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;

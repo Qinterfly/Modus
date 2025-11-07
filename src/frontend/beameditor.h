@@ -16,7 +16,7 @@ class BeamEditor : public Editor
 
 public:
     BeamEditor(KCL::ElasticSurface const& surface, KCL::AbstractElement* pElement, QString const& name, QWidget* pParent = nullptr);
-    ~BeamEditor() = default;
+    virtual ~BeamEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;

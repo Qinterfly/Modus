@@ -22,7 +22,7 @@ class ConstraintsEditor : public Editor
 
 public:
     ConstraintsEditor(Backend::Core::Constraints& constraints, QString const& name, QWidget* pParent = nullptr);
-    ~ConstraintsEditor() = default;
+    virtual ~ConstraintsEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;

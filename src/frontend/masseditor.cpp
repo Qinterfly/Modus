@@ -244,7 +244,7 @@ void MassEditor::setElementData()
     data[iData + 1] = mpAngleRodZEdit->value();
 
     // Set the updated data
-    emit commandExecuted(new EditElements(mpElement, data, name()));
+    emit commandExecuted(new EditElements(mpElement, data, name(), this));
 }
 
 //! Create the group of widgets to edit local coordinates

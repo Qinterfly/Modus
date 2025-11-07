@@ -22,7 +22,7 @@ class AnalysisParametersEditor : public Editor
 
 public:
     AnalysisParametersEditor(KCL::AnalysisParameters* pElement, QString const& name, QWidget* pParent = nullptr);
-    ~AnalysisParametersEditor() = default;
+    virtual ~AnalysisParametersEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;

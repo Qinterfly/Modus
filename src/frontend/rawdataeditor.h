@@ -15,7 +15,7 @@ class RawDataEditor : public Editor
 
 public:
     RawDataEditor(KCL::AbstractElement* pElement, QString const& name, QWidget* pParent = nullptr);
-    ~RawDataEditor() = default;
+    virtual ~RawDataEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;

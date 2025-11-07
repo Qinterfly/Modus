@@ -20,7 +20,7 @@ public:
     };
 
     ModalOptionsEditor(Backend::Core::ModalOptions& options, QString const& name, QWidget* pParent = nullptr);
-    ~ModalOptionsEditor() = default;
+    virtual ~ModalOptionsEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;
@@ -51,7 +51,7 @@ public:
     };
 
     FlutterOptionsEditor(Backend::Core::FlutterOptions& options, QString const& name, QWidget* pParent = nullptr);
-    ~FlutterOptionsEditor() = default;
+    virtual ~FlutterOptionsEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;
@@ -88,7 +88,7 @@ public:
     };
 
     OptimOptionsEditor(Backend::Core::OptimOptions& options, QString const& name, QWidget* pParent = nullptr);
-    ~OptimOptionsEditor() = default;
+    virtual ~OptimOptionsEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;

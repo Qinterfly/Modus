@@ -49,7 +49,7 @@ public:
 
 signals:
     void selectionChanged(QList<HierarchyItem*>);
-    void editingFinished();
+    void modelEdited(KCL::Model& model);
     void modelSubstituted(KCL::Model& model);
 
 private:

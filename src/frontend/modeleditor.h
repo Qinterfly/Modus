@@ -17,7 +17,7 @@ class ModelHighlighter : public QSyntaxHighlighter
 
 public:
     ModelHighlighter(QTextDocument* pParent = 0);
-    ~ModelHighlighter() = default;
+    virtual ~ModelHighlighter() = default;
 
 protected:
     void highlightBlock(QString const& text) override;
@@ -42,7 +42,7 @@ class ModelEditor : public Editor
 
 public:
     ModelEditor(KCL::Model& model, QString const& name, QWidget* pParent = nullptr);
-    ~ModelEditor() = default;
+    virtual ~ModelEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;

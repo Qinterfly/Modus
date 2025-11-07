@@ -62,11 +62,13 @@ public:
     QIcon const& icon() const;
 
     void setIcon(QIcon const& icon);
+    void setEdited();
 
     virtual void refresh() = 0;
 
 signals:
     void commandExecuted(QUndoCommand* pCommand);
+    void edited();
 
 protected:
     Type const mkType;
@@ -96,6 +98,9 @@ public:
     void setCurrentEditor(int index);
     void refreshCurrentEditor();
 
+signals:
+    void modelEdited(KCL::Model& model);
+
 private:
     void createContent();
     void createConnections();
@@ -108,12 +113,24 @@ private:
     QUndoStack* mpUndoStack;
 };
 
-//! Command to edit elements using datasets
-class EditElements : public QUndoCommand
+class EditCommand : public QUndoCommand
 {
 public:
-    EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::VecN> const& dataSet, QString const& name);
-    EditElements(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name);
+    EditCommand(Editor* pEditor = nullptr);
+    virtual ~EditCommand();
+
+protected:
+    void triggerEditor();
+
+    Editor* mpEditor;
+};
+
+//! Command to edit elements using datasets
+class EditElements : public EditCommand
+{
+public:
+    EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::VecN> const& dataSet, QString const& name, Editor* pEditor);
+    EditElements(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name, Editor* pEditor);
     ~EditElements() = default;
 
     void undo() override;
@@ -127,10 +144,10 @@ private:
 
 //! Command to edit property of a QObject
 template<typename T>
-class EditProperty : public QUndoCommand
+class EditProperty : public EditCommand
 {
 public:
-    EditProperty(T& object, QString const& name, QVariant const& value);
+    EditProperty(T& object, QString const& name, QVariant const& value, Editor* pEditor);
     ~EditProperty() = default;
 
     void undo() override;
@@ -145,10 +162,10 @@ private:
 
 //! Command to edit value
 template<typename T>
-class EditObject : public QUndoCommand
+class EditObject : public EditCommand
 {
 public:
-    EditObject(T& object, QString const& name, T const& value);
+    EditObject(T& object, QString const& name, T const& value, Editor* pEditor);
     ~EditObject() = default;
 
     void undo() override;

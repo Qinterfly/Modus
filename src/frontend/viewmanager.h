@@ -35,7 +35,7 @@ class ViewManager : public QWidget
 
 public:
     ViewManager(QSettings& settings, QWidget* pParent = nullptr);
-    ~ViewManager();
+    virtual ~ViewManager();
 
     QSize sizeHint() const override;
 

@@ -22,7 +22,7 @@ class PolyExponentsEditor : public Editor
 
 public:
     PolyExponentsEditor(KCL::PolyExponentsX* pElementX, KCL::PolyExponentsZ* pElementZ, QString const& name, QWidget* pParent = nullptr);
-    ~PolyExponentsEditor() = default;
+    virtual ~PolyExponentsEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;

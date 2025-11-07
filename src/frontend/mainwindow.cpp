@@ -211,10 +211,11 @@ void MainWindow::createConnections()
 {
     // Project browser
     connect(mpProjectBrowser, &ProjectBrowser::selectionChanged, mpViewManager, &ViewManager::processItems);
-    connect(mpProjectBrowser, &ProjectBrowser::editingFinished, this,
-            [this]()
+    connect(mpProjectBrowser, &ProjectBrowser::modelEdited, this,
+            [this](KCL::Model& model)
             {
                 setModified(true);
+                mpViewManager->createView(model);
                 mpViewManager->plot();
                 mpViewManager->processItems(mpProjectBrowser->selectedItems());
             });

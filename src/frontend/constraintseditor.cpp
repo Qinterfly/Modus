@@ -183,7 +183,7 @@ void ConstraintsEditor::setData()
     }
 
     // Apply the changes
-    emit commandExecuted(new EditObject<Constraints>(mConstraints, tr("Constraints"), newConstraints));
+    emit commandExecuted(new EditObject<Constraints>(mConstraints, tr("Constraints"), newConstraints, this));
 }
 
 //! Update edits which set flags

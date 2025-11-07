@@ -231,7 +231,7 @@ void PanelEditor::setElementData()
     }
 
     // Set the updated data
-    emit commandExecuted(new EditElements(mpElement, data, name()));
+    emit commandExecuted(new EditElements(mpElement, data, name(), this));
 }
 
 //! Create the group of widgets to edit local coordinates of the panel

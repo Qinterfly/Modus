@@ -16,7 +16,7 @@ class AeroTrapeziumEditor : public Editor
 
 public:
     AeroTrapeziumEditor(KCL::ElasticSurface const& surface, KCL::AbstractElement* pElement, QString const& name, QWidget* pParent = nullptr);
-    ~AeroTrapeziumEditor() = default;
+    virtual ~AeroTrapeziumEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;

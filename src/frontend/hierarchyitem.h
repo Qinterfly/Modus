@@ -93,7 +93,7 @@ class SubprojectHierarchyItem : public HierarchyItem
 {
 public:
     SubprojectHierarchyItem(Backend::Core::Subproject& subproject);
-    ~SubprojectHierarchyItem() = default;
+    virtual ~SubprojectHierarchyItem() = default;
 
     Backend::Core::Subproject& subproject();
 
@@ -109,7 +109,7 @@ class ModelHierarchyItem : public HierarchyItem
 {
 public:
     ModelHierarchyItem(KCL::Model& model);
-    ~ModelHierarchyItem() = default;
+    virtual ~ModelHierarchyItem() = default;
 
     Backend::Core::Subproject* subproject();
     KCL::Model& kclModel();
@@ -126,7 +126,7 @@ class SurfaceHierarchyItem : public HierarchyItem
 {
 public:
     SurfaceHierarchyItem(int iSurface, KCL::ElasticSurface& surface, QIcon const& icon, QString const& name);
-    ~SurfaceHierarchyItem() = default;
+    virtual ~SurfaceHierarchyItem() = default;
 
     int iSurface() const;
     KCL::ElasticSurface& surface();
@@ -147,7 +147,7 @@ class ElementHierarchyItem : public HierarchyItem
 {
 public:
     ElementHierarchyItem(int iElement, KCL::AbstractElement* pElement, QString const& name);
-    ~ElementHierarchyItem() = default;
+    virtual ~ElementHierarchyItem() = default;
 
     int iSurface();
     int iElement() const;
@@ -164,7 +164,7 @@ class ModalSolverHierarchyItem : public HierarchyItem
 {
 public:
     ModalSolverHierarchyItem(Backend::Core::ModalSolver* pSolver, QString const& defaultName);
-    ~ModalSolverHierarchyItem() = default;
+    virtual ~ModalSolverHierarchyItem() = default;
 
     Backend::Core::ModalSolver* solver();
 
@@ -178,7 +178,7 @@ class ModalOptionsHierarchyItem : public HierarchyItem
 {
 public:
     ModalOptionsHierarchyItem(Backend::Core::ModalOptions& options);
-    ~ModalOptionsHierarchyItem() = default;
+    virtual ~ModalOptionsHierarchyItem() = default;
 
     Backend::Core::ModalOptions& options();
 
@@ -190,7 +190,7 @@ class ModalSolutionHierarchyItem : public HierarchyItem
 {
 public:
     ModalSolutionHierarchyItem(Backend::Core::ModalSolution const& solution);
-    ~ModalSolutionHierarchyItem() = default;
+    virtual ~ModalSolutionHierarchyItem() = default;
 
     Backend::Core::ModalSolution const& solution() const;
 
@@ -205,7 +205,7 @@ class ModalPoleHierarchyItem : public HierarchyItem
 public:
     ModalPoleHierarchyItem(Backend::Core::Geometry const& geometry, int iMode, double frequency, Eigen::MatrixXd const& modeShape,
                            double damping = 0.0);
-    ~ModalPoleHierarchyItem() = default;
+    virtual ~ModalPoleHierarchyItem() = default;
 
     Backend::Core::Geometry const& geometry() const;
     int iMode() const;
@@ -226,7 +226,7 @@ class FlutterSolverHierarchyItem : public HierarchyItem
 {
 public:
     FlutterSolverHierarchyItem(Backend::Core::FlutterSolver* pSolver, QString const& defaultName);
-    ~FlutterSolverHierarchyItem() = default;
+    virtual ~FlutterSolverHierarchyItem() = default;
 
     Backend::Core::FlutterSolver* solver();
 
@@ -240,7 +240,7 @@ class FlutterOptionsHierarchyItem : public HierarchyItem
 {
 public:
     FlutterOptionsHierarchyItem(Backend::Core::FlutterOptions& options);
-    ~FlutterOptionsHierarchyItem() = default;
+    virtual ~FlutterOptionsHierarchyItem() = default;
 
     Backend::Core::FlutterOptions& options();
 
@@ -252,7 +252,7 @@ class FlutterSolutionHierarchyItem : public HierarchyItem
 {
 public:
     FlutterSolutionHierarchyItem(Backend::Core::FlutterSolution const& solution);
-    ~FlutterSolutionHierarchyItem() = default;
+    virtual ~FlutterSolutionHierarchyItem() = default;
 
     Backend::Core::FlutterSolution const& solution() const;
 
@@ -266,7 +266,7 @@ class FlutterRootsHierarchyItem : public HierarchyItem
 {
 public:
     FlutterRootsHierarchyItem(Eigen::VectorXd const& flow, Eigen::MatrixXcd const& roots);
-    ~FlutterRootsHierarchyItem() = default;
+    virtual ~FlutterRootsHierarchyItem() = default;
 
     Eigen::VectorXd const& flow() const;
     Eigen::MatrixXcd const& roots() const;
@@ -280,7 +280,7 @@ class FlutterCritDataHierarchyItem : public HierarchyItem
 {
 public:
     FlutterCritDataHierarchyItem(Backend::Core::FlutterSolution const& solution);
-    ~FlutterCritDataHierarchyItem() = default;
+    virtual ~FlutterCritDataHierarchyItem() = default;
 
     Eigen::VectorXd const& flow() const;
     Eigen::VectorXd const& speed() const;
@@ -302,7 +302,7 @@ class OptimSolverHierarchyItem : public HierarchyItem
 {
 public:
     OptimSolverHierarchyItem(Backend::Core::OptimSolver* pSolver, QString const& defaultName);
-    ~OptimSolverHierarchyItem() = default;
+    virtual ~OptimSolverHierarchyItem() = default;
 
     Backend::Core::OptimSolver* solver();
 
@@ -316,7 +316,7 @@ class OptimOptionsHierarchyItem : public HierarchyItem
 {
 public:
     OptimOptionsHierarchyItem(Backend::Core::OptimOptions& options);
-    ~OptimOptionsHierarchyItem() = default;
+    virtual ~OptimOptionsHierarchyItem() = default;
 
     Backend::Core::OptimOptions& options();
 
@@ -329,7 +329,7 @@ class OptimTargetHierarchyItem : public HierarchyItem
 public:
     OptimTargetHierarchyItem(Eigen::VectorXi& indices, Eigen::VectorXd& weights, Backend::Core::ModalSolution& solution,
                              Backend::Core::Matches& matches);
-    ~OptimTargetHierarchyItem() = default;
+    virtual ~OptimTargetHierarchyItem() = default;
 
     Eigen::VectorXi& indices();
     Eigen::VectorXd& weights();
@@ -347,7 +347,7 @@ class OptimSelectorHierarchyItem : public HierarchyItem
 {
 public:
     OptimSelectorHierarchyItem(Backend::Core::Selector& selector);
-    ~OptimSelectorHierarchyItem() = default;
+    virtual ~OptimSelectorHierarchyItem() = default;
 
     Backend::Core::Selector& selector();
 
@@ -359,7 +359,7 @@ class OptimConstraintsHierarchyItem : public HierarchyItem
 {
 public:
     OptimConstraintsHierarchyItem(Backend::Core::Constraints& constraints);
-    ~OptimConstraintsHierarchyItem() = default;
+    virtual ~OptimConstraintsHierarchyItem() = default;
 
     Backend::Core::Constraints& constraints();
 
@@ -371,7 +371,7 @@ class OptimSolutionHierarchyItem : public HierarchyItem
 {
 public:
     OptimSolutionHierarchyItem(int iSolution, Backend::Core::OptimSolution& solution);
-    ~OptimSolutionHierarchyItem() = default;
+    virtual ~OptimSolutionHierarchyItem() = default;
 
     int iSolution() const;
     Backend::Core::OptimSolution const& solution() const;

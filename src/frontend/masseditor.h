@@ -16,7 +16,7 @@ class MassEditor : public Editor
 
 public:
     MassEditor(KCL::ElasticSurface const& surface, KCL::AbstractElement* pElement, QString const& name, QWidget* pParent = nullptr);
-    ~MassEditor() = default;
+    virtual ~MassEditor() = default;
 
     QSize sizeHint() const override;
     void refresh() override;
