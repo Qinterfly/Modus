@@ -31,7 +31,7 @@ private:
     void createContent();
     void createConnections();
     void setData();
-    bool validateCheckEdits();
+    bool validateFlagEdits();
     void updateBoundEdits();
 
 private:

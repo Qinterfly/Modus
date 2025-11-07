@@ -229,7 +229,7 @@ void AeroTrapeziumEditor::setElementData()
     }
 
     // Set the updated data
-    emit commandExecuted(new EditElements(mpElement, data, name(), this));
+    emit commandExecuted(new EditElements(mpElement, data, name()));
 }
 
 //! Create the layout to edit aileron index

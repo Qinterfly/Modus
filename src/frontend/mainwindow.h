@@ -81,6 +81,9 @@ private:
     bool saveProjectChangesDialog();
     void about();
 
+    // Solver
+    void updateSolvers(KCL::Model const& model);
+
 private:
     QSettings mSettings;
     QList<QString> mPathRecentProjects;

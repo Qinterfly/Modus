@@ -165,12 +165,17 @@ Core::Subproject& SubprojectHierarchyItem::subproject()
 //! Select items associated with the model
 void SubprojectHierarchyItem::selectItems(KCL::Model const& kclModel, QList<Core::Selection> const& selections)
 {
-    QList<HierarchyItem*> foundItems = Utility::findItems(this, HierarchyItem::kModel);
+    QList<HierarchyItem*> foundItems;
+    Utility::findItems(this, HierarchyItem::kModel, foundItems);
     if (!foundItems.empty())
     {
-        ModelHierarchyItem* pModelItem = (ModelHierarchyItem*) foundItems.first();
-        if (&pModelItem->kclModel() == &kclModel)
-            pModelItem->selectItems(selections);
+        int numFound = foundItems.size();
+        for (int i = 0; i != numFound; ++i)
+        {
+            ModelHierarchyItem* pModelItem = (ModelHierarchyItem*) foundItems[i];
+            if (&pModelItem->kclModel() == &kclModel)
+                pModelItem->selectItems(selections);
+        }
     }
 }
 

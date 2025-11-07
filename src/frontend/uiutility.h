@@ -47,7 +47,7 @@ void setShortcutHints(QToolBar* pToolBar);
 QString errorColorName(double value, double acceptThreshold, double criticalThreshold);
 QString getLabel(Backend::Core::Selection selection);
 QString getLabel(int iSurface);
-QList<HierarchyItem*> findItems(HierarchyItem* pRootItem, HierarchyItem::Type type);
+void findItems(HierarchyItem* pRootItem, HierarchyItem::Type type, QList<HierarchyItem*>& result);
 
 // File
 void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix);

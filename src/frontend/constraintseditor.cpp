@@ -14,8 +14,8 @@ using namespace Backend;
 using namespace Frontend;
 using namespace Core;
 
-auto skVariables = magic_enum::enum_values<Core::VariableType>();
-int const skNumVariables = skVariables.size();
+auto skTypes = magic_enum::enum_values<Core::VariableType>();
+int const skNumTypes = skTypes.size();
 
 ConstraintsEditor::ConstraintsEditor(Constraints& constraints, QString const& name, QWidget* pParent)
     : Editor(kConstraints, name, QIcon(":/icons/constraints.png"), pParent)
@@ -34,29 +34,29 @@ QSize ConstraintsEditor::sizeHint() const
 //! Update data of widgets from the element source
 void ConstraintsEditor::refresh()
 {
-    for (auto variable : skVariables)
+    for (auto type : skTypes)
     {
         // Enabled
-        QSignalBlocker blockerEnabled(mEnabledEdits[variable]);
-        mEnabledEdits[variable]->setChecked(mConstraints.isEnabled(variable));
+        QSignalBlocker blockerEnabled(mEnabledEdits[type]);
+        mEnabledEdits[type]->setChecked(mConstraints.isEnabled(type));
         // United
-        QSignalBlocker blockerUnited(mUnitedEdits[variable]);
-        mUnitedEdits[variable]->setChecked(mConstraints.isUnited(variable));
+        QSignalBlocker blockerUnited(mUnitedEdits[type]);
+        mUnitedEdits[type]->setChecked(mConstraints.isUnited(type));
         // Multiplied
-        QSignalBlocker blockerMultiplied(mMultipliedEdits[variable]);
-        mMultipliedEdits[variable]->setChecked(mConstraints.isMultiplied(variable));
+        QSignalBlocker blockerMultiplied(mMultipliedEdits[type]);
+        mMultipliedEdits[type]->setChecked(mConstraints.isMultiplied(type));
         // Nonzero
-        QSignalBlocker blockerNonzero(mNonzeroEdits[variable]);
-        mNonzeroEdits[variable]->setChecked(mConstraints.isNonzero(variable));
+        QSignalBlocker blockerNonzero(mNonzeroEdits[type]);
+        mNonzeroEdits[type]->setChecked(mConstraints.isNonzero(type));
         // Scale
-        QSignalBlocker blockerScale(mScaleEdits[variable]);
-        mScaleEdits[variable]->setValue(mConstraints.scale(variable));
+        QSignalBlocker blockerScale(mScaleEdits[type]);
+        mScaleEdits[type]->setValue(mConstraints.scale(type));
         // Min bound
-        QSignalBlocker blockerMinBound(mMinBoundEdits[variable]);
-        mMinBoundEdits[variable]->setValue(mConstraints.bounds(variable).first);
+        QSignalBlocker blockerMinBound(mMinBoundEdits[type]);
+        mMinBoundEdits[type]->setValue(mConstraints.bounds(type).first);
         // Max bound
-        QSignalBlocker blockerMaxBound(mMaxBoundEdits[variable]);
-        mMaxBoundEdits[variable]->setValue(mConstraints.bounds(variable).second);
+        QSignalBlocker blockerMaxBound(mMaxBoundEdits[type]);
+        mMaxBoundEdits[type]->setValue(mConstraints.bounds(type).second);
     }
 }
 
@@ -68,14 +68,14 @@ void ConstraintsEditor::createContent()
                                 tr("Nonzero"),  tr("Scale"),   tr("Min bound"), tr("Max bound")};
 
     // Variable names
-    QMap<VariableType, QString> kVariableNames;
-    kVariableNames[VariableType::kBeamStiffness] = tr("Beam stiffness");
-    kVariableNames[VariableType::kThickness] = tr("Thickness");
-    kVariableNames[VariableType::kYoungsModulus1] = tr("Youngs modulus 1");
-    kVariableNames[VariableType::kYoungsModulus2] = tr("Youngs modulus 2");
-    kVariableNames[VariableType::kShearModulus] = tr("Shear modulus");
-    kVariableNames[VariableType::kPoissonRatio] = tr("Poisson ratio");
-    kVariableNames[VariableType::kSpringStiffness] = tr("Spring stiffness");
+    QMap<VariableType, QString> kTypeNames;
+    kTypeNames[VariableType::kBeamStiffness] = tr("Beam stiffness");
+    kTypeNames[VariableType::kThickness] = tr("Thickness");
+    kTypeNames[VariableType::kYoungsModulus1] = tr("Youngs modulus 1");
+    kTypeNames[VariableType::kYoungsModulus2] = tr("Youngs modulus 2");
+    kTypeNames[VariableType::kShearModulus] = tr("Shear modulus");
+    kTypeNames[VariableType::kPoissonRatio] = tr("Poisson ratio");
+    kTypeNames[VariableType::kSpringStiffness] = tr("Spring stiffness");
 
     // Retrieve the variables
     int numColumns = kColumnNames.size();
@@ -83,7 +83,7 @@ void ConstraintsEditor::createContent()
     // Create the table
     mpTable = new CustomTable;
     mpTable->setSizeAdjustPolicy(QTableWidget::AdjustToContents);
-    mpTable->setRowCount(skNumVariables);
+    mpTable->setRowCount(skNumTypes);
     mpTable->setColumnCount(numColumns);
     mpTable->setHorizontalHeaderLabels(kColumnNames);
     mpTable->verticalHeader()->setVisible(false);
@@ -112,27 +112,27 @@ void ConstraintsEditor::createContent()
     };
 
     // Add items to the table
-    for (int i = 0; i != skNumVariables; ++i)
+    for (int i = 0; i != skNumTypes; ++i)
     {
-        VariableType variable = skVariables[i];
+        VariableType type = skTypes[i];
         // Variable
-        QTableWidgetItem* pItem = new QTableWidgetItem(kVariableNames[variable]);
+        QTableWidgetItem* pItem = new QTableWidgetItem(kTypeNames[type]);
         pItem->setFlags(Qt::ItemIsEnabled);
         mpTable->setItem(i, 0, pItem);
         // Enabled
-        createCheckEdit(i, 1, &mEnabledEdits[variable]);
+        createCheckEdit(i, 1, &mEnabledEdits[type]);
         // United
-        createCheckEdit(i, 2, &mUnitedEdits[variable]);
+        createCheckEdit(i, 2, &mUnitedEdits[type]);
         // Multiplied
-        createCheckEdit(i, 3, &mMultipliedEdits[variable]);
+        createCheckEdit(i, 3, &mMultipliedEdits[type]);
         // Nonzero
-        createCheckEdit(i, 4, &mNonzeroEdits[variable]);
+        createCheckEdit(i, 4, &mNonzeroEdits[type]);
         // Scale
-        createDoubleEdit(i, 5, &mScaleEdits[variable]);
+        createDoubleEdit(i, 5, &mScaleEdits[type]);
         // Min bound
-        createDoubleEdit(i, 6, &mMinBoundEdits[variable]);
+        createDoubleEdit(i, 6, &mMinBoundEdits[type]);
         // Max bound
-        createDoubleEdit(i, 7, &mMaxBoundEdits[variable]);
+        createDoubleEdit(i, 7, &mMaxBoundEdits[type]);
     }
 
     // Set the main layout
@@ -145,15 +145,15 @@ void ConstraintsEditor::createContent()
 //! Specify signals and slots between widgets
 void ConstraintsEditor::createConnections()
 {
-    for (auto variable : skVariables)
+    for (auto type : skTypes)
     {
-        connect(mEnabledEdits[variable], &QCheckBox::clicked, this, &ConstraintsEditor::setData);
-        connect(mUnitedEdits[variable], &QCheckBox::clicked, this, &ConstraintsEditor::setData);
-        connect(mMultipliedEdits[variable], &QCheckBox::clicked, this, &ConstraintsEditor::setData);
-        connect(mNonzeroEdits[variable], &QCheckBox::clicked, this, &ConstraintsEditor::setData);
-        connect(mScaleEdits[variable], &Edit1d::valueChanged, this, &ConstraintsEditor::setData);
-        connect(mMinBoundEdits[variable], &Edit1d::valueChanged, this, &ConstraintsEditor::setData);
-        connect(mMaxBoundEdits[variable], &Edit1d::valueChanged, this, &ConstraintsEditor::setData);
+        connect(mEnabledEdits[type], &QCheckBox::clicked, this, &ConstraintsEditor::setData);
+        connect(mUnitedEdits[type], &QCheckBox::clicked, this, &ConstraintsEditor::setData);
+        connect(mMultipliedEdits[type], &QCheckBox::clicked, this, &ConstraintsEditor::setData);
+        connect(mNonzeroEdits[type], &QCheckBox::clicked, this, &ConstraintsEditor::setData);
+        connect(mScaleEdits[type], &Edit1d::valueChanged, this, &ConstraintsEditor::setData);
+        connect(mMinBoundEdits[type], &Edit1d::valueChanged, this, &ConstraintsEditor::setData);
+        connect(mMaxBoundEdits[type], &Edit1d::valueChanged, this, &ConstraintsEditor::setData);
     }
 }
 
@@ -161,7 +161,7 @@ void ConstraintsEditor::createConnections()
 void ConstraintsEditor::setData()
 {
     // Check if the flags are correct
-    if (!validateCheckEdits())
+    if (!validateFlagEdits())
     {
         refresh();
         return;
@@ -172,29 +172,29 @@ void ConstraintsEditor::setData()
 
     // Set the new values of constraints
     Constraints newConstraints = mConstraints;
-    for (auto variable : skVariables)
+    for (auto type : skTypes)
     {
-        newConstraints.setEnabled(variable, mEnabledEdits[variable]->isChecked());
-        newConstraints.setUnited(variable, mUnitedEdits[variable]->isChecked());
-        newConstraints.setMultiplied(variable, mMultipliedEdits[variable]->isChecked());
-        newConstraints.setNonzero(variable, mNonzeroEdits[variable]->isChecked());
-        newConstraints.setScale(variable, mScaleEdits[variable]->value());
-        newConstraints.setBounds(variable, {mMinBoundEdits[variable]->value(), mMaxBoundEdits[variable]->value()});
+        newConstraints.setEnabled(type, mEnabledEdits[type]->isChecked());
+        newConstraints.setUnited(type, mUnitedEdits[type]->isChecked());
+        newConstraints.setMultiplied(type, mMultipliedEdits[type]->isChecked());
+        newConstraints.setNonzero(type, mNonzeroEdits[type]->isChecked());
+        newConstraints.setScale(type, mScaleEdits[type]->value());
+        newConstraints.setBounds(type, {mMinBoundEdits[type]->value(), mMaxBoundEdits[type]->value()});
     }
 
     // Apply the changes
-    emit commandExecuted(new EditObject<Constraints>(mConstraints, tr("Constraints"), newConstraints, this));
+    emit commandExecuted(new EditObject<Constraints>(mConstraints, tr("Constraints"), newConstraints));
 }
 
 //! Update edits which set flags
-bool ConstraintsEditor::validateCheckEdits()
+bool ConstraintsEditor::validateFlagEdits()
 {
-    for (auto variable : skVariables)
+    for (auto type : skTypes)
     {
         // Obtain the current flags
-        bool isUnited = mUnitedEdits[variable]->isChecked();
-        bool isMultiplied = mMultipliedEdits[variable]->isChecked();
-        bool isNonzero = mNonzeroEdits[variable]->isChecked();
+        bool isUnited = mUnitedEdits[type]->isChecked();
+        bool isMultiplied = mMultipliedEdits[type]->isChecked();
+        bool isNonzero = mNonzeroEdits[type]->isChecked();
 
         // Validate flags
         if (isUnited && isMultiplied)
@@ -215,20 +215,20 @@ bool ConstraintsEditor::validateCheckEdits()
 //! Update edits which set boundaries
 void ConstraintsEditor::updateBoundEdits()
 {
-    for (auto variable : skVariables)
+    for (auto type : skTypes)
     {
         // Block the signals
-        QSignalBlocker blockerMinBound(mMinBoundEdits[variable]);
-        QSignalBlocker blockerMaxBound(mMaxBoundEdits[variable]);
+        QSignalBlocker blockerMinBound(mMinBoundEdits[type]);
+        QSignalBlocker blockerMaxBound(mMaxBoundEdits[type]);
 
         // Swap the bounds, if necessary
-        double minBound = mMinBoundEdits[variable]->value();
-        double maxBound = mMaxBoundEdits[variable]->value();
+        double minBound = mMinBoundEdits[type]->value();
+        double maxBound = mMaxBoundEdits[type]->value();
         if (minBound > maxBound)
             std::swap(minBound, maxBound);
 
         // Set the values
-        mMinBoundEdits[variable]->setValue(minBound);
-        mMaxBoundEdits[variable]->setValue(maxBound);
+        mMinBoundEdits[type]->setValue(minBound);
+        mMaxBoundEdits[type]->setValue(maxBound);
     }
 }

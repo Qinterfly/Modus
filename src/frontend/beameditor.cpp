@@ -153,7 +153,7 @@ void BeamEditor::setElementData()
     }
 
     // Set the updated data
-    emit commandExecuted(new EditElements(mpElement, data, name(), this));
+    emit commandExecuted(new EditElements(mpElement, data, name()));
 }
 
 //! Create the group of widgets to edit local coordinates of the beam

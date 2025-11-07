@@ -57,11 +57,6 @@ void Editor::setIcon(QIcon const& icon)
     mIcon = icon;
 }
 
-void Editor::setEdited()
-{
-    emit edited();
-}
-
 EditorManager::EditorManager(QWidget* pParent)
     : QDialog(pParent)
 {
@@ -95,17 +90,19 @@ void EditorManager::clear()
     for (int i = 0; i != numItems; ++i)
         mEditors[i]->deleteLater();
     mEditors.clear();
-    mpUndoStack->clear();
     mpCurrentEditor = nullptr;
 }
 
 //! Create a specific editor based on element type
 void EditorManager::createEditor(KCL::Model& model, Core::Selection const& selection)
 {
+    // Slice elements by selection
     KCL::ElasticSurface& surface = selection.iSurface >= 0 ? model.surfaces[selection.iSurface] : model.specialSurface;
     KCL::AbstractElement* pElement = surface.element(selection.type, selection.iElement);
     if (!pElement)
         return;
+
+    // Create the edtior
     Editor* pEditor = nullptr;
     auto type = pElement->type();
     QString name = Utility::getLabel(selection);
@@ -131,9 +128,13 @@ void EditorManager::createEditor(KCL::Model& model, Core::Selection const& selec
         pEditor = new SpringDamperEditor(model.surfaces, (KCL::SpringDamper*) pElement, name);
     else
         pEditor = new RawDataEditor(pElement, name);
-    if (pEditor)
-        connect(pEditor, &Editor::edited, this, [this, &model]() { emit modelEdited(model); });
+
+    // Add the editor to the manager
     addEditor(pEditor);
+
+    // Set the connection
+    auto setEdited = [this, &model]() { emit modelEdited(model); };
+    connectEditCommand(pEditor, setEdited);
 }
 
 //! Create a model editor
@@ -148,6 +149,8 @@ void EditorManager::createEditor(Backend::Core::ModalOptions& options)
 {
     Editor* pEditor = new ModalOptionsEditor(options, tr("Modal options"));
     addEditor(pEditor);
+    auto setEdited = [this, &options]() { emit modalOptionsEdited(options); };
+    connectEditCommand(pEditor, setEdited);
 }
 
 //! Create editor of flutter options
@@ -155,6 +158,8 @@ void EditorManager::createEditor(Backend::Core::FlutterOptions& options)
 {
     Editor* pEditor = new FlutterOptionsEditor(options, tr("Flutter options"));
     addEditor(pEditor);
+    auto setEdited = [this, &options]() { emit flutterOptionsEdited(options); };
+    connectEditCommand(pEditor, setEdited);
 }
 
 //! Create editor of optimization options
@@ -162,6 +167,8 @@ void EditorManager::createEditor(Backend::Core::OptimOptions& options)
 {
     Editor* pEditor = new OptimOptionsEditor(options, tr("Optimization options"));
     addEditor(pEditor);
+    auto setEdited = [this, &options]() { emit optimOptionsEdited(options); };
+    connectEditCommand(pEditor, setEdited);
 }
 
 //! Create editor of optimization constraints
@@ -169,6 +176,8 @@ void EditorManager::createEditor(Backend::Core::Constraints& constraints)
 {
     Editor* pEditor = new ConstraintsEditor(constraints, tr("Optimization constraints"));
     addEditor(pEditor);
+    auto setEdited = [this, &constraints]() { emit constraintsEdited(constraints); };
+    connectEditCommand(pEditor, setEdited);
 }
 
 //! Set the current editor to work with
@@ -256,27 +265,42 @@ void EditorManager::addEditor(Editor* pEditor)
         return;
     mEditors.push_back(pEditor);
     mpEditorsList->addItem(pEditor->icon(), pEditor->name());
-    connect(pEditor, &Editor::commandExecuted, this, [this](QUndoCommand* pCommand) { mpUndoStack->push(pCommand); });
 }
 
-EditCommand::EditCommand(Editor* pEditor)
-    : mpEditor(pEditor)
+void EditorManager::connectEditCommand(Editor* pEditor, std::function<void()> setEdited)
 {
+    if (!pEditor)
+        return;
+    connect(pEditor, &Editor::commandExecuted, this,
+            [this, setEdited](EditCommand* pCommand)
+            {
+                mpUndoStack->push(pCommand);
+                connect(pCommand->pHandler, &EditHandler::edited, this, setEdited);
+                setEdited();
+            });
+}
+
+EditHandler::EditHandler(QObject* pParent)
+    : QObject(pParent)
+{
+}
+
+EditCommand::EditCommand()
+{
+    pHandler = new EditHandler;
 }
 
 EditCommand::~EditCommand()
 {
 }
 
-void EditCommand::triggerEditor()
+void EditCommand::setEdited()
 {
-    if (mpEditor)
-        mpEditor->setEdited();
+    emit pHandler->edited();
 }
 
-EditElements::EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::VecN> const& dataSet, QString const& name, Editor* pEditor)
-    : EditCommand(pEditor)
-    , mElements(elements)
+EditElements::EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::VecN> const& dataSet, QString const& name)
+    : mElements(elements)
 {
     int numElements = mElements.size();
     mOldDataSet.resize(numElements);
@@ -286,8 +310,7 @@ EditElements::EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::Vec
     setText(QObject::tr("Multiple edits %1").arg(name));
 }
 
-EditElements::EditElements(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name, Editor* pEditor)
-    : EditCommand(pEditor)
+EditElements::EditElements(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name)
 {
     mElements.push_back(pElement);
     mOldDataSet.push_back(pElement->get());
@@ -298,25 +321,36 @@ EditElements::EditElements(KCL::AbstractElement* pElement, KCL::VecN const& data
 //! Revert the changes
 void EditElements::undo()
 {
-    int numElements = mElements.size();
-    for (int i = 0; i != numElements; ++i)
-        mElements[i]->set(mOldDataSet[i]);
-    triggerEditor();
+    try
+    {
+        int numElements = mElements.size();
+        for (int i = 0; i != numElements; ++i)
+            mElements[i]->set(mOldDataSet[i]);
+        setEdited();
+    }
+    catch (...)
+    {
+    }
 }
 
 //! Apply the changes
 void EditElements::redo()
 {
-    int numElements = mElements.size();
-    for (int i = 0; i != numElements; ++i)
-        mElements[i]->set(mNewDataSet[i]);
-    triggerEditor();
+    try
+    {
+        int numElements = mElements.size();
+        for (int i = 0; i != numElements; ++i)
+            mElements[i]->set(mNewDataSet[i]);
+        setEdited();
+    }
+    catch (...)
+    {
+    }
 }
 
 template<typename T>
-EditProperty<T>::EditProperty(T& object, QString const& name, QVariant const& value, Editor* pEditor)
-    : EditCommand(pEditor)
-    , mObject(object)
+EditProperty<T>::EditProperty(T& object, QString const& name, QVariant const& value)
+    : mObject(object)
 {
     QMetaObject const& metaObject = mObject.staticMetaObject;
     int iProperty = metaObject.indexOfProperty(name.toStdString().c_str());
@@ -333,10 +367,16 @@ EditProperty<T>::EditProperty(T& object, QString const& name, QVariant const& va
 template<typename T>
 void EditProperty<T>::undo()
 {
-    if (mProperty.isValid())
+    try
     {
-        mProperty.writeOnGadget(&mObject, mOldValue);
-        triggerEditor();
+        if (mProperty.isValid())
+        {
+            mProperty.writeOnGadget(&mObject, mOldValue);
+            setEdited();
+        }
+    }
+    catch (...)
+    {
     }
 }
 
@@ -344,17 +384,22 @@ void EditProperty<T>::undo()
 template<typename T>
 void EditProperty<T>::redo()
 {
-    if (mProperty.isValid())
+    try
     {
-        mProperty.writeOnGadget(&mObject, mNewValue);
-        triggerEditor();
+        if (mProperty.isValid())
+        {
+            mProperty.writeOnGadget(&mObject, mNewValue);
+            setEdited();
+        }
+    }
+    catch (...)
+    {
     }
 }
 
 template<typename T>
-EditObject<T>::EditObject(T& object, QString const& name, T const& value, Editor* pEditor)
-    : EditCommand(pEditor)
-    , mObject(object)
+EditObject<T>::EditObject(T& object, QString const& name, T const& value)
+    : mObject(object)
     , mOldValue(object)
     , mNewValue(value)
 {
@@ -365,16 +410,28 @@ EditObject<T>::EditObject(T& object, QString const& name, T const& value, Editor
 template<typename T>
 void EditObject<T>::undo()
 {
-    mObject = mOldValue;
-    triggerEditor();
+    try
+    {
+        mObject = mOldValue;
+        setEdited();
+    }
+    catch (...)
+    {
+    }
 }
 
 //! Apply the changes
 template<typename T>
 void EditObject<T>::redo()
 {
-    mObject = mNewValue;
-    triggerEditor();
+    try
+    {
+        mObject = mNewValue;
+        setEdited();
+    }
+    catch (...)
+    {
+    }
 }
 
 // Explicit template instantiation

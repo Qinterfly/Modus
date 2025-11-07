@@ -245,7 +245,7 @@ void SpringDamperEditor::setElementData()
     data[15] = mpTypeComboBox->currentData().toInt();
 
     // Set the updated data
-    emit commandExecuted(new EditElements(mpElement, data, name(), this));
+    emit commandExecuted(new EditElements(mpElement, data, name()));
 }
 
 //! Process selection of an elastic surface for pairing
@@ -272,7 +272,7 @@ void SpringDamperEditor::setMatrixData(bool isStiffness, int iRow, int iColumn, 
     data[iShift + iRow * matSize + iColumn] = value;
 
     // Set the updated data
-    emit commandExecuted(new EditElements(mpElement, data, name(), this));
+    emit commandExecuted(new EditElements(mpElement, data, name()));
 }
 
 //! Create a group box to pair elastic surfaces

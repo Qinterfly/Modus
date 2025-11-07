@@ -177,7 +177,7 @@ void AnalysisParametersEditor::setElementData()
     data[16] = mpBasicSurface->value();
 
     // Set the updated data
-    emit commandExecuted(new EditElements(mpElement, data, name(), this));
+    emit commandExecuted(new EditElements(mpElement, data, name()));
 }
 
 //! Create the layout of widgets to define, if a structure is symmetrical

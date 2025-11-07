@@ -142,7 +142,7 @@ void PolyExponentsEditor::resizeElementData()
     dataZ.resize(numData);
 
     // Set the updated data
-    emit commandExecuted(new EditElements({mpElementX, mpElementZ}, {dataX, dataZ}, name(), this));
+    emit commandExecuted(new EditElements({mpElementX, mpElementZ}, {dataX, dataZ}, name()));
 
     // Update the view
     refresh();
@@ -162,7 +162,7 @@ void PolyExponentsEditor::setElementData()
     }
 
     // Set the updated data
-    emit commandExecuted(new EditElements({mpElementX, mpElementZ}, {dataX, dataZ}, name(), this));
+    emit commandExecuted(new EditElements({mpElementX, mpElementZ}, {dataX, dataZ}, name()));
 
     // Update the combobox of predefined data
     updateTypeComboBox();
@@ -180,7 +180,7 @@ void PolyExponentsEditor::setElementDataByType()
     auto itemData = KCL::getPolyData(type);
 
     // Set the updated data
-    emit commandExecuted(new EditElements({mpElementX, mpElementZ}, {itemData.first, itemData.second}, name(), this));
+    emit commandExecuted(new EditElements({mpElementX, mpElementZ}, {itemData.first, itemData.second}, name()));
 
     // Update the view
     refresh();

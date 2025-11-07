@@ -150,6 +150,10 @@ void ProjectBrowser::createContent()
     // Create the editor manager
     mpEditorManager = new EditorManager(this);
     connect(mpEditorManager, &EditorManager::modelEdited, this, &ProjectBrowser::modelEdited);
+    connect(mpEditorManager, &EditorManager::modalOptionsEdited, this, &ProjectBrowser::edited);
+    connect(mpEditorManager, &EditorManager::flutterOptionsEdited, this, &ProjectBrowser::edited);
+    connect(mpEditorManager, &EditorManager::optimOptionsEdited, this, &ProjectBrowser::edited);
+    connect(mpEditorManager, &EditorManager::constraintsEdited, this, &ProjectBrowser::edited);
 
     // Create the view widget
     mpView = new QTreeView;
@@ -339,6 +343,9 @@ void ProjectBrowser::createItemEditor(HierarchyItem* pBaseItem)
         break;
     case HierarchyItem::kOptimOptions:
         mpEditorManager->createEditor(static_cast<OptimOptionsHierarchyItem*>(pBaseItem)->options());
+        break;
+    case HierarchyItem::kOptimConstraints:
+        mpEditorManager->createEditor(static_cast<OptimConstraintsHierarchyItem*>(pBaseItem)->constraints());
         break;
     default:
         break;

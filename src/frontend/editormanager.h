@@ -28,6 +28,8 @@ class Constraints;
 namespace Frontend
 {
 
+class EditCommand;
+
 //! Base class for all editors
 class Editor : public QWidget
 {
@@ -62,13 +64,11 @@ public:
     QIcon const& icon() const;
 
     void setIcon(QIcon const& icon);
-    void setEdited();
 
     virtual void refresh() = 0;
 
 signals:
-    void commandExecuted(QUndoCommand* pCommand);
-    void edited();
+    void commandExecuted(Frontend::EditCommand* pCommand);
 
 protected:
     Type const mkType;
@@ -83,7 +83,7 @@ class EditorManager : public QDialog
 
 public:
     EditorManager(QWidget* pParent = nullptr);
-    ~EditorManager();
+    virtual ~EditorManager();
 
     bool isEmpty() const;
     int numEditors() const;
@@ -100,11 +100,16 @@ public:
 
 signals:
     void modelEdited(KCL::Model& model);
+    void modalOptionsEdited(Backend::Core::ModalOptions& options);
+    void flutterOptionsEdited(Backend::Core::FlutterOptions& options);
+    void optimOptionsEdited(Backend::Core::OptimOptions& options);
+    void constraintsEdited(Backend::Core::Constraints& constraints);
 
 private:
     void createContent();
     void createConnections();
     void addEditor(Editor* pEditor);
+    void connectEditCommand(Editor* pEditor, std::function<void()> setEdited);
 
 private:
     Editor* mpCurrentEditor;
@@ -113,25 +118,37 @@ private:
     QUndoStack* mpUndoStack;
 };
 
+//! Class to send edit signals
+class EditHandler : public QObject
+{
+    Q_OBJECT
+
+public:
+    EditHandler(QObject* pParent = nullptr);
+    virtual ~EditHandler() = default;
+
+signals:
+    void edited();
+};
+
+//! Base command for editing
 class EditCommand : public QUndoCommand
 {
 public:
-    EditCommand(Editor* pEditor = nullptr);
+    EditCommand();
     virtual ~EditCommand();
+    void setEdited();
 
-protected:
-    void triggerEditor();
-
-    Editor* mpEditor;
+    EditHandler* pHandler;
 };
 
 //! Command to edit elements using datasets
 class EditElements : public EditCommand
 {
 public:
-    EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::VecN> const& dataSet, QString const& name, Editor* pEditor);
-    EditElements(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name, Editor* pEditor);
-    ~EditElements() = default;
+    EditElements(QList<KCL::AbstractElement*> elements, QList<KCL::VecN> const& dataSet, QString const& name);
+    EditElements(KCL::AbstractElement* pElement, KCL::VecN const& data, QString const& name);
+    virtual ~EditElements() = default;
 
     void undo() override;
     void redo() override;
@@ -147,8 +164,8 @@ template<typename T>
 class EditProperty : public EditCommand
 {
 public:
-    EditProperty(T& object, QString const& name, QVariant const& value, Editor* pEditor);
-    ~EditProperty() = default;
+    EditProperty(T& object, QString const& name, QVariant const& value);
+    virtual ~EditProperty() = default;
 
     void undo() override;
     void redo() override;
@@ -165,8 +182,8 @@ template<typename T>
 class EditObject : public EditCommand
 {
 public:
-    EditObject(T& object, QString const& name, T const& value, Editor* pEditor);
-    ~EditObject() = default;
+    EditObject(T& object, QString const& name, T const& value);
+    virtual ~EditObject() = default;
 
     void undo() override;
     void redo() override;

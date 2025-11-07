@@ -58,14 +58,14 @@ void ModalOptionsEditor::createProperties()
 void ModalOptionsEditor::setIntValue(QtProperty* pProperty, int value)
 {
     if (mpEditor->id(pProperty) == kNumModes)
-        emit commandExecuted(new EditProperty<ModalOptions>(mOptions, "numModes", value, this));
+        emit commandExecuted(new EditProperty<ModalOptions>(mOptions, "numModes", value));
 }
 
 //! Process changing of a double value
 void ModalOptionsEditor::setDoubleValue(QtProperty* pProperty, double value)
 {
     if (mpEditor->id(pProperty) == kTimeout)
-        emit commandExecuted(new EditProperty<ModalOptions>(mOptions, "timeout", value, this));
+        emit commandExecuted(new EditProperty<ModalOptions>(mOptions, "timeout", value));
 }
 
 FlutterOptionsEditor::FlutterOptionsEditor(FlutterOptions& options, QString const& name, QWidget* pParent)
@@ -116,14 +116,14 @@ void FlutterOptionsEditor::createProperties()
 void FlutterOptionsEditor::setIntValue(QtProperty* pProperty, int value)
 {
     if (mpEditor->id(pProperty) == kNumModes)
-        emit commandExecuted(new EditProperty<FlutterOptions>(mOptions, "numModes", value, this));
+        emit commandExecuted(new EditProperty<FlutterOptions>(mOptions, "numModes", value));
 }
 
 //! Process changing of a double value
 void FlutterOptionsEditor::setDoubleValue(QtProperty* pProperty, double value)
 {
     if (mpEditor->id(pProperty) == kTimeout)
-        emit commandExecuted(new EditProperty<FlutterOptions>(mOptions, "timeout", value, this));
+        emit commandExecuted(new EditProperty<FlutterOptions>(mOptions, "timeout", value));
 }
 
 OptimOptionsEditor::OptimOptionsEditor(OptimOptions& options, QString const& name, QWidget* pParent)
@@ -182,13 +182,13 @@ void OptimOptionsEditor::setIntValue(QtProperty* pProperty, int value)
     switch (mpEditor->id(pProperty))
     {
     case kMaxNumIterations:
-        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "maxNumIterations", value, this));
+        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "maxNumIterations", value));
         break;
     case kNumThreads:
-        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "numThreads", value, this));
+        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "numThreads", value));
         break;
     case kNumModes:
-        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "numModes", value, this));
+        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "numModes", value));
         break;
     }
 }
@@ -199,19 +199,19 @@ void OptimOptionsEditor::setDoubleValue(QtProperty* pProperty, double value)
     switch (mpEditor->id(pProperty))
     {
     case kTimeoutIteration:
-        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "timeoutIteration", value, this));
+        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "timeoutIteration", value));
         break;
     case kDiffStepSize:
-        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "diffStepSize", value, this));
+        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "diffStepSize", value));
         break;
     case kMinMAC:
-        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "minMAC", value, this));
+        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "minMAC", value));
         break;
     case kPenaltyMAC:
-        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "penaltyMAC", value, this));
+        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "penaltyMAC", value));
         break;
     case kMaxRelError:
-        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "maxRelError", value, this));
+        emit commandExecuted(new EditProperty<OptimOptions>(mOptions, "maxRelError", value));
         break;
     }
 }

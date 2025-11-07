@@ -8,8 +8,11 @@
 #include <QToolBar>
 
 #include "config.h"
+#include "fluttersolver.h"
 #include "logger.h"
 #include "mainwindow.h"
+#include "modalsolver.h"
+#include "optimsolver.h"
 #include "projectbrowser.h"
 #include "uiconstants.h"
 #include "uiutility.h"
@@ -211,19 +214,21 @@ void MainWindow::createConnections()
 {
     // Project browser
     connect(mpProjectBrowser, &ProjectBrowser::selectionChanged, mpViewManager, &ViewManager::processItems);
+    connect(mpProjectBrowser, &ProjectBrowser::edited, this, [this]() { setModified(true); });
     connect(mpProjectBrowser, &ProjectBrowser::modelEdited, this,
             [this](KCL::Model& model)
             {
                 setModified(true);
-                mpViewManager->createView(model);
                 mpViewManager->plot();
                 mpViewManager->processItems(mpProjectBrowser->selectedItems());
+                updateSolvers(model);
             });
     connect(mpProjectBrowser, &ProjectBrowser::modelSubstituted, this,
             [this](KCL::Model& model)
             {
                 setModified(true);
                 mpViewManager->replot(model);
+                updateSolvers(model);
             });
 
     // View manager
@@ -518,6 +523,44 @@ void MainWindow::about()
                                 .arg(APP_NAME, author, build);
     QString const title = tr("About %1 v%2").arg(APP_NAME, VERSION_FULL);
     QMessageBox::about(this, title, message);
+}
+
+//! Update state of solvers
+void MainWindow::updateSolvers(KCL::Model const& model)
+{
+    // Find the subproject associated with a model
+    int numSubprojects = mProject.numSubprojects();
+    int iFound = -1;
+    for (int i = 0; i != numSubprojects; ++i)
+    {
+        if (&mProject.subprojects()[i].model() == &model)
+        {
+            iFound = i;
+            break;
+        }
+    }
+    if (iFound < 0)
+        return;
+
+    // Loop through the solvers and modify model
+    QList<Core::ISolver*> solvers = mProject.subprojects()[iFound].solvers();
+    int numSolvers = solvers.size();
+    for (int i = 0; i != numSolvers; ++i)
+    {
+        Core::ISolver* pBaseSolver = solvers[i];
+        switch (pBaseSolver->type())
+        {
+        case Core::ISolver::kModal:
+            static_cast<Core::ModalSolver*>(pBaseSolver)->model = model;
+            break;
+        case Core::ISolver::kFlutter:
+            static_cast<Core::FlutterSolver*>(pBaseSolver)->model = model;
+            break;
+        case Core::ISolver::kOptim:
+            static_cast<Core::OptimSolver*>(pBaseSolver)->problem.model = model;
+            break;
+        }
+    }
 }
 
 //! Helper function to log all the messages

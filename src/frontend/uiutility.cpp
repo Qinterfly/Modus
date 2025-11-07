@@ -152,20 +152,18 @@ QString getLabel(int iSurface)
         return "ES51";
 }
 
-//! Search for hierarchy items of the specified type
-QList<HierarchyItem*> findItems(HierarchyItem* pRootItem, HierarchyItem::Type type)
+//! Search recursively for hierarchy items of the specified type
+void findItems(HierarchyItem* pRootItem, HierarchyItem::Type type, QList<HierarchyItem*>& result)
 {
-    QList<HierarchyItem*> result;
-    if (!pRootItem->hasChildren())
-        return result;
     int numChildren = pRootItem->rowCount();
     for (int i = 0; i != numChildren; ++i)
     {
         HierarchyItem* pItem = (HierarchyItem*) pRootItem->child(i);
+        if (pItem->hasChildren())
+            findItems(pItem, type, result);
         if (pItem->type() == type)
             result.push_back(pItem);
     }
-    return result;
 }
 
 //! Substitute a file suffix to the expected one, if necessary
