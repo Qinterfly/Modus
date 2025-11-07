@@ -383,7 +383,7 @@ void ProjectBrowser::createModelActions(QMenu* pMenu, QList<HierarchyItem*> cons
     QAction* pSaveAsAction = new QAction(tr("&Save as..."), this);
 
     // Set the icons
-    pOpenAction->setIcon(QIcon(":/icons/document-open.svg"));
+    pOpenAction->setIcon(QIcon(":/icons/document-model.svg"));
     pSaveAsAction->setIcon(QIcon(":/icons/document-save-as.svg"));
 
     // Set the connections

@@ -5,6 +5,7 @@
 
 #include <kcl/model.h>
 
+#include "customtabwidget.h"
 #include "geometry.h"
 #include "geometryview.h"
 #include "hierarchyitem.h"
@@ -221,7 +222,7 @@ void ViewManager::processModelItems(QList<HierarchyItem*> const& items, QSet<IVi
         {
             SubprojectHierarchyItem* pItem = (SubprojectHierarchyItem*) pBaseItem;
             Core::Subproject& subproject = pItem->subproject();
-            QString label = getViewName(&subproject, IView::kModel);
+            QString label = getViewName(pItem);
             pView = (ModelView*) createView(subproject.model(), label);
             pView->selector().deselectAll();
             modifiedViews.insert(pView);
@@ -230,7 +231,7 @@ void ViewManager::processModelItems(QList<HierarchyItem*> const& items, QSet<IVi
         case HierarchyItem::kModel:
         {
             ModelHierarchyItem* pItem = (ModelHierarchyItem*) pBaseItem;
-            QString label = getViewName(pItem->subproject(), IView::kModel);
+            QString label = getViewName(pItem);
             pView = (ModelView*) createView(pItem->kclModel(), label);
             pView->selector().deselectAll();
             modifiedViews.insert(pView);
@@ -260,7 +261,7 @@ void ViewManager::processModelItems(QList<HierarchyItem*> const& items, QSet<IVi
                 continue;
 
             // Create the view, if necessary
-            QString label = getViewName(pItem->subproject(), IView::kModel);
+            QString label = getViewName(pItem);
             pView = (ModelView*) createView(*pModel, label);
             if (!modifiedViews.contains(pView))
                 pView->selector().deselectAll();
@@ -296,7 +297,7 @@ void ViewManager::processGeometryItems(QList<HierarchyItem*> const& items, QSet<
         case HierarchyItem::kModalPole:
         {
             ModalPoleHierarchyItem* pItem = (ModalPoleHierarchyItem*) pBaseItem;
-            QString label = getViewName(pItem->subproject(), IView::kGeometry);
+            QString label = getViewName(pItem);
             VertexField field(pItem->iMode(), pItem->frequency(), pItem->modeShape());
             IView* pBaseView = findView(pItem->geometry());
             if (pBaseView)
@@ -356,16 +357,7 @@ void ViewManager::clear()
 void ViewManager::createContent()
 {
     // Create the central widget
-    mpTabWidget = new QTabWidget;
-    mpTabWidget->setContentsMargins(0, 0, 0, 0);
-    mpTabWidget->setTabsClosable(true);
-    connect(mpTabWidget->tabBar(), &QTabBar::tabCloseRequested, this,
-            [this](int index)
-            {
-                QWidget* widget = mpTabWidget->widget(index);
-                mpTabWidget->removeTab(index);
-                widget->deleteLater();
-            });
+    mpTabWidget = new CustomTabWidget;
 
     // Insert the widgets into the main layout
     QHBoxLayout* pLayout = new QHBoxLayout();
@@ -405,19 +397,27 @@ QString ViewManager::getDefaultViewName(IView::Type type)
 }
 
 //! Consturt a name for a new view
-QString ViewManager::getViewName(Backend::Core::Subproject* pSubproject, IView::Type type)
+QString ViewManager::getViewName(HierarchyItem* pItem)
 {
-    QString suffix;
-    switch (type)
+    // Constants
+    int const kMaxNumTokens = 1;
+    QChar const kDelimiter = '/';
+
+    // Get the full name
+    QString name = pItem->id();
+    int numName = name.size();
+
+    // Slice the N parts of the name
+    int numTokens = 0;
+    int iLast = 0;
+    for (iLast = 0; iLast != numName; ++iLast)
     {
-    case IView::kModel:
-        suffix = tr("model");
-        break;
-    case IView::kGeometry:
-        suffix = tr("geometry");
-        break;
+        if (name.at(iLast) == kDelimiter)
+        {
+            ++numTokens;
+            if (numTokens > kMaxNumTokens)
+                break;
+        }
     }
-    if (pSubproject && !pSubproject->name().isEmpty())
-        return QString("%1 %2").arg(pSubproject->name(), suffix);
-    return getDefaultViewName(IView::kModel);
+    return name.first(iLast);
 }

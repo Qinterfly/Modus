@@ -64,7 +64,10 @@ void HierarchyItem::evaluateID()
     QString objectKey = data(Qt::DisplayRole).toString();
 
     // Build up the id
-    mID = QString("%1%3%2").arg(parentKey, objectKey, kDelimiter);
+    if (parentKey.isEmpty())
+        mID = objectKey;
+    else
+        mID = QString("%1%3%2").arg(parentKey, objectKey, kDelimiter);
 }
 
 //! Set the expanded state of the hierarchy item

@@ -6,7 +6,6 @@
 #include "iview.h"
 
 QT_FORWARD_DECLARE_CLASS(QSettings)
-QT_FORWARD_DECLARE_CLASS(QTabWidget)
 
 namespace KCL
 {
@@ -24,6 +23,7 @@ struct ModalSolution;
 namespace Frontend
 {
 
+class CustomTabWidget;
 class HierarchyItem;
 class ElementHierarchyItem;
 class ModelHierarchyItem;
@@ -67,11 +67,11 @@ private:
     void processGeometryItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews);
     IView* createView(ModelHierarchyItem* pItem);
     QString getDefaultViewName(IView::Type type);
-    QString getViewName(Backend::Core::Subproject* pSubproject, IView::Type type);
+    QString getViewName(HierarchyItem* pItem);
 
 private:
     QSettings& mSettings;
-    QTabWidget* mpTabWidget;
+    CustomTabWidget* mpTabWidget;
 };
 
 }

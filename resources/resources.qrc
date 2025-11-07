@@ -51,6 +51,7 @@
 		<file>icons/draw-axes.svg</file>
 		<file>icons/process-start.svg</file>
 		<file>icons/process-stop.svg</file>
+		<file>icons/document-model.svg</file>
 		<file>icons/document-open.svg</file>
 		<file>icons/document-new.svg</file>
 		<file>icons/document-save.svg</file>

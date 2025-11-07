@@ -9,7 +9,7 @@ IntLineEdit::IntLineEdit(QWidget* pParent)
 {
     mpValidator = new QIntValidator(this);
     setValidator(mpValidator);
-    connect(this, &IntLineEdit::textEdited, this, &IntLineEdit::processTextChanged);
+    connect(this, &IntLineEdit::editingFinished, this, &IntLineEdit::processEditingFinished);
 }
 
 IntLineEdit::IntLineEdit(int minimum, int maximum, QWidget* pParent)
@@ -64,8 +64,8 @@ void IntLineEdit::setRange(int minimum, int maximum)
     mpValidator->setRange(minimum, maximum);
 }
 
-//! Slot function to handle text changes
-void IntLineEdit::processTextChanged()
+//! Slot function to handle termination of editing
+void IntLineEdit::processEditingFinished()
 {
     int position = 0;
     QString newText = text();
@@ -84,7 +84,8 @@ DoubleLineEdit::DoubleLineEdit(QWidget* pParent)
     mpValidator->setRange(-kRangeValue, kRangeValue, kNumDecimals);
     mpValidator->setLocale(QLocale::C);
     setValidator(mpValidator);
-    connect(this, &DoubleLineEdit::textEdited, this, &DoubleLineEdit::processTextChanged);
+    connect(this, &DoubleLineEdit::textEdited, this, &DoubleLineEdit::processTextEdited);
+    connect(this, &DoubleLineEdit::editingFinished, this, &DoubleLineEdit::processEditingFinished);
 }
 
 DoubleLineEdit::DoubleLineEdit(double minimum, double maximum, int decimals, QWidget* pParent)
@@ -154,7 +155,7 @@ void DoubleLineEdit::setDecimals(int number)
 }
 
 //! Slot function to handle text changes
-void DoubleLineEdit::processTextChanged()
+void DoubleLineEdit::processTextEdited()
 {
     int position = 0;
     QString newText = text();
@@ -164,6 +165,13 @@ void DoubleLineEdit::processTextChanged()
         newText.replace(",", ".");
         setText(newText);
     }
+}
+
+//! Slot function to handle termination of editing
+void DoubleLineEdit::processEditingFinished()
+{
+    int position = 0;
+    QString newText = text();
     auto state = mpValidator->validate(newText, position);
     if (state == QValidator::Acceptable)
         emit valueChanged();

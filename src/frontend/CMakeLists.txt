@@ -52,6 +52,7 @@ set(FRONTEND_HEADERS
     modeleditor.h
     solveroptionseditor.h
     constraintseditor.h
+    customtabwidget.h
 )
 
 set(FRONTEND_SOURCES
@@ -80,6 +81,7 @@ set(FRONTEND_SOURCES
     modeleditor.cpp
     solveroptionseditor.cpp
     constraintseditor.cpp
+    customtabwidget.cpp
 )
 
 qt_add_library(frontend STATIC

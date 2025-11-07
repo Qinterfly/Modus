@@ -32,6 +32,7 @@ public:
     // File interaction
     void newProject();
     bool openProject(QString const& pathFile);
+    void openModel(QString const& pathFile);
     void saveProject();
     void saveAsProject(QString const& pathFile);
 
@@ -77,6 +78,7 @@ private:
     // Dialogs
     void newProjectDialog();
     void openProjectDialog();
+    void openModelDialog();
     void saveAsProjectDialog();
     bool saveProjectChangesDialog();
     void about();

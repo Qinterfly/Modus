@@ -32,7 +32,7 @@ signals:
     void valueChanged();
 
 private:
-    void processTextChanged();
+    void processEditingFinished();
 
 private:
     QIntValidator* mpValidator;
@@ -63,7 +63,8 @@ signals:
     void valueChanged();
 
 private:
-    void processTextChanged();
+    void processTextEdited();
+    void processEditingFinished();
 
 private:
     QDoubleValidator* mpValidator;

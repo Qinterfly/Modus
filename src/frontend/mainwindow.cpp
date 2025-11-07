@@ -64,6 +64,21 @@ bool MainWindow::openProject(QString const& pathFile)
     return false;
 }
 
+//! Read the model located at the specied path
+void MainWindow::openModel(QString const& pathFile)
+{
+    KCL::Model model = Utility::readModel(pathFile);
+    if (!model.isEmpty())
+    {
+        Core::Subproject subproject;
+        subproject.model() = model;
+        subproject.name() = QFileInfo(pathFile).baseName();
+        mProject.addSubproject(subproject);
+        mpProjectBrowser->refresh();
+        Utility::setLastPathFile(mSettings, pathFile);
+    }
+}
+
 //! Save the project at the last used path
 void MainWindow::saveProject()
 {
@@ -242,6 +257,7 @@ void MainWindow::createFileActions()
     // Create the actions
     QAction* pNewAction = new QAction(tr("&New Project"), this);
     QAction* pOpenProjectAction = new QAction(tr("&Open Project..."), this);
+    QAction* pOpenModelAction = new QAction(tr("&Open Model..."), this);
     QAction* pSaveAction = new QAction(tr("&Save"), this);
     QAction* pSaveAsAction = new QAction(tr("&Save As..."), this);
     QAction* pExitAction = new QAction(tr("E&xit"), this);
@@ -249,6 +265,7 @@ void MainWindow::createFileActions()
     // Set the icons
     pNewAction->setIcon(QIcon(":/icons/document-new.svg"));
     pOpenProjectAction->setIcon(QIcon(":/icons/document-open.svg"));
+    pOpenModelAction->setIcon(QIcon(":/icons/document-model.svg"));
     pSaveAction->setIcon(QIcon(":/icons/document-save.svg"));
     pSaveAsAction->setIcon(QIcon(":/icons/document-save-as.svg"));
 
@@ -267,6 +284,7 @@ void MainWindow::createFileActions()
     // Connect the actions
     connect(pNewAction, &QAction::triggered, this, &MainWindow::newProjectDialog);
     connect(pOpenProjectAction, &QAction::triggered, this, &MainWindow::openProjectDialog);
+    connect(pOpenModelAction, &QAction::triggered, this, &MainWindow::openModelDialog);
     connect(pSaveAction, &QAction::triggered, this, &MainWindow::saveProject);
     connect(pSaveAsAction, &QAction::triggered, this, &MainWindow::saveAsProjectDialog);
     connect(pExitAction, &QAction::triggered, qApp, &QApplication::quit);
@@ -274,6 +292,7 @@ void MainWindow::createFileActions()
     // Fill up the menu
     pFileMenu->addAction(pNewAction);
     pFileMenu->addAction(pOpenProjectAction);
+    pFileMenu->addAction(pOpenModelAction);
     pFileMenu->addMenu(mpRecentMenu);
     pFileMenu->addSeparator();
     pFileMenu->addAction(pSaveAction);
@@ -287,6 +306,7 @@ void MainWindow::createFileActions()
     pFileToolBar->setIconSize(Constants::Size::skToolBarIcon);
     pFileToolBar->addAction(pNewAction);
     pFileToolBar->addAction(pOpenProjectAction);
+    pFileToolBar->addAction(pOpenModelAction);
     pFileToolBar->addSeparator();
     pFileToolBar->addAction(pSaveAction);
     pFileToolBar->addAction(pSaveAsAction);
@@ -476,6 +496,15 @@ void MainWindow::openProjectDialog()
     if (pathFile.isEmpty())
         return;
     openProject(pathFile);
+}
+
+//! Read the model using the file dialog
+void MainWindow::openModelDialog()
+{
+    QString pathFile = QFileDialog::getOpenFileName(this, tr("Open Model"), mProject.pathFile(), tr("Model file format (*.dat *.txt)"));
+    if (pathFile.isEmpty())
+        return;
+    openModel(pathFile);
 }
 
 //! Save the project using the file dialog
