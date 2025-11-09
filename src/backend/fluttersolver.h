@@ -82,6 +82,7 @@ class FlutterSolver : public QObject, public ISolver
     Q_PROPERTY(KCL::Model model MEMBER model)
     Q_PROPERTY(FlutterOptions options MEMBER options)
     Q_PROPERTY(FlutterSolution solution MEMBER solution)
+    Q_PROPERTY(QString log MEMBER log)
 
 public:
     FlutterSolver();
@@ -110,6 +111,7 @@ public:
     KCL::Model model;
     FlutterOptions options;
     FlutterSolution solution;
+    QString log;
 };
 }
 

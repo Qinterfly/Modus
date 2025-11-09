@@ -168,7 +168,7 @@ void TestBackend::testOptimSolverSimpleWing()
     problem.fillMatches();
 
     // Start the solver
-    connect(pSolver, &OptimSolver::log, [](QString message) { std::cout << message.toStdString() << std::endl; });
+    connect(pSolver, &OptimSolver::logAppended, [](QString message) { std::cout << message.toStdString() << std::endl; });
     pSolver->solve();
     QVERIFY(!pSolver->solutions.isEmpty());
     QVERIFY(pSolver->solutions.last().isSuccess);

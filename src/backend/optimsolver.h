@@ -154,6 +154,7 @@ class OptimSolver : public QObject, public ISolver
     Q_PROPERTY(OptimProblem problem MEMBER problem)
     Q_PROPERTY(OptimOptions options MEMBER options)
     Q_PROPERTY(QList<OptimSolution> solutions MEMBER solutions)
+    Q_PROPERTY(QString log MEMBER log)
 
 public:
     OptimSolver();
@@ -177,7 +178,7 @@ public:
 signals:
     void solverFinished();
     void iterationFinished(Backend::Core::OptimSolution solution);
-    void log(QString message);
+    void logAppended(QString message);
 
 private:
     void setModelParameters();
@@ -200,6 +201,7 @@ public:
     OptimProblem problem;
     OptimOptions options;
     QList<OptimSolution> solutions;
+    QString log;
 
 private:
     KCL::Model mInitModel;
@@ -235,7 +237,7 @@ public:
 
 signals:
     void iterationFinished(Backend::Core::OptimSolution solution);
-    void log(QString message);
+    void logRequested(QString message);
 
 private:
     QList<double>& mParameterValues;

@@ -179,6 +179,7 @@ void FlutterSolver::clear()
     options = FlutterOptions();
     model = KCL::Model();
     solution = FlutterSolution();
+    log = QString();
 }
 
 void FlutterSolver::solve()
@@ -191,10 +192,12 @@ void FlutterSolver::solve()
     pParameters->numLowModes = options.numModes;
 
     // Create the auxiliary function
-    std::function<KCL::FlutterSolution()> fun = [&currentModel]() { return currentModel.solveFlutter(); };
+    std::ostringstream stream;
+    std::function<KCL::FlutterSolution()> fun = [&currentModel, &stream]() { return currentModel.solveFlutter(stream); };
 
     // Run the solution
     solution = Utility::solve(fun, options.timeout);
+    log = stream.str().data();
 
     emit solverFinished();
 }
@@ -208,6 +211,7 @@ void FlutterSolver::serialize(QXmlStreamWriter& stream, QString const& elementNa
     Utility::serialize(stream, "model", model);
     options.serialize(stream, "options");
     solution.serialize(stream, "solution");
+    Utility::serialize(stream, "log", log);
     stream.writeEndElement();
 }
 
@@ -225,6 +229,8 @@ void FlutterSolver::deserialize(QXmlStreamReader& stream)
             options.deserialize(stream);
         else if (stream.name() == "solution")
             solution.deserialize(stream);
+        else if (stream.name() == "log")
+            Utility::deserialize(stream, log);
         else
             stream.skipCurrentElement();
     }

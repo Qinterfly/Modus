@@ -125,7 +125,7 @@ ceres::CallbackReturnType OptimCallback::operator()(ceres::IterationSummary cons
     solution.modalSolution = modalSolution;
     solution.modalComparison = modalComparison;
     emit iterationFinished(solution);
-    emit log(message);
+    emit logRequested(message);
 
     if (maxError < mOptions.maxRelError)
         return ceres::SOLVER_TERMINATE_SUCCESSFULLY;
@@ -182,6 +182,7 @@ void OptimSolver::clear()
     mConstraints = Constraints();
     mParameterScales.clear();
     mParameterBounds.clear();
+    log = QString();
 }
 
 //! Perform the updating
@@ -229,7 +230,8 @@ void OptimSolver::solve()
     };
     SolverFun solverFun = [this](Model const& model)
     {
-        std::function<EigenSolution()> fun = [&model]() { return model.solveEigen(); };
+        std::ostringstream stream;
+        std::function<EigenSolution()> fun = [&model, &stream]() { return model.solveEigen(stream); };
         return Utility::solve(fun, options.timeoutIteration);
     };
 
@@ -276,7 +278,12 @@ void OptimSolver::solve()
                 solutions.push_back(solution);
                 emit iterationFinished(solution);
             });
-    connect(&callback, &OptimCallback::log, this, &OptimSolver::log);
+    connect(&callback, &OptimCallback::logRequested, this,
+            [this](QString message)
+            {
+                log.append(message);
+                emit logAppended(message);
+            });
     ceresOptions.callbacks.push_back(&callback);
 
     // Solve the problem
@@ -749,7 +756,8 @@ void OptimSolver::printReport(ceres::Solver::Summary const& summary)
     stream << tr("* Final cost:   %1").arg(QString::number(summary.final_cost, 'e', 3)) << Qt::endl;
     stream << tr("* Duration:     %1 s").arg(QString::number(summary.total_time_in_seconds, 'f', 3)) << Qt::endl;
     stream << tr("* Termination:  %1").arg(ceres::TerminationTypeToString(summary.termination_type)) << Qt::endl;
-    emit log(message);
+    log.append(message);
+    emit logAppended(message);
 }
 
 //! Retrieve surface elements
@@ -805,6 +813,7 @@ void OptimSolver::serialize(QXmlStreamWriter& stream, QString const& elementName
     problem.serialize(stream, "problem");
     options.serialize(stream, "options");
     Utility::serialize(stream, "solutions", "solution", solutions);
+    Utility::serialize(stream, "log", log);
     stream.writeEndElement();
 }
 
@@ -822,6 +831,8 @@ void OptimSolver::deserialize(QXmlStreamReader& stream)
             options.deserialize(stream);
         else if (stream.name() == "solutions")
             Utility::deserialize(stream, "solution", solutions);
+        else if (stream.name() == "log")
+            Utility::deserialize(stream, log);
         else
             stream.skipCurrentElement();
     }

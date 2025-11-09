@@ -108,6 +108,7 @@ class ModalSolver : public QObject, public ISolver
     Q_PROPERTY(KCL::Model model MEMBER model)
     Q_PROPERTY(ModalOptions options MEMBER options)
     Q_PROPERTY(ModalSolution solution MEMBER solution)
+    Q_PROPERTY(QString log MEMBER log)
 
 public:
     ModalSolver();
@@ -136,6 +137,7 @@ public:
     KCL::Model model;
     ModalOptions options;
     ModalSolution solution;
+    QString log;
 };
 }
 

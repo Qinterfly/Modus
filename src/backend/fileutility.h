@@ -285,6 +285,9 @@ void deserialize(QXmlStreamReader& stream, QMap<Backend::Core::Selection, bool>&
 void serialize(QXmlStreamWriter& stream, QString const& elementName, KCL::Model const& model);
 void deserialize(QXmlStreamReader& stream, KCL::Model& model);
 
+void serialize(QXmlStreamWriter& stream, QString const& elementName, QString const& text);
+void deserialize(QXmlStreamReader& stream, QString& text);
+
 //! Check if metaobjects are equal
 template<typename T>
 bool areEqual(T const& first, T const& second)

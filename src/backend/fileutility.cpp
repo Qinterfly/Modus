@@ -161,27 +161,38 @@ void deserialize(QXmlStreamReader& stream, QMap<Backend::Core::Selection, bool>&
 
 void serialize(QXmlStreamWriter& stream, QString const& elementName, KCL::Model const& model)
 {
-    QString text;
-    if (!model.isEmpty())
-    {
-        text = model.toString().c_str();
-        QByteArray data(text.toUtf8());
-        data = qCompress(data).toBase64();
-        text = QString::fromLatin1(data);
-    }
-    stream.writeStartElement(elementName);
-    stream.writeCharacters(text);
-    stream.writeEndElement();
+    serialize(stream, elementName, model.toString().c_str());
 }
 
 void deserialize(QXmlStreamReader& stream, KCL::Model& model)
 {
-    QString text = stream.readElementText();
+    QString text;
+    deserialize(stream, text);
+    if (!text.isEmpty())
+        model.fromString(text.toStdString());
+}
+
+void serialize(QXmlStreamWriter& stream, QString const& elementName, QString const& text)
+{
+    QString compressText;
+    if (!text.isEmpty())
+    {
+        QByteArray data(text.toUtf8());
+        data = qCompress(data).toBase64();
+        compressText = QString::fromLatin1(data);
+    }
+    stream.writeStartElement(elementName);
+    stream.writeCharacters(compressText);
+    stream.writeEndElement();
+}
+
+void deserialize(QXmlStreamReader& stream, QString& text)
+{
+    text = stream.readElementText();
     if (!text.isEmpty())
     {
         QByteArray data = QByteArray::fromBase64(text.toLatin1());
         text = QString::fromUtf8(qUncompress(data));
-        model.fromString(text.toStdString());
     }
 }
 
