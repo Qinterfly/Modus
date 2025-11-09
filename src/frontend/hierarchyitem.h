@@ -65,7 +65,8 @@ public:
         kOptimSelector,
         kOptimConstraints,
         kGroupOptimSolutions,
-        kOptimSolution
+        kOptimSolution,
+        kLog
     };
 
     HierarchyItem() = delete;
@@ -381,6 +382,18 @@ private:
 
     int const mkISolution;
     Backend::Core::OptimSolution& mSolution;
+};
+
+class LogHierarchyItem : public QObject, public HierarchyItem
+{
+public:
+    LogHierarchyItem(QString& log);
+    virtual ~LogHierarchyItem() = default;
+
+    QString const& log() const;
+
+private:
+    QString& mLog;
 };
 }
 

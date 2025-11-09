@@ -57,6 +57,14 @@ QString toString(QVariant const& variant)
     return QString();
 }
 
+void appendLog(QString& log, QString const& message, bool isTime)
+{
+    QTextStream stream(&log);
+    if (isTime)
+        stream << Qt::endl << QString("[%1]").arg(QTime::currentTime().toString()) << Qt::endl;
+    stream << message;
+}
+
 QString toString(bool value)
 {
     return QString::number(value);

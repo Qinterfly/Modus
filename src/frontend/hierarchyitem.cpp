@@ -388,6 +388,7 @@ void ModalSolverHierarchyItem::appendChildren()
     appendRow(new ModalOptionsHierarchyItem(mpSolver->options));
     if (!mpSolver->solution.isEmpty())
         appendRow(new ModalSolutionHierarchyItem(mpSolver->solution));
+    appendRow(new LogHierarchyItem(mpSolver->log));
 }
 
 ModalOptionsHierarchyItem::ModalOptionsHierarchyItem(Core::ModalOptions& options)
@@ -484,6 +485,7 @@ void FlutterSolverHierarchyItem::appendChildren()
     appendRow(new FlutterOptionsHierarchyItem(mpSolver->options));
     if (!mpSolver->solution.isEmpty())
         appendRow(new FlutterSolutionHierarchyItem(mpSolver->solution));
+    appendRow(new LogHierarchyItem(mpSolver->log));
 }
 
 FlutterOptionsHierarchyItem::FlutterOptionsHierarchyItem(Core::FlutterOptions& options)
@@ -613,6 +615,7 @@ void OptimSolverHierarchyItem::appendChildren()
             pGroupSolutions->appendRow(new OptimSolutionHierarchyItem(i, mpSolver->solutions[i]));
         appendRow(pGroupSolutions);
     }
+    appendRow(new LogHierarchyItem(mpSolver->log));
 }
 
 OptimOptionsHierarchyItem::OptimOptionsHierarchyItem(Core::OptimOptions& options)
@@ -708,6 +711,17 @@ void OptimSolutionHierarchyItem::appendChildren()
 {
     appendRow(new ModelHierarchyItem(mSolution.model));
     appendRow(new ModalSolutionHierarchyItem(mSolution.modalSolution));
+}
+
+LogHierarchyItem::LogHierarchyItem(QString& log)
+    : HierarchyItem(kLog, QIcon(":/icons/log.png"), QObject::tr("Log"))
+    , mLog(log)
+{
+}
+
+QString const& LogHierarchyItem::log() const
+{
+    return mLog;
 }
 
 //! Helper function to find subproject which contains the current item

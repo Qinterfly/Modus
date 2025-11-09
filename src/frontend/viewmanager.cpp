@@ -9,6 +9,7 @@
 #include "geometry.h"
 #include "geometryview.h"
 #include "hierarchyitem.h"
+#include "logview.h"
 #include "modelview.h"
 #include "selectionset.h"
 #include "subproject.h"
@@ -105,6 +106,19 @@ IView* ViewManager::findView(Backend::Core::Geometry const& geometry)
     return nullptr;
 }
 
+//! Find the view associated with the current log
+IView* ViewManager::findView(QString const& log)
+{
+    int count = numViews();
+    for (int i = 0; i != count; ++i)
+    {
+        IView* pView = view(i);
+        if (pView->type() == IView::kLog && &static_cast<LogView*>(pView)->log() == &log)
+            return pView;
+    }
+    return nullptr;
+}
+
 //! Retrieve the current view
 IView* ViewManager::currentView()
 {
@@ -172,6 +186,32 @@ IView* ViewManager::createView(Backend::Core::Geometry const& geometry, VertexFi
     return pGeometryView;
 }
 
+//! Create the view associated with a log
+IView* ViewManager::createView(QString const& log, QString const& name)
+{
+    // Set the view as the current one if it has been already created
+    IView* pView = findView(log);
+    if (pView)
+    {
+        LogView* pLogView = (LogView*) pView;
+        pLogView->plot();
+        mpTabWidget->setCurrentWidget(pView);
+        mpTabWidget->setTabText(mpTabWidget->currentIndex(), name);
+        return pView;
+    }
+
+    // Create the log view otherwise
+    LogView* pLogView = new LogView(log);
+    pLogView->plot();
+
+    // Add it to the tab
+    QString label = name.isEmpty() ? getDefaultViewName(IView::kLog) : name;
+    mpTabWidget->addTab(pLogView, label);
+    mpTabWidget->setCurrentWidget(pLogView);
+
+    return pLogView;
+}
+
 //! Create views associated with project hierarchy items
 void ViewManager::processItems(QList<HierarchyItem*> const& items)
 {
@@ -202,6 +242,8 @@ void ViewManager::processItems(QList<HierarchyItem*> const& items)
             processModelItems(typeItems, modifiedViews);
         else if (kGeometryTypes.contains(type))
             processGeometryItems(typeItems, modifiedViews);
+        else if (type == HierarchyItem::kLog)
+            processLogItems(typeItems, modifiedViews);
     }
 
     // Refresh the modified views
@@ -316,6 +358,18 @@ void ViewManager::processGeometryItems(QList<HierarchyItem*> const& items, QSet<
         // Add the view to the modified list
         if (pView)
             modifiedViews.insert(pView);
+    }
+}
+
+//! Process hierarchy items associated with the LogView
+void ViewManager::processLogItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews)
+{
+    for (HierarchyItem* pBaseItem : items)
+    {
+        LogHierarchyItem* pItem = (LogHierarchyItem*) pBaseItem;
+        QString label = getViewName(pItem);
+        LogView* pView = (LogView*) createView(pItem->log(), label);
+        modifiedViews.insert(pView);
     }
 }
 

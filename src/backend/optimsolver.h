@@ -192,6 +192,7 @@ private:
     Eigen::MatrixXd unwrapProperties(int& iParameter, QList<double> const& parameterValues, Eigen::MatrixXd const& initProperties,
                                      VariableType type);
     void printReport(ceres::Solver::Summary const& summary);
+    void appendLog(QString const& message);
     QMap<int, ElementMap> getSurfaceElements(KCL::Model& model);
     QMap<VariableType, QList<int>> getVariableIndices();
     QMap<KCL::ElementType, QList<VariableType>> getElementVariables();

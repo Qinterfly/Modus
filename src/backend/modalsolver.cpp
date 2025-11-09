@@ -403,7 +403,7 @@ void ModalSolver::solve()
 
     // Run the solution
     solution = Utility::solve(fun, options.timeout);
-    log = stream.str().data();
+    appendLog(stream.str().data());
 
     emit solverFinished();
 }
@@ -453,4 +453,10 @@ bool ModalSolver::operator==(ISolver const* pBaseSolver) const
 bool ModalSolver::operator!=(ISolver const* pBaseSolver) const
 {
     return !(this == pBaseSolver);
+}
+
+void ModalSolver::appendLog(QString const& message)
+{
+    Utility::appendLog(log, message);
+    emit logAppended(message);
 }

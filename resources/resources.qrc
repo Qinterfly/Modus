@@ -37,7 +37,8 @@
 		<file>icons/selector.svg</file>
 		<file>icons/constraints.png</file>
 		<file>icons/mode.png</file>
-		<file>icons/optimization.png</file>		
+		<file>icons/optimization.png</file>	
+		<file>icons/log.png</file>		
 		<file>icons/select-list.png</file>
 		<file>icons/draw-line.svg</file>
 		<file>icons/draw-triangle.svg</file>

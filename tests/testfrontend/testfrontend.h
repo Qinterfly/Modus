@@ -25,6 +25,7 @@ private slots:
     void testOpenProject();
     void testViewModel();
     void testViewGeometry();
+    void testViewLog();
     void testEditorManager();
 
 private:

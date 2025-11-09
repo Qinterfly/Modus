@@ -27,7 +27,7 @@ void ModelHighlighter::addRule(QString const& pattern, QTextCharFormat const& fo
     HighlightingRule rule;
     rule.pattern = QRegularExpression(pattern);
     rule.format = format;
-    mHighlightingRules.append(rule);
+    mRules.append(rule);
 }
 
 void ModelHighlighter::addRules(QStringList const& patterns, QTextCharFormat const& format)
@@ -39,7 +39,7 @@ void ModelHighlighter::addRules(QStringList const& patterns, QTextCharFormat con
 void ModelHighlighter::highlightBlock(QString const& text)
 {
     setCurrentBlockState(0);
-    for (HighlightingRule const& rule : std::as_const(mHighlightingRules))
+    for (HighlightingRule const& rule : std::as_const(mRules))
     {
         QRegularExpressionMatchIterator matchIterator = rule.pattern.globalMatch(text);
         while (matchIterator.hasNext())
@@ -76,14 +76,11 @@ void ModelEditor::createContent()
     // Create the widget to edit
     mpEdit = new QTextEdit;
     mpEdit->setReadOnly(true);
-    QString fontName = "RobotoMono";
-#ifdef Q_OS_WIN
-    fontName = "Roboto Mono";
-#endif
-    int fontSize = qApp->font().pointSize() - 1;
-    mpEdit->setFont(QFont(fontName, fontSize));
+    QFont fnt = Utility::getMonospaceFont();
+    fnt.setPointSize(fnt.pointSize() - 1);
+    mpEdit->setFont(fnt);
 
-    // Createt the highlighter
+    // Create the highlighter
     mpHighlighter = new ModelHighlighter(mpEdit->document());
 
     // Create the layout

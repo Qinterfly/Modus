@@ -2,6 +2,7 @@
 #include <QTime>
 
 #include "logger.h"
+#include "uiutility.h"
 
 using namespace Frontend;
 
@@ -9,12 +10,7 @@ Logger::Logger(QWidget* pParent)
     : QTextEdit(pParent)
 {
     setReadOnly(false);
-    QString fontName = "RobotoMono";
-#ifdef Q_OS_WIN
-    fontName = "Roboto Mono";
-#endif
-    int fontSize = qApp->font().pointSize();
-    setFont(QFont(fontName, fontSize));
+    setFont(Utility::getMonospaceFont());
 }
 
 Logger::~Logger()

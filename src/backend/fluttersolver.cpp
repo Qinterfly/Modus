@@ -197,7 +197,7 @@ void FlutterSolver::solve()
 
     // Run the solution
     solution = Utility::solve(fun, options.timeout);
-    log = stream.str().data();
+    appendLog(stream.str().data());
 
     emit solverFinished();
 }
@@ -247,4 +247,10 @@ bool FlutterSolver::operator==(ISolver const* pBaseSolver) const
 bool FlutterSolver::operator!=(ISolver const* pBaseSolver) const
 {
     return !(*this == pBaseSolver);
+}
+
+void FlutterSolver::appendLog(QString const& message)
+{
+    Utility::appendLog(log, message);
+    emit logAppended(message);
 }

@@ -47,9 +47,11 @@ public:
     bool isEmpty() const;
     IView* findView(KCL::Model const& model);
     IView* findView(Backend::Core::Geometry const& geometry);
+    IView* findView(QString const& log);
 
     IView* createView(KCL::Model const& model, QString const& name = QString());
     IView* createView(Backend::Core::Geometry const& geometry, VertexField const& field, QString const& name = QString());
+    IView* createView(QString const& log, QString const& name = QString());
     void processItems(QList<HierarchyItem*> const& items);
     void refresh();
     void plot();
@@ -65,6 +67,7 @@ private:
     void initialize();
     void processModelItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews);
     void processGeometryItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews);
+    void processLogItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews);
     IView* createView(ModelHierarchyItem* pItem);
     QString getDefaultViewName(IView::Type type);
     QString getViewName(HierarchyItem* pItem);

@@ -105,6 +105,10 @@ public:
 
 signals:
     void solverFinished();
+    void logAppended(QString const& message);
+
+private:
+    void appendLog(QString const& message);
 
 public:
     QString name;

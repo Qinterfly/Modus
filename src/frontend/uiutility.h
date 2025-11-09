@@ -36,6 +36,7 @@ namespace Frontend::Utility
 // Text
 QColor textColor(const QPalette& palette);
 void setTextColor(QWidget* pWidget, const QColor& color);
+QFont getMonospaceFont();
 
 // Ui
 QColor getColor(vtkColor3d color);

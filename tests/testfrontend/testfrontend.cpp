@@ -44,17 +44,38 @@ void TestFrontend::testViewGeometry()
     int iSubproject = 1;
     int iMode = 8;
     Core::Subproject& subproject = mpMainWindow->project().subprojects()[iSubproject];
-    int numSolvers = subproject.solvers().size();
+    auto solvers = subproject.solvers(Core::ISolver::kModal);
+    int numSolvers = solvers.size();
     for (int i = 0; i != numSolvers; ++i)
     {
-        Core::ISolver* pBaseSolver = subproject.solvers()[i];
-        if (pBaseSolver->type() == Core::ISolver::kModal)
-        {
-            auto pSolver = (Core::ModalSolver*) pBaseSolver;
-            VertexField field(pSolver->solution, iMode);
-            mpMainWindow->viewManager()->createView(pSolver->solution.geometry, field);
-        }
+        auto pSolver = (Core::ModalSolver*) solvers[i];
+        VertexField field(pSolver->solution, iMode);
+        mpMainWindow->viewManager()->createView(pSolver->solution.geometry, field);
     }
+}
+
+//! View a solver log
+void TestFrontend::testViewLog()
+{
+    int iSubproject = 0;
+    int iSolver = 1;
+    Core::Subproject& subproject = mpMainWindow->project().subprojects()[iSubproject];
+    Core::ISolver* pBaseSolver = subproject.solvers()[iSolver];
+    QVERIFY(pBaseSolver);
+    QString log;
+    switch (pBaseSolver->type())
+    {
+    case Core::ISolver::kModal:
+        log = static_cast<Core::ModalSolver*>(pBaseSolver)->log;
+        break;
+    case Core::ISolver::kFlutter:
+        log = static_cast<Core::FlutterSolver*>(pBaseSolver)->log;
+        break;
+    case Core::ISolver::kOptim:
+        log = static_cast<Core::OptimSolver*>(pBaseSolver)->log;
+        break;
+    }
+    mpMainWindow->viewManager()->createView(log);
 }
 
 //! Edit elements of different types through the manager

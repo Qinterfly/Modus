@@ -9,7 +9,8 @@ public:
     enum Type
     {
         kModel,
-        kGeometry
+        kGeometry,
+        kLog
     };
     virtual ~IView() = default;
     virtual void clear() = 0;

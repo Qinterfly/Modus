@@ -92,8 +92,7 @@ ceres::CallbackReturnType OptimCallback::operator()(ceres::IterationSummary cons
         stream << std::format("{:^8} {:>6} {:>11} {:>10} {:>10}", "Iter", "Fun", "Diff", "Grad", "Step").c_str() << Qt::endl;
     auto constexpr headFormat = "{:^7d} {:10.3e} {:10.3e} {:10.3e} {:10.3e}";
     stream << std::format(headFormat, summary.iteration, summary.cost, summary.cost_change, summary.gradient_max_norm, summary.step_norm).c_str();
-    stream << Qt::endl;
-    stream << QTime::currentTime().toString() << Qt::endl << Qt::endl;
+    stream << Qt::endl << Qt::endl;
 
     // Print the data
     int numTargets = mProblem.targetIndices.size();
@@ -192,13 +191,14 @@ void OptimSolver::solve()
     clear();
 
     // Intialize the resulting set
+    appendLog("Solver started\n");
     solutions.clear();
     solutions.reserve(options.maxNumIterations);
 
     // Check if the optimization data is valid
     if (!problem.isValid())
     {
-        qWarning() << QObject::tr("Optimization data is not valid");
+        appendLog("[Error] Optimization data is not valid\n");
         return;
     }
 
@@ -208,11 +208,14 @@ void OptimSolver::solve()
     mConstraints = problem.constraints;
 
     // Set the model parameters
+    QString message;
+    message.append("* Preparing the model parameters to be updated\n");
     setModelParameters();
 
     // Wrap the model
     QList<double> parameterValues = wrapModel();
     int numParameters = parameterValues.size();
+    message.append(QString("Number of parameters: %1\n").arg(numParameters));
 
     // Count the number of residuals
     int numResiduals = 0;
@@ -221,6 +224,8 @@ void OptimSolver::solve()
         if (weight > std::numeric_limits<double>::epsilon())
             ++numResiduals;
     }
+    message.append(QString("Number of residuals: %1\n").arg(numResiduals));
+    appendLog(message);
 
     // Create the auxiliary function
     UnwrapFun unwrapFun = [this, &numParameters](const double* const x)
@@ -240,6 +245,7 @@ void OptimSolver::solve()
     diffOptions.relative_step_size = options.diffStepSize;
 
     // Create the cost function
+    appendLog("* Constructing the cost function\n");
     ObjectiveFunctor functor(problem, options, unwrapFun, solverFun);
     auto* costFunction = new ceres::DynamicNumericDiffCostFunction<ObjectiveFunctor, ceres::FORWARD>(&functor, ceres::DO_NOT_TAKE_OWNERSHIP,
                                                                                                      diffOptions);
@@ -278,15 +284,11 @@ void OptimSolver::solve()
                 solutions.push_back(solution);
                 emit iterationFinished(solution);
             });
-    connect(&callback, &OptimCallback::logRequested, this,
-            [this](QString message)
-            {
-                log.append(message);
-                emit logAppended(message);
-            });
+    connect(&callback, &OptimCallback::logRequested, this, &OptimSolver::appendLog);
     ceresOptions.callbacks.push_back(&callback);
 
     // Solve the problem
+    appendLog("* Running optimization process\n");
     ceres::Solver::Summary ceresSummary;
     ceres::Solve(ceresOptions, &ceresProblem, &ceresSummary);
     if (!solutions.empty())
@@ -295,6 +297,7 @@ void OptimSolver::solve()
         lastSolution.isSuccess = ceresSummary.IsSolutionUsable();
         lastSolution.message = ceresSummary.message.c_str();
     }
+    appendLog("Solver terminated successfully\n");
 
     // Log the report
     printReport(ceresSummary);
@@ -751,12 +754,18 @@ void OptimSolver::printReport(ceres::Solver::Summary const& summary)
     QString message;
     QTextStream stream(&message);
     stream << tr("Ceres Solver Report") << Qt::endl;
-    stream << tr("* Iterations:   %1").arg(summary.iterations.size()) << Qt::endl;
-    stream << tr("* Initial cost: %1").arg(QString::number(summary.initial_cost, 'e', 3)) << Qt::endl;
-    stream << tr("* Final cost:   %1").arg(QString::number(summary.final_cost, 'e', 3)) << Qt::endl;
-    stream << tr("* Duration:     %1 s").arg(QString::number(summary.total_time_in_seconds, 'f', 3)) << Qt::endl;
-    stream << tr("* Termination:  %1").arg(ceres::TerminationTypeToString(summary.termination_type)) << Qt::endl;
-    log.append(message);
+    stream << tr("-> Iterations:   %1").arg(summary.iterations.size()) << Qt::endl;
+    stream << tr("-> Initial cost: %1").arg(QString::number(summary.initial_cost, 'e', 3)) << Qt::endl;
+    stream << tr("-> Final cost:   %1").arg(QString::number(summary.final_cost, 'e', 3)) << Qt::endl;
+    stream << tr("-> Duration:     %1 s").arg(QString::number(summary.total_time_in_seconds, 'f', 3)) << Qt::endl;
+    stream << tr("-> Termination:  %1").arg(ceres::TerminationTypeToString(summary.termination_type)) << Qt::endl;
+    appendLog(message);
+}
+
+//! Add a message to a log
+void OptimSolver::appendLog(QString const& message)
+{
+    Utility::appendLog(log, message);
     emit logAppended(message);
 }
 

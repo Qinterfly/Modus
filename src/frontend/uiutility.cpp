@@ -74,6 +74,17 @@ vtkColor3d getColor(QColor color)
     return vtkColor3d(color.redF(), color.greenF(), color.blueF());
 }
 
+//! Get a default monospace font
+QFont getMonospaceFont()
+{
+    QString fontName = "RobotoMono";
+#ifdef Q_OS_WIN
+    fontName = "Roboto Mono";
+#endif
+    int fontSize = qApp->font().pointSize();
+    return QFont(fontName, fontSize);
+}
+
 //! Show save dialog when closing a widget and process its output
 int showSaveDialog(QWidget* pWidget, QString const& title, QString const& message)
 {

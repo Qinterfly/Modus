@@ -32,7 +32,7 @@ private:
         QRegularExpression pattern;
         QTextCharFormat format;
     };
-    QVector<HighlightingRule> mHighlightingRules;
+    QVector<HighlightingRule> mRules;
 };
 
 //! Class to edit properties of entire model
