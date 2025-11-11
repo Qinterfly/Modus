@@ -14,6 +14,9 @@ struct FlutterOptions : public ISerializable
     Q_GADGET
     Q_PROPERTY(int numModes MEMBER numModes)
     Q_PROPERTY(double timeout MEMBER timeout)
+    Q_PROPERTY(double initFlow MEMBER initFlow)
+    Q_PROPERTY(double flowStep MEMBER flowStep)
+    Q_PROPERTY(int numFlowSteps MEMBER numFlowSteps)
 
 public:
     FlutterOptions();
@@ -30,6 +33,15 @@ public:
 
     //! Maximum duration of solution
     double timeout;
+
+    //! Initial flow value for computation
+    double initFlow;
+
+    //! Flow step to increment
+    double flowStep;
+
+    //! Number of flow steps
+    int numFlowSteps;
 };
 
 struct FlutterSolution : public ISerializable

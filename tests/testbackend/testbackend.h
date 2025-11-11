@@ -6,6 +6,11 @@
 
 #include "project.h"
 
+namespace Backend::Core
+{
+struct FlutterOptions;
+}
+
 namespace Tests
 {
 
@@ -41,7 +46,10 @@ private slots:
     void testOptimSolverSimpleWing();
 
     // Flutter solvers
+    void testFlutterSolverSimpleWing();
     void testFlutterSolverHunterWing();
+    void testFlutterSolverFullHunterSym();
+    void testFlutterSolverFullHunterASym();
 
     // Project
     void testWriteProject();
@@ -49,6 +57,7 @@ private slots:
 private:
     double generateDouble(QPair<double, double> const& limits);
     void testModalSolver(Example example, int numModes);
+    void testFlutterSolver(Example example, Backend::Core::FlutterOptions const& options);
 
 private:
     Backend::Core::Project mProject;

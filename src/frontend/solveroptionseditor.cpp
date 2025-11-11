@@ -110,20 +110,42 @@ void FlutterOptionsEditor::createProperties()
 {
     mpEditor->createIntProperty(kNumModes, tr("Number of modes"), mOptions.numModes, 1);
     mpEditor->createDoubleProperty(kTimeout, tr("Timeout"), mOptions.timeout, 0.0);
+    mpEditor->createDoubleProperty(kInitFlow, tr("Init flow"), mOptions.initFlow, 0.0);
+    mpEditor->createDoubleProperty(kFlowStep, tr("Flow step"), mOptions.flowStep, 0.0);
+    mpEditor->createIntProperty(kNumFlowSteps, tr("Number of steps"), mOptions.numFlowSteps, 1);
 }
 
 //! Process changing of an integer value
 void FlutterOptionsEditor::setIntValue(QtProperty* pProperty, int value)
 {
-    if (mpEditor->id(pProperty) == kNumModes)
+    int idProperty = mpEditor->id(pProperty);
+    switch (idProperty)
+    {
+    case kNumModes:
         emit commandExecuted(new EditProperty<FlutterOptions>(mOptions, "numModes", value));
+        break;
+    case kNumFlowSteps:
+        emit commandExecuted(new EditProperty<FlutterOptions>(mOptions, "numFlowSteps", value));
+        break;
+    }
 }
 
 //! Process changing of a double value
 void FlutterOptionsEditor::setDoubleValue(QtProperty* pProperty, double value)
 {
-    if (mpEditor->id(pProperty) == kTimeout)
+    int idProperty = mpEditor->id(pProperty);
+    switch (idProperty)
+    {
+    case kTimeout:
         emit commandExecuted(new EditProperty<FlutterOptions>(mOptions, "timeout", value));
+        break;
+    case kInitFlow:
+        emit commandExecuted(new EditProperty<FlutterOptions>(mOptions, "initFlow", value));
+        break;
+    case kFlowStep:
+        emit commandExecuted(new EditProperty<FlutterOptions>(mOptions, "flowStep", value));
+        break;
+    }
 }
 
 OptimOptionsEditor::OptimOptionsEditor(OptimOptions& options, QString const& name, QWidget* pParent)

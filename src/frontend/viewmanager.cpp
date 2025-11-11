@@ -6,6 +6,7 @@
 #include <kcl/model.h>
 
 #include "customtabwidget.h"
+#include "flutterview.h"
 #include "geometry.h"
 #include "geometryview.h"
 #include "hierarchyitem.h"
@@ -119,6 +120,19 @@ IView* ViewManager::findView(QString const& log)
     return nullptr;
 }
 
+//! Find the view associated with the current flutter solution
+IView* ViewManager::findView(Backend::Core::FlutterSolution const& solution)
+{
+    int count = numViews();
+    for (int i = 0; i != count; ++i)
+    {
+        IView* pView = view(i);
+        if (pView->type() == IView::kFlutter && &static_cast<FlutterView*>(pView)->solution() == &solution)
+            return pView;
+    }
+    return nullptr;
+}
+
 //! Retrieve the current view
 IView* ViewManager::currentView()
 {
@@ -131,85 +145,111 @@ IView* ViewManager::currentView()
 IView* ViewManager::createView(KCL::Model const& model, QString const& name)
 {
     // Set the view as the current one if it has been already created
-    IView* pView = findView(model);
-    if (pView)
+    IView* pBaseView = findView(model);
+    if (pBaseView)
     {
-        mpTabWidget->setCurrentWidget(pView);
+        mpTabWidget->setCurrentWidget(pBaseView);
         mpTabWidget->setTabText(mpTabWidget->currentIndex(), name);
-        return pView;
+        return pBaseView;
     }
 
     // Create the model view otherwise
-    ModelView* pModelView = new ModelView(model);
-    pModelView->plot();
-    pModelView->setIsometricView();
+    ModelView* pView = new ModelView(model);
+    pView->plot();
+    pView->setIsometricView();
 
     // Set the connections
-    connect(pModelView, &ModelView::selectItemsRequested, this,
-            [pModelView, this](QList<Core::Selection> selections) { emit selectItemsRequested(pModelView->model(), selections); });
-    connect(pModelView, &ModelView::editItemsRequested, this,
-            [pModelView, this](QList<Core::Selection> selections) { emit editItemsRequested(pModelView->model(), selections); });
+    connect(pView, &ModelView::selectItemsRequested, this,
+            [pView, this](QList<Core::Selection> selections) { emit selectItemsRequested(pView->model(), selections); });
+    connect(pView, &ModelView::editItemsRequested, this,
+            [pView, this](QList<Core::Selection> selections) { emit editItemsRequested(pView->model(), selections); });
 
     // Add it to the tab
     QString label = name.isEmpty() ? getDefaultViewName(IView::kModel) : name;
-    mpTabWidget->addTab(pModelView, label);
-    mpTabWidget->setCurrentWidget(pModelView);
+    mpTabWidget->addTab(pView, label);
+    mpTabWidget->setCurrentWidget(pView);
 
-    return pModelView;
+    return pView;
 }
 
 //! Create the view associated with a geometry
 IView* ViewManager::createView(Backend::Core::Geometry const& geometry, VertexField const& field, QString const& name)
 {
     // Set the view as the current one if it has been already created
-    IView* pView = findView(geometry);
-    if (pView)
+    IView* pBaseView = findView(geometry);
+    if (pBaseView)
     {
-        GeometryView* pGeometryView = (GeometryView*) pView;
-        pGeometryView->insertField(field);
-        pGeometryView->plot();
+        GeometryView* pView = (GeometryView*) pBaseView;
+        pView->insertField(field);
+        pView->plot();
         mpTabWidget->setCurrentWidget(pView);
         mpTabWidget->setTabText(mpTabWidget->currentIndex(), name);
         return pView;
     }
 
     // Create the geometry view otherwise
-    GeometryView* pGeometryView = new GeometryView(geometry, field);
-    pGeometryView->plot();
-    pGeometryView->setIsometricView();
+    GeometryView* pView = new GeometryView(geometry, field);
+    pView->plot();
+    pView->setIsometricView();
 
     // Add it to the tab
     QString label = name.isEmpty() ? getDefaultViewName(IView::kGeometry) : name;
-    mpTabWidget->addTab(pGeometryView, label);
-    mpTabWidget->setCurrentWidget(pGeometryView);
+    mpTabWidget->addTab(pView, label);
+    mpTabWidget->setCurrentWidget(pView);
 
-    return pGeometryView;
+    return pView;
 }
 
 //! Create the view associated with a log
 IView* ViewManager::createView(QString const& log, QString const& name)
 {
     // Set the view as the current one if it has been already created
-    IView* pView = findView(log);
-    if (pView)
+    IView* pBaseView = findView(log);
+    if (pBaseView)
     {
-        LogView* pLogView = (LogView*) pView;
-        pLogView->plot();
+        LogView* pView = (LogView*) pBaseView;
+        pView->plot();
         mpTabWidget->setCurrentWidget(pView);
         mpTabWidget->setTabText(mpTabWidget->currentIndex(), name);
         return pView;
     }
 
     // Create the log view otherwise
-    LogView* pLogView = new LogView(log);
-    pLogView->plot();
+    LogView* pView = new LogView(log);
+    pView->plot();
 
     // Add it to the tab
     QString label = name.isEmpty() ? getDefaultViewName(IView::kLog) : name;
-    mpTabWidget->addTab(pLogView, label);
-    mpTabWidget->setCurrentWidget(pLogView);
+    mpTabWidget->addTab(pView, label);
+    mpTabWidget->setCurrentWidget(pView);
 
-    return pLogView;
+    return pView;
+}
+
+//! Create the view associated with a flutter solution
+IView* ViewManager::createView(Backend::Core::FlutterSolution const& solution, QString const& name)
+{
+    // Set the view as the current one if it has been already created
+    IView* pBaseView = findView(solution);
+    if (pBaseView)
+    {
+        FlutterView* pView = (FlutterView*) pBaseView;
+        pView->plot();
+        mpTabWidget->setCurrentWidget(pView);
+        mpTabWidget->setTabText(mpTabWidget->currentIndex(), name);
+        return pView;
+    }
+
+    // Create the log view otherwise
+    FlutterView* pView = new FlutterView(solution);
+    pView->plot();
+
+    // Add it to the tab
+    QString label = name.isEmpty() ? getDefaultViewName(IView::kFlutter) : name;
+    mpTabWidget->addTab(pView, label);
+    mpTabWidget->setCurrentWidget(pView);
+
+    return pView;
 }
 
 //! Create views associated with project hierarchy items
@@ -219,6 +259,7 @@ void ViewManager::processItems(QList<HierarchyItem*> const& items)
     QSet<HierarchyItem::Type> kModelTypes = {HierarchyItem::kSubproject, HierarchyItem::kModel, HierarchyItem::kSurface,
                                              HierarchyItem::kGroupElements, HierarchyItem::kElement};
     QSet<HierarchyItem::Type> kGeometryTypes = {HierarchyItem::kModalSolution, HierarchyItem::kModalPole};
+    QSet<HierarchyItem::Type> kFlutterTypes = {HierarchyItem::kFlutterSolution, HierarchyItem::kFlutterRoots, HierarchyItem::kFlutterCritData};
 
     // Check if there are any items to view
     if (items.isEmpty())
@@ -242,6 +283,8 @@ void ViewManager::processItems(QList<HierarchyItem*> const& items)
             processModelItems(typeItems, modifiedViews);
         else if (kGeometryTypes.contains(type))
             processGeometryItems(typeItems, modifiedViews);
+        else if (kFlutterTypes.contains(type))
+            processFlutterItems(typeItems, modifiedViews);
         else if (type == HierarchyItem::kLog)
             processLogItems(typeItems, modifiedViews);
     }
@@ -373,6 +416,42 @@ void ViewManager::processLogItems(QList<HierarchyItem*> const& items, QSet<IView
     }
 }
 
+//! Process hierarchy items associated with the FlutterView
+void ViewManager::processFlutterItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews)
+{
+    for (HierarchyItem* pBaseItem : items)
+    {
+        auto type = pBaseItem->type();
+        FlutterView* pView = nullptr;
+        switch (type)
+        {
+        case HierarchyItem::kFlutterSolution:
+        {
+            FlutterSolutionHierarchyItem* pItem = (FlutterSolutionHierarchyItem*) pBaseItem;
+            QString label = getViewName(pItem);
+            pView = (FlutterView*) createView(pItem->solution(), label);
+            break;
+        }
+        case HierarchyItem::kFlutterRoots:
+        {
+            // TODO
+            break;
+        }
+        case HierarchyItem::kFlutterCritData:
+        {
+            // TODO
+            break;
+        }
+        default:
+            break;
+        }
+
+        // Add the view to the modified list
+        if (pView)
+            modifiedViews.insert(pView);
+    }
+}
+
 //! Render all the views
 void ViewManager::refresh()
 {
@@ -443,6 +522,12 @@ QString ViewManager::getDefaultViewName(IView::Type type)
         break;
     case IView::kGeometry:
         prefix = tr("Geometry");
+        break;
+    case IView::kLog:
+        prefix = tr("Log");
+        break;
+    case IView::kFlutter:
+        prefix = tr("Flutter");
         break;
     default:
         break;

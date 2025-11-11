@@ -177,6 +177,14 @@ void findItems(HierarchyItem* pRootItem, HierarchyItem::Type type, QList<Hierarc
     }
 }
 
+//! Helper function to get circular index
+int getRepeatedIndex(int index, int size)
+{
+    if (index >= size)
+        return index % size;
+    return index;
+}
+
 //! Substitute a file suffix to the expected one, if necessary
 void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix)
 {

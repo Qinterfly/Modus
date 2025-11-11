@@ -18,6 +18,7 @@ struct Selection;
 class Subproject;
 struct Geometry;
 struct ModalSolution;
+struct FlutterSolution;
 }
 
 namespace Frontend
@@ -48,10 +49,12 @@ public:
     IView* findView(KCL::Model const& model);
     IView* findView(Backend::Core::Geometry const& geometry);
     IView* findView(QString const& log);
+    IView* findView(Backend::Core::FlutterSolution const& solution);
 
     IView* createView(KCL::Model const& model, QString const& name = QString());
     IView* createView(Backend::Core::Geometry const& geometry, VertexField const& field, QString const& name = QString());
     IView* createView(QString const& log, QString const& name = QString());
+    IView* createView(Backend::Core::FlutterSolution const& solution, QString const& name = QString());
     void processItems(QList<HierarchyItem*> const& items);
     void refresh();
     void plot();
@@ -68,6 +71,7 @@ private:
     void processModelItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews);
     void processGeometryItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews);
     void processLogItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews);
+    void processFlutterItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews);
     IView* createView(ModelHierarchyItem* pItem);
     QString getDefaultViewName(IView::Type type);
     QString getViewName(HierarchyItem* pItem);

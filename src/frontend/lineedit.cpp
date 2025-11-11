@@ -43,6 +43,8 @@ void IntLineEdit::setValue(int value)
 {
     QString newText = QString::number(value);
     mpValidator->fixup(newText);
+    if (newText == text())
+        return;
     setText(newText);
 }
 
@@ -127,6 +129,8 @@ void DoubleLineEdit::setValue(double value)
     if (isReadOnly())
         return;
     QString newText = QString::number(value, 'g');
+    if (newText == text())
+        return;
     setText(newText);
 }
 

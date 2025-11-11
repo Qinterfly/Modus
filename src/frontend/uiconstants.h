@@ -26,6 +26,7 @@ namespace Colors
 {
 
 vtkNew<vtkNamedColors> const vtkColors;
+QList<QColor> const skStandardColors = {"red", "green", "blue", "orange", "cyan", "magenta", "gray", "purple", "darkyellow"};
 }
 
 namespace Size

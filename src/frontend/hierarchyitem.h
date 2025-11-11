@@ -205,7 +205,7 @@ class ModalPoleHierarchyItem : public HierarchyItem
 {
 public:
     ModalPoleHierarchyItem(Backend::Core::Geometry const& geometry, int iMode, double frequency, Eigen::MatrixXd const& modeShape,
-                           double damping = 0.0);
+                           double damping = 0.0, QString const& postfix = QString());
     virtual ~ModalPoleHierarchyItem() = default;
 
     Backend::Core::Geometry const& geometry() const;

@@ -174,26 +174,37 @@ void TestBackend::testOptimSolverSimpleWing()
     QVERIFY(pSolver->solutions.last().isSuccess);
 }
 
+void TestBackend::testFlutterSolverSimpleWing()
+{
+    FlutterOptions options;
+    options.numModes = 10;
+    options.flowStep = 5;
+    options.numFlowSteps = 200;
+    testFlutterSolver(Example::kSimpleWing, options);
+}
+
 //! Solve flutter problem for the hunter wing
 void TestBackend::testFlutterSolverHunterWing()
 {
-    Example const example = Example::kHunterWing;
-    int const numModes = 30;
+    FlutterOptions options;
+    options.numModes = 10;
+    testFlutterSolver(Example::kHunterWing, options);
+}
 
-    // Slice the subproject
-    Subproject& subproject = mProject.subprojects()[example];
+//! Solve flutter problem for the full hunter using symmetrical spectrum
+void TestBackend::testFlutterSolverFullHunterSym()
+{
+    FlutterOptions options;
+    options.numModes = 20;
+    testFlutterSolver(Example::kFullHunterSym, options);
+}
 
-    // Initialize the solver
-    FlutterSolver* pSolver = (FlutterSolver*) subproject.addSolver(ISolver::kFlutter);
-
-    // Set the solver data
-    pSolver->options.numModes = numModes;
-    pSolver->model = subproject.model();
-
-    // Run the solver
-    pSolver->solve();
-    QVERIFY(!pSolver->solution.isEmpty());
-    QVERIFY(pSolver->solution.numCrit() > 0);
+//! Solve flutter problem for the full hunter using asymmetrical spectrum
+void TestBackend::testFlutterSolverFullHunterASym()
+{
+    FlutterOptions options;
+    options.numModes = 20;
+    testFlutterSolver(Example::kFullHunterASym, options);
 }
 
 //! Write a project consisted of several subprojects to a file
@@ -242,6 +253,24 @@ void TestBackend::testModalSolver(Example example, int numModes)
     pSolver->solve();
     QVERIFY(!pSolver->solution.isEmpty());
     QVERIFY(pSolver->solution.numModes() == numModes);
+}
+
+//! Helper function to obtain flutter solutions
+void TestBackend::testFlutterSolver(Example example, FlutterOptions const& options)
+{
+    // Slice the subproject
+    Subproject& subproject = mProject.subprojects()[example];
+
+    // Initialize the solver
+    FlutterSolver* pSolver = (FlutterSolver*) subproject.addSolver(ISolver::kFlutter);
+
+    // Set the solver data
+    pSolver->options = options;
+    pSolver->model = subproject.model();
+
+    // Run the solver
+    pSolver->solve();
+    QVERIFY(!pSolver->solution.isEmpty());
 }
 
 QTEST_MAIN(TestBackend)

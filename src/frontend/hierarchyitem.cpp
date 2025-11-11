@@ -422,7 +422,7 @@ void ModalSolutionHierarchyItem::appendChildren()
 }
 
 ModalPoleHierarchyItem::ModalPoleHierarchyItem(Core::Geometry const& geometry, int iMode, double frequency, Eigen::MatrixXd const& modeShape,
-                                               double damping)
+                                               double damping, QString const& postfix)
     : HierarchyItem(kModalPole)
     , mGeometry(geometry)
     , mIMode(iMode)
@@ -430,7 +430,7 @@ ModalPoleHierarchyItem::ModalPoleHierarchyItem(Core::Geometry const& geometry, i
     , mModeShape(modeShape)
     , mDamping(damping)
 {
-    QString name = QObject::tr("Mode %1: %2 Hz").arg(1 + mIMode).arg(mFrequency, 0, 'f', 3);
+    QString name = QObject::tr("Mode %1%3: %2 Hz").arg(1 + mIMode).arg(mFrequency, 0, 'f', 3).arg(postfix);
     setText(name);
     setIcon(QIcon(":/icons/mode.png"));
 }
@@ -520,8 +520,10 @@ void FlutterSolutionHierarchyItem::appendChildren()
         appendRow(new FlutterCritDataHierarchyItem(mSolution));
         for (int i = 0; i != numCrit; ++i)
         {
-            appendRow(new ModalPoleHierarchyItem(mSolution.geometry, i, mSolution.critFrequency[i], mSolution.critModeShapes[i].cwiseAbs(),
-                                                 mSolution.critDamping[i]));
+            appendRow(new ModalPoleHierarchyItem(mSolution.geometry, i, mSolution.critFrequency[i], mSolution.critModeShapes[i].real(),
+                                                 mSolution.critDamping[i], "R"));
+            appendRow(new ModalPoleHierarchyItem(mSolution.geometry, i, mSolution.critFrequency[i], mSolution.critModeShapes[i].imag(),
+                                                 mSolution.critDamping[i], "I"));
         }
     }
 }

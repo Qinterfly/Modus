@@ -47,7 +47,10 @@ public:
     enum Type
     {
         kNumModes,
-        kTimeout
+        kTimeout,
+        kInitFlow,
+        kFlowStep,
+        kNumFlowSteps
     };
 
     FlutterOptionsEditor(Backend::Core::FlutterOptions& options, QString const& name, QWidget* pParent = nullptr);

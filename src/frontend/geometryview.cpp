@@ -42,7 +42,6 @@ using namespace Eigen;
 
 // Helper functions
 QString getModeName(int index, double frequency);
-int getRepeatedIndex(int index, int size);
 
 // Alias
 using UpdateFun = std::function<void(double)>;
@@ -543,15 +542,15 @@ void GeometryView::drawDeformedState()
         vtkSmartPointer<vtkDoubleArray> magnitudes = getMagnitudes(field);
 
         // Get the color
-        int iColor = getRepeatedIndex(iField, numColors);
+        int iColor = Utility::getRepeatedIndex(iField, numColors);
         vtkColor3d color = mOptions.deformedColors[iColor];
 
         // Get the amplitude
-        int iScale = getRepeatedIndex(iField, numScales);
+        int iScale = Utility::getRepeatedIndex(iField, numScales);
         double amplitude = mOptions.deformedScales[iScale] * maxDimension;
 
         // Get the initial phase
-        int iPhase = getRepeatedIndex(iField, numPhases);
+        int iPhase = Utility::getRepeatedIndex(iField, numPhases);
         double initPhase = mOptions.deformedInitPhases[iPhase];
 
         // Construct the function for drawing elements
@@ -707,7 +706,7 @@ void GeometryView::drawLegend()
         VertexField const& field = mFields[iField];
 
         // Get the color
-        int iColor = getRepeatedIndex(iField, mOptions.deformedColors.size());
+        int iColor = Utility::getRepeatedIndex(iField, mOptions.deformedColors.size());
         vtkColor3d color = mOptions.deformedColors[iColor];
         if (count == 1)
             color = vtkColors->GetColor3d("black");
@@ -787,7 +786,7 @@ void GeometryView::showSettingsEditor()
         pTable->setItem(i, 0, pNameItem);
 
         // Color
-        int iColor = getRepeatedIndex(i, mOptions.deformedColors.size());
+        int iColor = Utility::getRepeatedIndex(i, mOptions.deformedColors.size());
         QColor color = Utility::getColor(mOptions.deformedColors[iColor]);
         QTableWidgetItem* pColorItem = new QTableWidgetItem;
         pColorItem->setFlags(Qt::ItemIsEnabled);
@@ -795,7 +794,7 @@ void GeometryView::showSettingsEditor()
         pTable->setItem(i, 1, pColorItem);
 
         // Scale
-        int iScale = getRepeatedIndex(i, mOptions.deformedScales.size());
+        int iScale = Utility::getRepeatedIndex(i, mOptions.deformedScales.size());
         double scale = mOptions.deformedScales[iScale];
         Edit1d* pScaleEdit = new Edit1d;
         pScaleEdit->setValue(scale);
@@ -805,7 +804,7 @@ void GeometryView::showSettingsEditor()
         pTable->setCellWidget(i, 2, pScaleEdit);
 
         // Initial phase
-        int iPhase = getRepeatedIndex(i, mOptions.deformedInitPhases.size());
+        int iPhase = Utility::getRepeatedIndex(i, mOptions.deformedInitPhases.size());
         double phase = mOptions.deformedInitPhases[iPhase];
         Edit1d* pPhaseEdit = new Edit1d;
         pPhaseEdit->setValue(qRadiansToDegrees(phase));
@@ -857,12 +856,4 @@ void GeometryView::showSettingsEditor()
 QString getModeName(int index, double frequency)
 {
     return QObject::tr("Mode %1 (%2 Hz)").arg(1 + index).arg(QString::number(frequency, 'f', 2));
-}
-
-//! Helper function to get circular index
-int getRepeatedIndex(int index, int size)
-{
-    if (index >= size)
-        return index % size;
-    return index;
 }

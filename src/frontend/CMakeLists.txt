@@ -46,14 +46,16 @@ set(FRONTEND_HEADERS
     aerotrapeziumeditor.h
     rawdataeditor.h
     customtable.h
+    customtabwidget.h
+    customplot.h
     polyexponentseditor.h
     springdampereditor.h
     geometryview.h
     modeleditor.h
     solveroptionseditor.h
     constraintseditor.h
-    customtabwidget.h
     logview.h
+    flutterview.h
 )
 
 set(FRONTEND_SOURCES
@@ -76,14 +78,16 @@ set(FRONTEND_SOURCES
     aerotrapeziumeditor.cpp
     rawdataeditor.cpp
     customtable.cpp
+    customtabwidget.cpp
+    customplot.cpp
     polyexponentseditor.cpp
     springdampereditor.cpp
     geometryview.cpp
     modeleditor.cpp
     solveroptionseditor.cpp
     constraintseditor.cpp
-    customtabwidget.cpp
     logview.cpp
+    flutterview.cpp
 )
 
 qt_add_library(frontend STATIC
@@ -100,6 +104,7 @@ target_link_libraries(frontend PRIVATE
     ads::qtadvanceddocking-qt6
     ${VTK_LIBRARIES}
     qtpropertybrowser
+    qcustomplot
     backend
 )
 

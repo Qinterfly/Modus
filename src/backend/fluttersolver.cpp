@@ -7,6 +7,9 @@ using namespace Backend::Core;
 FlutterOptions::FlutterOptions()
     : numModes(15)
     , timeout(10.0)
+    , initFlow(0.0)
+    , flowStep(10)
+    , numFlowSteps(60)
 {
 }
 
@@ -190,6 +193,9 @@ void FlutterSolver::solve()
     // Set the analysis parameters
     auto pParameters = (KCL::AnalysisParameters*) currentModel.specialSurface.element(KCL::WP);
     pParameters->numLowModes = options.numModes;
+    pParameters->initFlow = options.initFlow;
+    pParameters->flowStep = options.flowStep;
+    pParameters->numFlowSteps = options.numFlowSteps;
 
     // Create the auxiliary function
     std::ostringstream stream;

@@ -78,6 +78,19 @@ void TestFrontend::testViewLog()
     mpMainWindow->viewManager()->createView(log);
 }
 
+//! View a flutter solution
+void TestFrontend::testViewFlutter()
+{
+    int iSubproject = 1;
+    Core::Subproject& subproject = mpMainWindow->project().subprojects()[iSubproject];
+    Core::ISolver* pBaseSolver = subproject.solver(Core::ISolver::kFlutter);
+    if (pBaseSolver)
+    {
+        Core::FlutterSolver* pSolver = (Core::FlutterSolver*) pBaseSolver;
+        mpMainWindow->viewManager()->createView(pSolver->solution);
+    }
+}
+
 //! Edit elements of different types through the manager
 void TestFrontend::testEditorManager()
 {

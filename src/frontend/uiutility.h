@@ -49,6 +49,7 @@ QString errorColorName(double value, double acceptThreshold, double criticalThre
 QString getLabel(Backend::Core::Selection selection);
 QString getLabel(int iSurface);
 void findItems(HierarchyItem* pRootItem, HierarchyItem::Type type, QList<HierarchyItem*>& result);
+int getRepeatedIndex(int index, int size);
 
 // File
 void modifyFileSuffix(QString& pathFile, QString const& expectedSuffix);

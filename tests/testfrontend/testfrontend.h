@@ -26,6 +26,7 @@ private slots:
     void testViewModel();
     void testViewGeometry();
     void testViewLog();
+    void testViewFlutter();
     void testEditorManager();
 
 private:
