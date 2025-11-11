@@ -91,16 +91,26 @@ void FlutterViewEditor::createContent()
     QHBoxLayout* pMainLayout = new QHBoxLayout;
     pMainLayout->setContentsMargins(0, 0, 0, 0);
 
-    // Create the list to selecte modes
+    // Create the list to select modes
+    QVBoxLayout* pModeLayout = new QVBoxLayout;
     mpModeList = new QListWidget;
     mpModeList->setSelectionMode(QAbstractItemView::ExtendedSelection);
     mpModeList->setContentsMargins(0, 0, 0, 0);
-    // mpModeList->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
     mpModeList->setResizeMode(QListWidget::Adjust);
     mpModeList->setSizeAdjustPolicy(QListWidget::AdjustToContents);
+    pModeLayout->addWidget(mpModeList);
+
+    // Create the selection controls
+    QPushButton* pInvertButton = new QPushButton(tr("Invert selection"));
+    connect(pInvertButton, &QPushButton::clicked, this, &FlutterViewEditor::invertModeSelection);
+    QHBoxLayout* pControlLayout = new QHBoxLayout;
+    pControlLayout->addWidget(pInvertButton);
+    pControlLayout->addStretch();
+    pModeLayout->addLayout(pControlLayout);
+    pModeLayout->addStretch();
 
     // Set the layout
-    pMainLayout->addWidget(mpModeList);
+    pMainLayout->addLayout(pModeLayout);
     setLayout(pMainLayout);
 }
 
@@ -108,16 +118,72 @@ void FlutterViewEditor::createContent()
 void FlutterViewEditor::createConnections()
 {
     connect(mpModeList, &QListWidget::itemSelectionChanged, this, &FlutterViewEditor::processModeSelection);
+    connect(mpModeList, &QListWidget::itemDoubleClicked, this, &FlutterViewEditor::processModeDoubleClick);
 }
 
 //! Process mode selections via the list
 void FlutterViewEditor::processModeSelection()
 {
+    // Slice the selected items
     QList<QListWidgetItem*> selectedItems = mpModeList->selectedItems();
     int numSelected = selectedItems.size();
+
+    // Set the indices of modes
     mOptions.indicesModes.resize(numSelected);
     for (int i = 0; i != numSelected; ++i)
         mOptions.indicesModes[i] = mpModeList->row(selectedItems[i]);
+
+    // Mark the finish of editing
+    emit edited();
+}
+
+//! Process double click event on item
+void FlutterViewEditor::processModeDoubleClick(QListWidgetItem* pItem)
+{
+    // Retrieve the current color
+    int iMode = mpModeList->row(pItem);
+    int iColor = Utility::getRepeatedIndex(iMode, mOptions.modeColors.size());
+    QColor color = mOptions.modeColors[iColor];
+
+    // Change the color via dialog
+    mOptions.modeColors[iColor] = QColorDialog::getColor(color, this, tr("Change mode color"));
+
+    // Mark the finish of editing
+    emit edited();
+}
+
+//! Invert the selection of modes
+void FlutterViewEditor::invertModeSelection()
+{
+    // Slice selected items
+    QList<QListWidgetItem*> selectedItems = mpModeList->selectedItems();
+
+    // Slice dimensions
+    int numModes = mpModeList->count();
+    int numSelected = selectedItems.size();
+
+    // Set the mask of modes
+    QList<bool> maskModes(numModes, true);
+    for (int i = 0; i != numSelected; ++i)
+    {
+        int iMode = mpModeList->row(selectedItems[i]);
+        maskModes[iMode] = false;
+    }
+
+    // Invert the indices
+    numSelected = numModes - numSelected;
+    mOptions.indicesModes.resize(numSelected);
+    numSelected = 0;
+    for (int i = 0; i != numModes; ++i)
+    {
+        if (maskModes[i])
+        {
+            mOptions.indicesModes[numSelected] = i;
+            ++numSelected;
+        }
+    }
+
+    // Mark the finish of editing
     emit edited();
 }
 

@@ -62,6 +62,8 @@ private:
     void createContent();
     void createConnections();
     void processModeSelection();
+    void processModeDoubleClick(QListWidgetItem* pItem);
+    void invertModeSelection();
 
 private:
     FlutterViewOptions& mOptions;
