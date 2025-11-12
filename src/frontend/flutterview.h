@@ -73,6 +73,7 @@ private:
     QGroupBox* createLimitsGroupBox();
     QGroupBox* createGridGroupBox();
     QGroupBox* createFlagsGroupBox();
+    QGroupBox* createSizeGroupBox();
 
     // Handle signals & slots
     void processModeDoubleClick(QListWidgetItem* pItem);
@@ -101,6 +102,10 @@ private:
     QCheckBox* mpShowCircularCheckBox;
     QCheckBox* mpShowLinesCheckBox;
     QCheckBox* mpShowMarkersCheckBox;
+
+    // Size
+    Edit1i* mpMarkerSizeEdit;
+    Edit1d* mpLineWidthEdit;
 };
 
 //! Class to display flutter solution
@@ -130,8 +135,10 @@ private:
     // Plot
     void plotVgDiagram();
     void plotHodograph();
-    void addGraph(CustomPlot* pPlot, QList<double> const& xData, QList<double> const& yData, QColor const& color, Marker marker);
-    void addCurve(CustomPlot* pPlot, QList<double> const& xData, QList<double> const& yData, QColor const& color, Marker marker);
+    void addGraph(CustomPlot* pPlot, QList<double> const& xData, QList<double> const& yData, QColor const& color, Marker marker,
+                  QString const& name);
+    void addCurve(CustomPlot* pPlot, QList<double> const& xData, QList<double> const& yData, QColor const& color, Marker marker,
+                  QString const& name);
 
 private:
     Backend::Core::FlutterSolution const& mSolution;

@@ -115,6 +115,12 @@ void FlutterViewEditor::refresh(QList<bool> const& maskModes, Eigen::VectorXd co
     mpShowCircularCheckBox->setChecked(mOptions.showCircular);
     mpShowLinesCheckBox->setChecked(mOptions.showLines);
     mpShowMarkersCheckBox->setChecked(mOptions.showMarkers);
+
+    // Set the size
+    QSignalBlocker blockerMarkerSize(mpMarkerSizeEdit);
+    QSignalBlocker blockerLineWidth(mpLineWidthEdit);
+    mpMarkerSizeEdit->setValue(mOptions.markerSize);
+    mpLineWidthEdit->setValue(mOptions.lineWidth);
 }
 
 //! Create all the widget
@@ -135,6 +141,7 @@ void FlutterViewEditor::createContent()
     pOptionsLayout->addWidget(createLimitsGroupBox());
     pOptionsLayout->addWidget(createGridGroupBox());
     pOptionsLayout->addWidget(createFlagsGroupBox());
+    pOptionsLayout->addWidget(createSizeGroupBox());
     pOptionsLayout->addStretch();
     pMainLayout->addLayout(pOptionsLayout);
 
@@ -163,6 +170,10 @@ void FlutterViewEditor::createConnections()
     connect(mpNumFrequencyEdit, &Edit1i::valueChanged, this, &FlutterViewEditor::setOptions);
     connect(mpNumDecrementEdit, &Edit1i::valueChanged, this, &FlutterViewEditor::setOptions);
     connect(mpNumFlowEdit, &Edit1i::valueChanged, this, &FlutterViewEditor::setOptions);
+
+    // Size
+    connect(mpMarkerSizeEdit, &Edit1i::valueChanged, this, &FlutterViewEditor::setOptions);
+    connect(mpLineWidthEdit, &Edit1d::valueChanged, this, &FlutterViewEditor::setOptions);
 }
 
 //! Create widgets to handle mode selection
@@ -248,7 +259,7 @@ QGroupBox* FlutterViewEditor::createGridGroupBox()
     mpNumDecrementEdit->setMinimum(1);
     mpNumFlowEdit->setMinimum(1);
 
-    // Set the frequency limits
+    // Add the widgets to the layout
     pLayout->addWidget(new QLabel(tr("N<sub>d</sub>: ")), 0, 0);
     pLayout->addWidget(new QLabel(tr("N<sub>f</sub>: ")), 1, 0);
     pLayout->addWidget(new QLabel(tr("N<sub>v</sub>: ")), 2, 0);
@@ -288,6 +299,34 @@ QGroupBox* FlutterViewEditor::createFlagsGroupBox()
 
     // Create the group box
     QGroupBox* pGroupBox = new QGroupBox(tr("Flags"));
+    pGroupBox->setContentsMargins(0, 0, 0, 0);
+    pGroupBox->setLayout(pLayout);
+
+    return pGroupBox;
+}
+
+//! Create widgets to handle size
+QGroupBox* FlutterViewEditor::createSizeGroupBox()
+{
+    // Create the layout
+    QGridLayout* pLayout = new QGridLayout;
+    pLayout->setContentsMargins(0, 0, 0, 0);
+    pLayout->setAlignment(Qt::AlignTop);
+
+    // Create the widgets
+    mpMarkerSizeEdit = new Edit1i;
+    mpLineWidthEdit = new Edit1d;
+    mpMarkerSizeEdit->setMinimum(0);
+    mpLineWidthEdit->setMinimum(0.0);
+
+    // Add the widgets to the layout
+    pLayout->addWidget(new QLabel(tr("Marker size: ")), 0, 0);
+    pLayout->addWidget(new QLabel(tr("Line width: ")), 1, 0);
+    pLayout->addWidget(mpMarkerSizeEdit, 0, 1);
+    pLayout->addWidget(mpLineWidthEdit, 1, 1);
+
+    // Create the group box
+    QGroupBox* pGroupBox = new QGroupBox(tr("Size"));
     pGroupBox->setContentsMargins(0, 0, 0, 0);
     pGroupBox->setLayout(pLayout);
 
@@ -387,6 +426,10 @@ void FlutterViewEditor::setOptions()
     mOptions.showCircular = mpShowCircularCheckBox->isChecked();
     mOptions.showLines = mpShowLinesCheckBox->isChecked();
     mOptions.showMarkers = mpShowMarkersCheckBox->isChecked();
+
+    // Set the size
+    mOptions.markerSize = mpMarkerSizeEdit->value();
+    mOptions.lineWidth = mpLineWidthEdit->value();
 
     // Finish up the editing
     emit edited();
@@ -576,8 +619,9 @@ void FlutterView::plotVgDiagram()
         auto marker = mOptions.modeMarkers[iMarker];
 
         // Add the graphs
-        addGraph(mpFrequencyPlot, flow, frequency, color, marker);
-        addGraph(mpDecrementPlot, flow, decrement, color, marker);
+        QString name = Utility::getModeName(iMode, mSolution.frequencies[iMode]);
+        addGraph(mpFrequencyPlot, flow, frequency, color, marker, name);
+        addGraph(mpDecrementPlot, flow, decrement, color, marker, name);
     }
 
     // Set the ranges
@@ -631,7 +675,8 @@ void FlutterView::plotHodograph()
         auto marker = mOptions.modeMarkers[iMarker];
 
         // Add the curves
-        addCurve(mpHodographPlot, decrement, frequency, color, marker);
+        QString name = Utility::getModeName(iMode, mSolution.frequencies[iMode]);
+        addCurve(mpHodographPlot, decrement, frequency, color, marker, name);
     }
 
     // Set the ranges
@@ -652,13 +697,17 @@ void FlutterView::plotHodograph()
 }
 
 //! Add the graph to the specified plot
-void FlutterView::addGraph(CustomPlot* pPlot, QList<double> const& xData, QList<double> const& yData, QColor const& color, Marker marker)
+void FlutterView::addGraph(CustomPlot* pPlot, QList<double> const& xData, QList<double> const& yData, QColor const& color, Marker marker,
+                           QString const& name)
 {
     // Create a new graph
     QCPGraph* pGraph = pPlot->addGraph();
     pGraph->setData(xData, yData, false);
     pGraph->setSelectable(QCP::SelectionType::stSingleData);
     pGraph->setAdaptiveSampling(true);
+    pGraph->setName(name);
+
+    // Set the graph style
     if (!mOptions.showMarkers)
         marker = QCPScatterStyle::ssNone;
     pGraph->setScatterStyle(QCPScatterStyle(marker, mOptions.markerSize));
@@ -666,8 +715,6 @@ void FlutterView::addGraph(CustomPlot* pPlot, QList<double> const& xData, QList<
         pGraph->setLineStyle(QCPGraph::lsLine);
     else
         pGraph->setLineStyle(QCPGraph::lsNone);
-
-    // Set the graph style
     pGraph->setPen(QPen(color, mOptions.lineWidth));
 
     // Rescale the axes, so that all the graphs fit
@@ -676,12 +723,16 @@ void FlutterView::addGraph(CustomPlot* pPlot, QList<double> const& xData, QList<
 }
 
 //! Add the curve to the specified plot
-void FlutterView::addCurve(CustomPlot* pPlot, QList<double> const& xData, QList<double> const& yData, QColor const& color, Marker marker)
+void FlutterView::addCurve(CustomPlot* pPlot, QList<double> const& xData, QList<double> const& yData, QColor const& color, Marker marker,
+                           QString const& name)
 {
     // Create a new curve
     QCPCurve* pCurve = new QCPCurve(pPlot->xAxis, pPlot->yAxis);
     pCurve->setData(xData, yData);
     pCurve->setSelectable(QCP::SelectionType::stSingleData);
+    pCurve->setName(name);
+
+    // Set the curve style
     if (!mOptions.showMarkers)
         marker = QCPScatterStyle::ssNone;
     pCurve->setScatterStyle(QCPScatterStyle(marker, mOptions.markerSize));
@@ -689,8 +740,6 @@ void FlutterView::addCurve(CustomPlot* pPlot, QList<double> const& xData, QList<
         pCurve->setLineStyle(QCPCurve::lsLine);
     else
         pCurve->setLineStyle(QCPCurve::lsNone);
-
-    // Set the curve style
     pCurve->setPen(QPen(color, mOptions.lineWidth));
 
     // Rescale the axes, so that all the graphs fit
