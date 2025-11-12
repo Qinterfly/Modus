@@ -40,9 +40,6 @@ using namespace Frontend;
 using namespace Constants::Colors;
 using namespace Eigen;
 
-// Helper functions
-QString getModeName(int index, double frequency);
-
 // Alias
 using UpdateFun = std::function<void(double)>;
 
@@ -94,7 +91,7 @@ VertexField::VertexField(int iMode, double modeFrequency, MatrixXd const& modeSh
     : index(iMode)
     , frequency(modeFrequency)
     , values(modeShape)
-    , name(getModeName(iMode, modeFrequency))
+    , name(Utility::getModeName(iMode, modeFrequency))
 {
 }
 
@@ -111,7 +108,7 @@ VertexField::VertexField(ModalSolution const& solution, int iMode)
     if (!solution.names.empty())
         name = solution.names[iMode];
     else
-        name = getModeName(iMode, frequency);
+        name = Utility::getModeName(iMode, frequency);
 }
 
 bool VertexField::isEmpty() const
@@ -850,10 +847,4 @@ void GeometryView::showSettingsEditor()
     // Position the dialog on the screen
     QPoint center = mapToGlobal(rect().center());
     pDialog->move(center.x() - pDialog->width() / 2, center.y() - pDialog->height() / 2);
-}
-
-//! Helper function to construct mode name
-QString getModeName(int index, double frequency)
-{
-    return QObject::tr("Mode %1 (%2 Hz)").arg(1 + index).arg(QString::number(frequency, 'f', 2));
 }

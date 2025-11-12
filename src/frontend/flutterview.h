@@ -38,10 +38,12 @@ struct FlutterViewOptions
     // Grid
     int numFrequency;
     int numDecrement;
+    int numFlow;
 
     // Flags
     bool showCircular;
     bool showLines;
+    bool showMarkers;
 
     // Size
     int markerSize;
@@ -58,7 +60,7 @@ public:
     virtual ~FlutterViewEditor() = default;
 
     QSize sizeHint() const override;
-    void refresh(QList<bool> const& maskModes);
+    void refresh(QList<bool> const& maskModes, Eigen::VectorXd const& modeFrequencies);
 
 signals:
     void edited();
@@ -74,7 +76,8 @@ private:
 
     // Handle signals & slots
     void processModeDoubleClick(QListWidgetItem* pItem);
-    void invertModeSelection();
+    void invertSelectModes();
+    void selectAllModes();
     void setOptions();
 
 private:
@@ -92,10 +95,12 @@ private:
     // Grid
     Edit1i* mpNumFrequencyEdit;
     Edit1i* mpNumDecrementEdit;
+    Edit1i* mpNumFlowEdit;
 
     // Flags
-    QCheckBox* mpCircularCheckBox;
-    QCheckBox* mpLinesCheckBox;
+    QCheckBox* mpShowCircularCheckBox;
+    QCheckBox* mpShowLinesCheckBox;
+    QCheckBox* mpShowMarkersCheckBox;
 };
 
 //! Class to display flutter solution

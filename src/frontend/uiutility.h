@@ -48,6 +48,7 @@ void setShortcutHints(QToolBar* pToolBar);
 QString errorColorName(double value, double acceptThreshold, double criticalThreshold);
 QString getLabel(Backend::Core::Selection selection);
 QString getLabel(int iSurface);
+QString getModeName(int iMode, double frequency);
 void findItems(HierarchyItem* pRootItem, HierarchyItem::Type type, QList<HierarchyItem*>& result);
 int getRepeatedIndex(int index, int size);
 

@@ -48,6 +48,7 @@ struct FlutterSolution : public ISerializable
 {
     Q_GADGET
     Q_PROPERTY(Geometry geometry MEMBER geometry)
+    Q_PROPERTY(Eigen::VectorXd frequencies MEMBER frequencies)
     Q_PROPERTY(Eigen::VectorXd flow MEMBER flow)
     Q_PROPERTY(Eigen::MatrixXcd roots MEMBER roots)
     Q_PROPERTY(Eigen::VectorXd critFlow MEMBER critFlow)
@@ -75,6 +76,7 @@ public:
     void deserialize(QXmlStreamReader& stream) override;
 
     Geometry geometry;
+    Eigen::VectorXd frequencies;
     Eigen::VectorXd flow;
     Eigen::MatrixXcd roots;
     Eigen::VectorXd critFlow;

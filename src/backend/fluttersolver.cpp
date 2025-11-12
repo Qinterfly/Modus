@@ -43,6 +43,7 @@ FlutterSolution::FlutterSolution()
 FlutterSolution::FlutterSolution(KCL::FlutterSolution const& solution)
 {
     geometry = solution.geometry;
+    frequencies = solution.frequencies;
     flow = solution.flow;
     roots = solution.roots;
     critFlow = solution.critFlow;
@@ -87,6 +88,7 @@ void FlutterSolution::serialize(QXmlStreamWriter& stream, QString const& element
 {
     stream.writeStartElement(elementName);
     geometry.serialize(stream, "geometry");
+    Utility::serialize(stream, "frequencies", frequencies);
     Utility::serialize(stream, "flow", flow);
     Utility::serialize(stream, "roots", roots);
     Utility::serialize(stream, "critFlow", critFlow);
@@ -107,6 +109,8 @@ void FlutterSolution::deserialize(QXmlStreamReader& stream)
     {
         if (stream.name() == "geometry")
             geometry.deserialize(stream);
+        else if (stream.name() == "frequencies")
+            Utility::deserialize(stream, frequencies);
         else if (stream.name() == "flow")
             Utility::deserialize(stream, flow);
         else if (stream.name() == "roots")

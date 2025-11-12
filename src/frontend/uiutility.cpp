@@ -163,6 +163,12 @@ QString getLabel(int iSurface)
         return "ES51";
 }
 
+//! Retrieve mode name by its index and frequency
+QString getModeName(int index, double frequency)
+{
+    return QObject::tr("Mode %1 (%2 Hz)").arg(1 + index).arg(QString::number(frequency, 'f', 2));
+}
+
 //! Search recursively for hierarchy items of the specified type
 void findItems(HierarchyItem* pRootItem, HierarchyItem::Type type, QList<HierarchyItem*>& result)
 {
