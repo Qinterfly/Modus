@@ -5,6 +5,7 @@
 #include "customtabwidget.h"
 #include "fluttersolver.h"
 #include "flutterview.h"
+#include "lineedit.h"
 #include "uiconstants.h"
 #include "uiutility.h"
 
@@ -13,6 +14,7 @@ using namespace Frontend;
 
 QString getModeName(int iMode);
 QIcon getIcon(QCPScatterStyle const& style, QSize const& size, bool isLine);
+void updateLimits(Edit1d* pMinEdit, Edit1d* pMaxEdit);
 
 FlutterViewOptions::FlutterViewOptions()
     : indicesModes(128)
@@ -24,9 +26,13 @@ FlutterViewOptions::FlutterViewOptions()
     modeMarkers = {QCPScatterStyle::ssCross,  QCPScatterStyle::ssPlus,    QCPScatterStyle::ssCircle,   QCPScatterStyle::ssDisc,
                    QCPScatterStyle::ssSquare, QCPScatterStyle::ssDiamond, QCPScatterStyle::ssTriangle, QCPScatterStyle::ssTriangleInverted};
 
-    // Configuration
+    // Limits
     limitsFrequencies = {0, 200};
     limitsDecrements = {-10, 5};
+
+    // Grid
+    numFrequency = 5;
+    numDecrement = 5;
 
     // Flags
     showCircular = true;
@@ -46,7 +52,7 @@ FlutterViewEditor::FlutterViewEditor(FlutterViewOptions& options)
 
 QSize FlutterViewEditor::sizeHint() const
 {
-    return QSize(20, 800);
+    return QSize(40, 800);
 }
 
 void FlutterViewEditor::refresh(QList<bool> const& maskModes)
@@ -82,6 +88,28 @@ void FlutterViewEditor::refresh(QList<bool> const& maskModes)
         if (maskModes[iMode])
             mpModeList->setCurrentItem(pItem, QItemSelectionModel::Select);
     }
+
+    // Set the limits
+    QSignalBlocker blockerMinFrequency(mpMinFrequencyEdit);
+    QSignalBlocker blockerMaxFrequency(mpMaxFrequencyEdit);
+    QSignalBlocker blockerMinDecrement(mpMinDecrementEdit);
+    QSignalBlocker blockerMaxDecrement(mpMaxDecrementEdit);
+    mpMinFrequencyEdit->setValue(mOptions.limitsFrequencies.first);
+    mpMaxFrequencyEdit->setValue(mOptions.limitsFrequencies.second);
+    mpMinDecrementEdit->setValue(mOptions.limitsDecrements.first);
+    mpMaxDecrementEdit->setValue(mOptions.limitsDecrements.second);
+
+    // Set the grid
+    QSignalBlocker blockerNumFrequency(mpNumFrequencyEdit);
+    QSignalBlocker blockerNumDecrement(mpNumDecrementEdit);
+    mpNumFrequencyEdit->setValue(mOptions.numFrequency);
+    mpNumDecrementEdit->setValue(mOptions.numDecrement);
+
+    // Set the flags
+    QSignalBlocker blockerCircular(mpCircularCheckBox);
+    QSignalBlocker blockerLines(mpLinesCheckBox);
+    mpCircularCheckBox->setChecked(mOptions.showCircular);
+    mpLinesCheckBox->setChecked(mOptions.showLines);
 }
 
 //! Create all the widget
@@ -91,14 +119,53 @@ void FlutterViewEditor::createContent()
     QHBoxLayout* pMainLayout = new QHBoxLayout;
     pMainLayout->setContentsMargins(0, 0, 0, 0);
 
-    // Create the list to select modes
+    // Set the widgets to edit mode selection
     QVBoxLayout* pModeLayout = new QVBoxLayout;
+    pModeLayout->addWidget(createModeGroupBox());
+    pModeLayout->addStretch();
+    pMainLayout->addLayout(pModeLayout);
+
+    // Set the widgets to edit options
+    QVBoxLayout* pOptionsLayout = new QVBoxLayout;
+    pOptionsLayout->addWidget(createLimitsGroupBox());
+    pOptionsLayout->addWidget(createGridGroupBox());
+    pOptionsLayout->addWidget(createFlagsGroupBox());
+    pOptionsLayout->addStretch();
+    pMainLayout->addLayout(pOptionsLayout);
+
+    // Set the layout
+    setLayout(pMainLayout);
+}
+
+//! Specify widget connections
+void FlutterViewEditor::createConnections()
+{
+    // Mode
+    connect(mpModeList, &QListWidget::itemSelectionChanged, this, &FlutterViewEditor::setOptions);
+    connect(mpModeList, &QListWidget::itemDoubleClicked, this, &FlutterViewEditor::processModeDoubleClick);
+
+    // Limits
+    connect(mpMinFrequencyEdit, &Edit1d::valueChanged, this, &FlutterViewEditor::setOptions);
+    connect(mpMaxFrequencyEdit, &Edit1d::valueChanged, this, &FlutterViewEditor::setOptions);
+    connect(mpMinDecrementEdit, &Edit1d::valueChanged, this, &FlutterViewEditor::setOptions);
+    connect(mpMaxDecrementEdit, &Edit1d::valueChanged, this, &FlutterViewEditor::setOptions);
+
+    // Grid
+    connect(mpNumFrequencyEdit, &Edit1i::valueChanged, this, &FlutterViewEditor::setOptions);
+    connect(mpNumDecrementEdit, &Edit1i::valueChanged, this, &FlutterViewEditor::setOptions);
+}
+
+//! Create widgets to handle mode selection
+QGroupBox* FlutterViewEditor::createModeGroupBox()
+{
+    // Create the list to select modes
+    QVBoxLayout* pMainLayout = new QVBoxLayout;
     mpModeList = new QListWidget;
     mpModeList->setSelectionMode(QAbstractItemView::ExtendedSelection);
     mpModeList->setContentsMargins(0, 0, 0, 0);
     mpModeList->setResizeMode(QListWidget::Adjust);
     mpModeList->setSizeAdjustPolicy(QListWidget::AdjustToContents);
-    pModeLayout->addWidget(mpModeList);
+    pMainLayout->addWidget(mpModeList);
 
     // Create the selection controls
     QPushButton* pInvertButton = new QPushButton(tr("Invert selection"));
@@ -106,35 +173,106 @@ void FlutterViewEditor::createContent()
     QHBoxLayout* pControlLayout = new QHBoxLayout;
     pControlLayout->addWidget(pInvertButton);
     pControlLayout->addStretch();
-    pModeLayout->addLayout(pControlLayout);
-    pModeLayout->addStretch();
+    pMainLayout->addLayout(pControlLayout);
+    pMainLayout->addStretch();
 
-    // Set the layout
-    pMainLayout->addLayout(pModeLayout);
-    setLayout(pMainLayout);
+    // Create the group box
+    QGroupBox* pGroupBox = new QGroupBox(tr("Mode selection"));
+    pGroupBox->setContentsMargins(0, 0, 0, 0);
+    pGroupBox->setLayout(pMainLayout);
+
+    return pGroupBox;
 }
 
-//! Specify widget connections
-void FlutterViewEditor::createConnections()
+//! Create widgets to handle limits
+QGroupBox* FlutterViewEditor::createLimitsGroupBox()
 {
-    connect(mpModeList, &QListWidget::itemSelectionChanged, this, &FlutterViewEditor::processModeSelection);
-    connect(mpModeList, &QListWidget::itemDoubleClicked, this, &FlutterViewEditor::processModeDoubleClick);
+    // Create the layout
+    QGridLayout* pLayout = new QGridLayout;
+    pLayout->setContentsMargins(0, 0, 0, 0);
+    pLayout->setAlignment(Qt::AlignTop);
+
+    // Create the widgets
+    mpMinFrequencyEdit = new Edit1d;
+    mpMaxFrequencyEdit = new Edit1d;
+    mpMinDecrementEdit = new Edit1d;
+    mpMaxDecrementEdit = new Edit1d;
+
+    // Set the frequency limits
+    pLayout->addWidget(new QLabel(tr("f<sub>min</sub>: ")), 0, 0);
+    pLayout->addWidget(new QLabel(tr("f<sub>max</sub>: ")), 1, 0);
+    pLayout->addWidget(mpMinFrequencyEdit, 0, 1);
+    pLayout->addWidget(mpMaxFrequencyEdit, 1, 1);
+
+    // Set the decrement limits
+    pLayout->addWidget(new QLabel(tr("d<sub>min</sub>: ")), 2, 0);
+    pLayout->addWidget(new QLabel(tr("d<sub>max</sub>: ")), 3, 0);
+    pLayout->addWidget(mpMinDecrementEdit, 2, 1);
+    pLayout->addWidget(mpMaxDecrementEdit, 3, 1);
+
+    // Create the group box
+    QGroupBox* pGroupBox = new QGroupBox(tr("Limits"));
+    pGroupBox->setContentsMargins(0, 0, 0, 0);
+    pGroupBox->setLayout(pLayout);
+
+    return pGroupBox;
 }
 
-//! Process mode selections via the list
-void FlutterViewEditor::processModeSelection()
+//! Create widgets to handle grid
+QGroupBox* FlutterViewEditor::createGridGroupBox()
 {
-    // Slice the selected items
-    QList<QListWidgetItem*> selectedItems = mpModeList->selectedItems();
-    int numSelected = selectedItems.size();
+    // Create the layout
+    QGridLayout* pLayout = new QGridLayout;
+    pLayout->setContentsMargins(0, 0, 0, 0);
+    pLayout->setAlignment(Qt::AlignTop);
 
-    // Set the indices of modes
-    mOptions.indicesModes.resize(numSelected);
-    for (int i = 0; i != numSelected; ++i)
-        mOptions.indicesModes[i] = mpModeList->row(selectedItems[i]);
+    // Create the widgets
+    mpNumFrequencyEdit = new Edit1i;
+    mpNumDecrementEdit = new Edit1i;
+    mpNumFrequencyEdit->setMinimum(1);
+    mpNumDecrementEdit->setMinimum(1);
 
-    // Mark the finish of editing
-    emit edited();
+    // Set the frequency limits
+    pLayout->addWidget(new QLabel(tr("N<sub>f</sub>: ")), 0, 0);
+    pLayout->addWidget(new QLabel(tr("N<sub>d</sub>: ")), 1, 0);
+    pLayout->addWidget(mpNumFrequencyEdit, 0, 1);
+    pLayout->addWidget(mpNumDecrementEdit, 1, 1);
+
+    // Create the group box
+    QGroupBox* pGroupBox = new QGroupBox(tr("Grid"));
+    pGroupBox->setContentsMargins(0, 0, 0, 0);
+    pGroupBox->setLayout(pLayout);
+
+    return pGroupBox;
+}
+
+//! Create widgets to handle flags
+QGroupBox* FlutterViewEditor::createFlagsGroupBox()
+{
+    // Create the layout
+    QVBoxLayout* pLayout = new QVBoxLayout;
+    pLayout->setContentsMargins(0, 0, 0, 0);
+    pLayout->setAlignment(Qt::AlignTop);
+
+    // Set the auxilary function
+    auto createFlagWidget = [this, pLayout](QString const& text)
+    {
+        QCheckBox* pCheckBox = new QCheckBox(text);
+        pLayout->addWidget(pCheckBox);
+        connect(pCheckBox, &QCheckBox::clicked, this, &FlutterViewEditor::setOptions);
+        return pCheckBox;
+    };
+
+    // Create the widgets
+    mpCircularCheckBox = createFlagWidget(tr("Circular"));
+    mpLinesCheckBox = createFlagWidget(tr("Lines"));
+
+    // Create the group box
+    QGroupBox* pGroupBox = new QGroupBox(tr("Flags"));
+    pGroupBox->setContentsMargins(0, 0, 0, 0);
+    pGroupBox->setLayout(pLayout);
+
+    return pGroupBox;
 }
 
 //! Process double click event on item
@@ -155,6 +293,8 @@ void FlutterViewEditor::processModeDoubleClick(QListWidgetItem* pItem)
 //! Invert the selection of modes
 void FlutterViewEditor::invertModeSelection()
 {
+    QSignalBlocker blocker(mpModeList);
+
     // Slice selected items
     QList<QListWidgetItem*> selectedItems = mpModeList->selectedItems();
 
@@ -170,20 +310,48 @@ void FlutterViewEditor::invertModeSelection()
         maskModes[iMode] = false;
     }
 
-    // Invert the indices
-    numSelected = numModes - numSelected;
-    mOptions.indicesModes.resize(numSelected);
-    numSelected = 0;
+    // Apply the selection
     for (int i = 0; i != numModes; ++i)
     {
         if (maskModes[i])
-        {
-            mOptions.indicesModes[numSelected] = i;
-            ++numSelected;
-        }
+            mpModeList->setCurrentRow(i, QItemSelectionModel::Select);
+        else
+            mpModeList->setCurrentRow(i, QItemSelectionModel::Deselect);
     }
 
-    // Mark the finish of editing
+    // Set the options
+    setOptions();
+}
+
+//! Set the new values of options based on widget state
+void FlutterViewEditor::setOptions()
+{
+    // Update the limits
+    updateLimits(mpMinFrequencyEdit, mpMaxFrequencyEdit);
+    updateLimits(mpMinDecrementEdit, mpMaxDecrementEdit);
+
+    // Set the mode selection
+    QList<QListWidgetItem*> selectedItems = mpModeList->selectedItems();
+    int numSelected = selectedItems.size();
+    mOptions.indicesModes.resize(numSelected);
+    for (int i = 0; i != numSelected; ++i)
+        mOptions.indicesModes[i] = mpModeList->row(selectedItems[i]);
+
+    // Set the limits
+    mOptions.limitsFrequencies.first = mpMinFrequencyEdit->value();
+    mOptions.limitsFrequencies.second = mpMaxFrequencyEdit->value();
+    mOptions.limitsDecrements.first = mpMinDecrementEdit->value();
+    mOptions.limitsDecrements.second = mpMaxDecrementEdit->value();
+
+    // Set the grid
+    mOptions.numFrequency = mpNumFrequencyEdit->value();
+    mOptions.numDecrement = mpNumDecrementEdit->value();
+
+    // Set the grid
+    mOptions.showCircular = mpCircularCheckBox->isChecked();
+    mOptions.showLines = mpLinesCheckBox->isChecked();
+
+    // Finish up the editing
     emit edited();
 }
 
@@ -379,10 +547,15 @@ void FlutterView::plotVgDiagram()
     mpFrequencyPlot->yAxis->setRange(mOptions.limitsFrequencies.first, mOptions.limitsFrequencies.second);
     mpDecrementPlot->yAxis->setRange(mOptions.limitsDecrements.first, mOptions.limitsDecrements.second);
 
+    // Set the ticks
+    mpFrequencyPlot->yAxis->ticker()->setTickCount(mOptions.numFrequency);
+    mpDecrementPlot->yAxis->ticker()->setTickCount(mOptions.numDecrement);
+
     // Set the labels
+    QString suffixFrequency = mOptions.showCircular ? tr("rad/s") : tr("Hz");
     mpFrequencyPlot->xAxis->setLabel(tr("Flow"));
     mpDecrementPlot->xAxis->setLabel(tr("Flow"));
-    mpFrequencyPlot->yAxis->setLabel(tr("Frequency"));
+    mpFrequencyPlot->yAxis->setLabel(tr("Frequency, %1").arg(suffixFrequency));
     mpDecrementPlot->yAxis->setLabel(tr("Decrement"));
 
     // Update the plots
@@ -426,9 +599,14 @@ void FlutterView::plotHodograph()
     mpHodographPlot->xAxis->setRange(mOptions.limitsDecrements.first, mOptions.limitsDecrements.second);
     mpHodographPlot->yAxis->setRange(mOptions.limitsFrequencies.first, mOptions.limitsFrequencies.second);
 
+    // Set the ticks
+    mpHodographPlot->xAxis->ticker()->setTickCount(mOptions.numDecrement);
+    mpHodographPlot->yAxis->ticker()->setTickCount(mOptions.numFrequency);
+
     // Set the labels
+    QString suffixFrequency = mOptions.showCircular ? tr("rad/s") : tr("Hz");
     mpHodographPlot->xAxis->setLabel(tr("Decrement"));
-    mpHodographPlot->yAxis->setLabel(tr("Frequency"));
+    mpHodographPlot->yAxis->setLabel(tr("Frequency, %1").arg(suffixFrequency));
 
     // Update the plot
     mpHodographPlot->replot();
@@ -507,4 +685,17 @@ QIcon getIcon(QCPScatterStyle const& style, QSize const& size, bool isLine)
     style.drawShape(&painter, targetRect.center());
 
     return QIcon(pixmap);
+}
+
+//! Helper function to swap limits, if necessary
+void updateLimits(Edit1d* pMinEdit, Edit1d* pMaxEdit)
+{
+    QSignalBlocker blockerMin(pMinEdit);
+    QSignalBlocker blockerMax(pMaxEdit);
+    double minValue = pMinEdit->value();
+    double maxValue = pMaxEdit->value();
+    if (maxValue < minValue)
+        std::swap(minValue, maxValue);
+    pMinEdit->setValue(minValue);
+    pMaxEdit->setValue(maxValue);
 }

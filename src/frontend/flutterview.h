@@ -5,6 +5,7 @@
 
 #include "customplot.h"
 #include "iview.h"
+#include "uialiasdata.h"
 
 class CustomPlot;
 class QListWidget;
@@ -34,6 +35,10 @@ struct FlutterViewOptions
     QPair<double, double> limitsFrequencies;
     QPair<double, double> limitsDecrements;
 
+    // Grid
+    int numFrequency;
+    int numDecrement;
+
     // Flags
     bool showCircular;
     bool showLines;
@@ -59,15 +64,38 @@ signals:
     void edited();
 
 private:
+    // Content
     void createContent();
     void createConnections();
-    void processModeSelection();
+    QGroupBox* createModeGroupBox();
+    QGroupBox* createLimitsGroupBox();
+    QGroupBox* createGridGroupBox();
+    QGroupBox* createFlagsGroupBox();
+
+    // Handle signals & slots
     void processModeDoubleClick(QListWidgetItem* pItem);
     void invertModeSelection();
+    void setOptions();
 
 private:
     FlutterViewOptions& mOptions;
+
+    // Mode
     QListWidget* mpModeList;
+
+    // Limits
+    Edit1d* mpMinFrequencyEdit;
+    Edit1d* mpMaxFrequencyEdit;
+    Edit1d* mpMinDecrementEdit;
+    Edit1d* mpMaxDecrementEdit;
+
+    // Grid
+    Edit1i* mpNumFrequencyEdit;
+    Edit1i* mpNumDecrementEdit;
+
+    // Flags
+    QCheckBox* mpCircularCheckBox;
+    QCheckBox* mpLinesCheckBox;
 };
 
 //! Class to display flutter solution
