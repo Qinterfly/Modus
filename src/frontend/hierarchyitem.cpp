@@ -403,7 +403,12 @@ Core::ModalOptions& ModalOptionsHierarchyItem::options()
 }
 
 ModalSolutionHierarchyItem::ModalSolutionHierarchyItem(Core::ModalSolution const& solution)
-    : HierarchyItem(kModalSolution, QIcon(":/icons/solution.png"), QObject::tr("Modal Solution"))
+    : ModalSolutionHierarchyItem(solution, QObject::tr("Modal Solution"))
+{
+}
+
+ModalSolutionHierarchyItem::ModalSolutionHierarchyItem(Core::ModalSolution const& solution, QString const& name)
+    : HierarchyItem(kModalSolution, QIcon(":/icons/solution.png"), name)
     , mSolution(solution)
 {
     appendChildren();
@@ -660,7 +665,6 @@ OptimTargetHierarchyItem::OptimTargetHierarchyItem(Eigen::VectorXi& indices, Eig
     , mSolution(solution)
     , mMatches(matches)
 {
-    appendRow(new ModalSolutionHierarchyItem(solution));
 }
 
 Eigen::VectorXi& OptimTargetHierarchyItem::indices()

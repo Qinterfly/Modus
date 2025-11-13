@@ -192,6 +192,7 @@ class ModalSolutionHierarchyItem : public HierarchyItem
 {
 public:
     ModalSolutionHierarchyItem(Backend::Core::ModalSolution const& solution);
+    ModalSolutionHierarchyItem(Backend::Core::ModalSolution const& solution, QString const& name);
     virtual ~ModalSolutionHierarchyItem() = default;
 
     Backend::Core::ModalSolution const& solution() const;

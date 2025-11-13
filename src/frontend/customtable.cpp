@@ -134,10 +134,9 @@ void CustomTable::clearSelection()
 }
 
 //! Show the context menum at the specified location
-void CustomTable::processContextMenuRequested(QPoint const& position)
+void CustomTable::processContextMenuRequested(QPoint const& /*position*/)
 {
-    QMenu* pMenu = new QMenu;
-    pMenu->setAttribute(Qt::WA_DeleteOnClose, true);
+    QMenu* pMenu = new QMenu(this);
     pMenu->addActions(actions());
-    pMenu->exec(mapToGlobal(position));
+    pMenu->exec(QCursor::pos());
 }

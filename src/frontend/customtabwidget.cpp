@@ -58,7 +58,7 @@ bool CustomTabWidget::eventFilter(QObject* pObject, QEvent* pEvent)
                 if (iTab != -1)
                 {
                     // Create the menu
-                    QMenu* pMenu = new QMenu;
+                    QMenu* pMenu = new QMenu(this);
 
                     // Create the actions
                     QAction* pCloseAction = new QAction(tr("&Close tab"), this);
