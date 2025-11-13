@@ -53,6 +53,7 @@ public:
         kModalSolver,
         kModalOptions,
         kModalSolution,
+        kModalFrequencies,
         kModalPole,
         kFlutterSolver,
         kFlutterOptions,
@@ -198,6 +199,19 @@ public:
 private:
     void appendChildren();
 
+    Backend::Core::ModalSolution const& mSolution;
+};
+
+class ModalFrequenciesHierarchyItem : public HierarchyItem
+{
+public:
+    ModalFrequenciesHierarchyItem(Backend::Core::ModalSolution const& solution);
+    virtual ~ModalFrequenciesHierarchyItem() = default;
+
+    Eigen::VectorXd const& frequencies() const;
+    Backend::Core::ModalSolution const& solution() const;
+
+private:
     Backend::Core::ModalSolution const& mSolution;
 };
 

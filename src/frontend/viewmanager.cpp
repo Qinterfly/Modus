@@ -167,7 +167,7 @@ IView* ViewManager::createModelView(KCL::Model const& model, QString const& name
 
     // Add it to the tab
     QString label = name.isEmpty() ? getDefaultViewName(IView::kModel) : name;
-    mpTabWidget->addTab(pView, label);
+    mpTabWidget->addTab(pView, QIcon(":/icons/model.svg"), label);
     mpTabWidget->setCurrentWidget(pView);
 
     return pView;
@@ -195,7 +195,7 @@ IView* ViewManager::createGeometryView(Backend::Core::Geometry const& geometry, 
 
     // Add it to the tab
     QString label = name.isEmpty() ? getDefaultViewName(IView::kGeometry) : name;
-    mpTabWidget->addTab(pView, label);
+    mpTabWidget->addTab(pView, QIcon(":/icons/mode.png"), label);
     mpTabWidget->setCurrentWidget(pView);
 
     return pView;
@@ -221,7 +221,7 @@ IView* ViewManager::createLogView(QString const& log, QString const& name)
 
     // Add it to the tab
     QString label = name.isEmpty() ? getDefaultViewName(IView::kLog) : name;
-    mpTabWidget->addTab(pView, label);
+    mpTabWidget->addTab(pView, QIcon(":/icons/log.png"), label);
     mpTabWidget->setCurrentWidget(pView);
 
     return pView;
@@ -247,14 +247,14 @@ IView* ViewManager::createFlutterView(Backend::Core::FlutterSolution const& solu
 
     // Add it to the tab
     QString label = name.isEmpty() ? getDefaultViewName(IView::kFlutter) : name;
-    mpTabWidget->addTab(pView, label);
+    mpTabWidget->addTab(pView, QIcon(":/icons/roots.svg"), label);
     mpTabWidget->setCurrentWidget(pView);
 
     return pView;
 }
 
 //! Create the table view associated with a flutter solution
-IView* ViewManager::createTableView(Backend::Core::FlutterSolution const& solution, QString const& name)
+IView* ViewManager::createTableView(Core::FlutterSolution const& solution, QString const& name)
 {
     // Create the flutter view otherwise
     TableView* pView = new TableView(solution);
@@ -262,7 +262,22 @@ IView* ViewManager::createTableView(Backend::Core::FlutterSolution const& soluti
 
     // Add it to the tab
     QString label = name.isEmpty() ? getDefaultViewName(IView::kTable) : name;
-    mpTabWidget->addTab(pView, label);
+    mpTabWidget->addTab(pView, QIcon(":/icons/table.png"), label);
+    mpTabWidget->setCurrentWidget(pView);
+
+    return pView;
+}
+
+//! Create the table view associated with a vector
+IView* ViewManager::createTableView(Core::ModalSolution const& solution, QString const& name)
+{
+    // Create the flutter view otherwise
+    TableView* pView = new TableView(solution);
+    pView->plot();
+
+    // Add it to the tab
+    QString label = name.isEmpty() ? getDefaultViewName(IView::kTable) : name;
+    mpTabWidget->addTab(pView, QIcon(":/icons/table.png"), label);
     mpTabWidget->setCurrentWidget(pView);
 
     return pView;
@@ -274,7 +289,7 @@ void ViewManager::processItems(QList<HierarchyItem*> const& items)
     // Constants
     QSet<HierarchyItem::Type> kModelTypes = {HierarchyItem::kSubproject, HierarchyItem::kModel, HierarchyItem::kSurface,
                                              HierarchyItem::kGroupElements, HierarchyItem::kElement};
-    QSet<HierarchyItem::Type> kGeometryTypes = {HierarchyItem::kModalSolution, HierarchyItem::kModalPole};
+    QSet<HierarchyItem::Type> kGeometryTypes = {HierarchyItem::kModalSolution, HierarchyItem::kModalFrequencies, HierarchyItem::kModalPole};
     QSet<HierarchyItem::Type> kFlutterTypes = {HierarchyItem::kFlutterSolution, HierarchyItem::kFlutterRoots, HierarchyItem::kFlutterCritData};
 
     // Check if there are any items to view
@@ -387,12 +402,19 @@ void ViewManager::processGeometryItems(QList<HierarchyItem*> const& items, QSet<
     for (HierarchyItem* pBaseItem : items)
     {
         auto type = pBaseItem->type();
-        GeometryView* pView = nullptr;
+        IView* pView = nullptr;
         switch (type)
         {
         case HierarchyItem::kModalSolution:
         {
             processGeometryItems(Utility::childItems(pBaseItem), modifiedViews);
+            break;
+        }
+        case HierarchyItem::kModalFrequencies:
+        {
+            ModalFrequenciesHierarchyItem* pItem = (ModalFrequenciesHierarchyItem*) pBaseItem;
+            QString label = getViewName(pItem);
+            pView = createTableView(pItem->solution(), label);
             break;
         }
         case HierarchyItem::kModalPole:

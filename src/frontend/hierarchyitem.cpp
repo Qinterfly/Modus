@@ -417,8 +417,25 @@ Core::ModalSolution const& ModalSolutionHierarchyItem::solution() const
 void ModalSolutionHierarchyItem::appendChildren()
 {
     int numModes = mSolution.numModes();
+    appendRow(new ModalFrequenciesHierarchyItem(mSolution));
     for (int i = 0; i != numModes; ++i)
         appendRow(new ModalPoleHierarchyItem(mSolution.geometry, i, mSolution.frequencies[i], mSolution.modeShapes[i]));
+}
+
+ModalFrequenciesHierarchyItem::ModalFrequenciesHierarchyItem(Core::ModalSolution const& solution)
+    : HierarchyItem(kModalFrequencies, QIcon(":/icons/frequency.png"), QObject::tr("Frequencies"))
+    , mSolution(solution)
+{
+}
+
+Eigen::VectorXd const& ModalFrequenciesHierarchyItem::frequencies() const
+{
+    return mSolution.frequencies;
+}
+
+Core::ModalSolution const& ModalFrequenciesHierarchyItem::solution() const
+{
+    return mSolution;
 }
 
 ModalPoleHierarchyItem::ModalPoleHierarchyItem(Core::Geometry const& geometry, int iMode, double frequency, Eigen::MatrixXd const& modeShape,

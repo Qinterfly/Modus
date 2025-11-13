@@ -7,6 +7,7 @@
 
 namespace Backend::Core
 {
+struct ModalSolution;
 struct FlutterSolution;
 }
 
@@ -20,6 +21,9 @@ class TableView : public IView
     Q_OBJECT
 
 public:
+    TableView();
+    TableView(Eigen::VectorXd const& data);
+    TableView(Backend::Core::ModalSolution const& solution);
     TableView(Backend::Core::FlutterSolution const& solution);
     virtual ~TableView() = default;
 
@@ -30,6 +34,8 @@ public:
 
 private:
     void createContent();
+    void setData(Eigen::VectorXd const& data);
+    void setData(Backend::Core::ModalSolution const& solution);
     void setData(Backend::Core::FlutterSolution const& solution);
 
 private:

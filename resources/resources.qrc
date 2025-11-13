@@ -40,6 +40,8 @@
 		<file>icons/optimization.png</file>	
 		<file>icons/log.png</file>		
 		<file>icons/select-list.png</file>
+		<file>icons/table.png</file>
+		<file>icons/frequency.png</file>
 		<file>icons/draw-line.svg</file>
 		<file>icons/draw-triangle.svg</file>
 		<file>icons/draw-quadrangle.png</file>

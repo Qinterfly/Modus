@@ -109,6 +109,7 @@ ModelView::ModelView(KCL::Model const& model, ModelViewOptions const& options)
 
 ModelView::~ModelView()
 {
+    ModelView::clear();
 }
 
 //! Clear all the items from the scene

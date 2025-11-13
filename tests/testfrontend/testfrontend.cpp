@@ -95,12 +95,20 @@ void TestFrontend::testViewFlutter()
 void TestFrontend::testViewTable()
 {
     int iSubproject = 2;
+    int iSolver = 1;
     Core::Subproject& subproject = mpMainWindow->project().subprojects()[iSubproject];
-    Core::ISolver* pBaseSolver = subproject.solver(Core::ISolver::kFlutter);
-    if (pBaseSolver)
+    Core::ISolver* pBaseSolver = subproject.solvers()[iSolver];
+    QVERIFY(pBaseSolver);
+    switch (pBaseSolver->type())
     {
-        Core::FlutterSolver* pSolver = (Core::FlutterSolver*) pBaseSolver;
-        mpMainWindow->viewManager()->createTableView(pSolver->solution);
+    case Core::ISolver::kModal:
+        mpMainWindow->viewManager()->createTableView(static_cast<Core::ModalSolver*>(pBaseSolver)->solution);
+        break;
+    case Core::ISolver::kFlutter:
+        mpMainWindow->viewManager()->createTableView(static_cast<Core::FlutterSolver*>(pBaseSolver)->solution);
+        break;
+    default:
+        break;
     }
 }
 

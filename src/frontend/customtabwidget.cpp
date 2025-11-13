@@ -1,5 +1,6 @@
 #include <QEvent>
 #include <QInputDialog>
+#include <QMenu>
 #include <QMouseEvent>
 #include <QTabBar>
 
@@ -13,26 +14,76 @@ CustomTabWidget::CustomTabWidget(QWidget* pParent)
     setContentsMargins(0, 0, 0, 0);
     setTabsClosable(true);
     tabBar()->installEventFilter(this);
-    connect(tabBar(), &QTabBar::tabCloseRequested, this,
-            [this](int index)
-            {
-                QWidget* pWidget = widget(index);
-                removeTab(index);
-                pWidget->deleteLater();
-            });
+    connect(tabBar(), &QTabBar::tabCloseRequested, this, &CustomTabWidget::removePage);
+}
+
+//! Remove tab as well as widget associated with it
+void CustomTabWidget::removePage(int index)
+{
+    QWidget* pWidget = widget(index);
+    QTabWidget::removeTab(index);
+    pWidget->deleteLater();
+}
+
+void CustomTabWidget::removeAllPages()
+{
+    while (count() > 0)
+        removePage(0);
 }
 
 //! Reimplemented filter of events
 bool CustomTabWidget::eventFilter(QObject* pObject, QEvent* pEvent)
 {
-    if (pObject == tabBar() && pEvent->type() == QEvent::MouseButtonDblClick)
+    if (pObject == tabBar())
     {
-        QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(pEvent);
-        int tabIndex = tabBar()->tabAt(mouseEvent->pos());
-        if (tabIndex != -1)
+        if (pEvent->type() == QEvent::MouseButtonDblClick)
         {
-            renameTabDialog(tabIndex);
-            return true;
+            QMouseEvent* pMouseEvent = static_cast<QMouseEvent*>(pEvent);
+            if (pMouseEvent->button() == Qt::LeftButton)
+            {
+                int iTab = tabBar()->tabAt(pMouseEvent->pos());
+                if (iTab != -1)
+                {
+                    renameTabDialog(iTab);
+                    return true;
+                }
+            }
+        }
+        else if (pEvent->type() == QEvent::MouseButtonPress)
+        {
+            QMouseEvent* pMouseEvent = static_cast<QMouseEvent*>(pEvent);
+            if (pMouseEvent->button() == Qt::RightButton)
+            {
+                int iTab = tabBar()->tabAt(pMouseEvent->pos());
+                if (iTab != -1)
+                {
+                    // Create the menu
+                    QMenu* pMenu = new QMenu;
+
+                    // Create the actions
+                    QAction* pCloseAction = new QAction(tr("&Close tab"), this);
+                    QAction* pRenameAction = new QAction(tr("Rename tab"), this);
+                    QAction* pCloseAllAction = new QAction(tr("&Close all tabs"), this);
+
+                    // Set the icons
+                    pCloseAction->setIcon(QIcon(":/icons/edit-delete.svg"));
+                    pRenameAction->setIcon(QIcon(":/icons/edit-edit.svg"));
+
+                    // Set the connections
+                    connect(pCloseAction, &QAction::triggered, this, [this, iTab]() { removeTab(iTab); });
+                    connect(pRenameAction, &QAction::triggered, this, [this, iTab]() { renameTabDialog(iTab); });
+                    connect(pCloseAllAction, &QAction::triggered, this, &CustomTabWidget::removeAllPages);
+
+                    // Add the actions
+                    pMenu->addAction(pCloseAction);
+                    pMenu->addAction(pRenameAction);
+                    pMenu->addSeparator();
+                    pMenu->addAction(pCloseAllAction);
+
+                    // Display the menu
+                    pMenu->exec(QCursor::pos());
+                }
+            }
         }
     }
     return QTabWidget::eventFilter(pObject, pEvent);

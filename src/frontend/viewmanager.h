@@ -3,6 +3,8 @@
 
 #include <QWidget>
 
+#include <Eigen/Core>
+
 #include "iview.h"
 
 QT_FORWARD_DECLARE_CLASS(QSettings)
@@ -57,6 +59,7 @@ public:
     IView* createLogView(QString const& log, QString const& name = QString());
     IView* createFlutterView(Backend::Core::FlutterSolution const& solution, QString const& name = QString());
     IView* createTableView(Backend::Core::FlutterSolution const& solution, QString const& name = QString());
+    IView* createTableView(Backend::Core::ModalSolution const& solution, QString const& name = QString());
 
     void processItems(QList<HierarchyItem*> const& items);
     void refresh();

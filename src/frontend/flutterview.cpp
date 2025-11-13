@@ -320,8 +320,8 @@ QGroupBox* FlutterViewEditor::createSizeGroupBox()
     mpLineWidthEdit->setMinimum(0.0);
 
     // Add the widgets to the layout
-    pLayout->addWidget(new QLabel(tr("Marker size: ")), 0, 0);
-    pLayout->addWidget(new QLabel(tr("Line width: ")), 1, 0);
+    pLayout->addWidget(new QLabel(tr("Marker: ")), 0, 0);
+    pLayout->addWidget(new QLabel(tr("Line: ")), 1, 0);
     pLayout->addWidget(mpMarkerSizeEdit, 0, 1);
     pLayout->addWidget(mpLineWidthEdit, 1, 1);
 

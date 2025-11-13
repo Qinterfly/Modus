@@ -175,6 +175,7 @@ GeometryView::GeometryView(Geometry const& geometry, VertexField const& field, G
 
 GeometryView::~GeometryView()
 {
+    GeometryView::clear();
 }
 
 //! Clear all the items from the scene

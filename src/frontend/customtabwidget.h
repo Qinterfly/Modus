@@ -12,6 +12,9 @@ public:
     CustomTabWidget(QWidget* pParent = nullptr);
     virtual ~CustomTabWidget() = default;
 
+    void removePage(int index);
+    void removeAllPages();
+
 protected:
     bool eventFilter(QObject* pObject, QEvent* pEvent) override;
 
