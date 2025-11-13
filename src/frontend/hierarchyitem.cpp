@@ -513,7 +513,7 @@ Core::FlutterSolution const& FlutterSolutionHierarchyItem::solution() const
 
 void FlutterSolutionHierarchyItem::appendChildren()
 {
-    appendRow(new FlutterRootsHierarchyItem(mSolution.flow, mSolution.roots));
+    appendRow(new FlutterRootsHierarchyItem(mSolution));
     int numCrit = mSolution.numCrit();
     if (numCrit > 0)
     {
@@ -528,62 +528,66 @@ void FlutterSolutionHierarchyItem::appendChildren()
     }
 }
 
-FlutterRootsHierarchyItem::FlutterRootsHierarchyItem(Eigen::VectorXd const& flow, Eigen::MatrixXcd const& roots)
+FlutterRootsHierarchyItem::FlutterRootsHierarchyItem(Core::FlutterSolution const& solution)
     : HierarchyItem(kFlutterRoots, QIcon(":/icons/roots.svg"), QObject::tr("Roots"))
-    , mFlow(flow)
-    , mRoots(roots)
+    , mSolution(solution)
 {
 }
 
 Eigen::VectorXd const& FlutterRootsHierarchyItem::flow() const
 {
-    return mFlow;
+    return mSolution.flow;
 }
 
 Eigen::MatrixXcd const& FlutterRootsHierarchyItem::roots() const
 {
-    return mRoots;
+    return mSolution.roots;
+}
+
+Core::FlutterSolution const& FlutterRootsHierarchyItem::solution() const
+{
+    return mSolution;
 }
 
 FlutterCritDataHierarchyItem::FlutterCritDataHierarchyItem(Core::FlutterSolution const& solution)
     : HierarchyItem(kFlutterCritData, QIcon(":/icons/crit.png"), QObject::tr("Critical Data"))
-    , mFlow(solution.critFlow)
-    , mSpeed(solution.critSpeed)
-    , mFrequency(solution.critFrequency)
-    , mCircFrequency(solution.critCircFrequency)
-    , mStrouhal(solution.critStrouhal)
-    , mDamping(solution.critDamping)
+    , mSolution(solution)
 {
 }
 
 Eigen::VectorXd const& FlutterCritDataHierarchyItem::flow() const
 {
-    return mFlow;
+    return mSolution.critFlow;
 }
 
 Eigen::VectorXd const& FlutterCritDataHierarchyItem::speed() const
 {
-    return mSpeed;
+    return mSolution.critSpeed;
 }
 
 Eigen::VectorXd const& FlutterCritDataHierarchyItem::frequency() const
 {
-    return mFrequency;
+    return mSolution.critFrequency;
 }
 
 Eigen::VectorXd const& FlutterCritDataHierarchyItem::circFrequency() const
 {
-    return mCircFrequency;
+    return mSolution.critCircFrequency;
 }
 
 Eigen::VectorXd const& FlutterCritDataHierarchyItem::strouhal() const
 {
-    return mStrouhal;
+    return mSolution.critStrouhal;
 }
 
 Eigen::VectorXd const& FlutterCritDataHierarchyItem::damping() const
 {
-    return mDamping;
+    return mSolution.critDamping;
+}
+
+Core::FlutterSolution const& FlutterCritDataHierarchyItem::solution() const
+{
+    return mSolution;
 }
 
 OptimSolverHierarchyItem::OptimSolverHierarchyItem(Core::OptimSolver* pSolver, QString const& defaultName)

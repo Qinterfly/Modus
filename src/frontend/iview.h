@@ -11,7 +11,8 @@ public:
         kModel,
         kGeometry,
         kLog,
-        kFlutter
+        kFlutter,
+        kTable
     };
     virtual ~IView() = default;
     virtual void clear() = 0;

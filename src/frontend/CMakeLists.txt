@@ -56,6 +56,7 @@ set(FRONTEND_HEADERS
     constraintseditor.h
     logview.h
     flutterview.h
+    tableview.h
 )
 
 set(FRONTEND_SOURCES
@@ -88,6 +89,7 @@ set(FRONTEND_SOURCES
     constraintseditor.cpp
     logview.cpp
     flutterview.cpp
+    tableview.cpp
 )
 
 qt_add_library(frontend STATIC

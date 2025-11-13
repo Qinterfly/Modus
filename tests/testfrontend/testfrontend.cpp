@@ -35,7 +35,7 @@ void TestFrontend::testViewModel()
     int iSubproject = 1;
     Core::Subproject& subproject = mpMainWindow->project().subprojects()[iSubproject];
     KCL::Model& model = subproject.model();
-    mpMainWindow->viewManager()->createView(model);
+    mpMainWindow->viewManager()->createModelView(model);
 }
 
 //! View a model geometry
@@ -50,7 +50,7 @@ void TestFrontend::testViewGeometry()
     {
         auto pSolver = (Core::ModalSolver*) solvers[i];
         VertexField field(pSolver->solution, iMode);
-        mpMainWindow->viewManager()->createView(pSolver->solution.geometry, field);
+        mpMainWindow->viewManager()->createGeometryView(pSolver->solution.geometry, field);
     }
 }
 
@@ -75,7 +75,7 @@ void TestFrontend::testViewLog()
         log = static_cast<Core::OptimSolver*>(pBaseSolver)->log;
         break;
     }
-    mpMainWindow->viewManager()->createView(log);
+    mpMainWindow->viewManager()->createLogView(log);
 }
 
 //! View a flutter solution
@@ -87,7 +87,20 @@ void TestFrontend::testViewFlutter()
     if (pBaseSolver)
     {
         Core::FlutterSolver* pSolver = (Core::FlutterSolver*) pBaseSolver;
-        mpMainWindow->viewManager()->createView(pSolver->solution);
+        mpMainWindow->viewManager()->createFlutterView(pSolver->solution);
+    }
+}
+
+//! View a flutter table
+void TestFrontend::testViewTable()
+{
+    int iSubproject = 2;
+    Core::Subproject& subproject = mpMainWindow->project().subprojects()[iSubproject];
+    Core::ISolver* pBaseSolver = subproject.solver(Core::ISolver::kFlutter);
+    if (pBaseSolver)
+    {
+        Core::FlutterSolver* pSolver = (Core::FlutterSolver*) pBaseSolver;
+        mpMainWindow->viewManager()->createTableView(pSolver->solution);
     }
 }
 

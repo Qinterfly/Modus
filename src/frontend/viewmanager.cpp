@@ -14,6 +14,7 @@
 #include "modelview.h"
 #include "selectionset.h"
 #include "subproject.h"
+#include "tableview.h"
 #include "uiutility.h"
 #include "viewmanager.h"
 
@@ -82,7 +83,7 @@ bool ViewManager::isEmpty() const
 }
 
 //! Find the view associated with the current model
-IView* ViewManager::findView(KCL::Model const& model)
+IView* ViewManager::findModelView(KCL::Model const& model)
 {
     int count = numViews();
     for (int i = 0; i != count; ++i)
@@ -95,7 +96,7 @@ IView* ViewManager::findView(KCL::Model const& model)
 }
 
 //! Find the view associated with the current geometry
-IView* ViewManager::findView(Backend::Core::Geometry const& geometry)
+IView* ViewManager::findGeometryView(Backend::Core::Geometry const& geometry)
 {
     int count = numViews();
     for (int i = 0; i != count; ++i)
@@ -108,7 +109,7 @@ IView* ViewManager::findView(Backend::Core::Geometry const& geometry)
 }
 
 //! Find the view associated with the current log
-IView* ViewManager::findView(QString const& log)
+IView* ViewManager::findLogView(QString const& log)
 {
     int count = numViews();
     for (int i = 0; i != count; ++i)
@@ -121,7 +122,7 @@ IView* ViewManager::findView(QString const& log)
 }
 
 //! Find the view associated with the current flutter solution
-IView* ViewManager::findView(Backend::Core::FlutterSolution const& solution)
+IView* ViewManager::findFlutterView(Backend::Core::FlutterSolution const& solution)
 {
     int count = numViews();
     for (int i = 0; i != count; ++i)
@@ -142,10 +143,10 @@ IView* ViewManager::currentView()
 }
 
 //! Create the view associated with a KCL model
-IView* ViewManager::createView(KCL::Model const& model, QString const& name)
+IView* ViewManager::createModelView(KCL::Model const& model, QString const& name)
 {
     // Set the view as the current one if it has been already created
-    IView* pBaseView = findView(model);
+    IView* pBaseView = findModelView(model);
     if (pBaseView)
     {
         mpTabWidget->setCurrentWidget(pBaseView);
@@ -173,10 +174,10 @@ IView* ViewManager::createView(KCL::Model const& model, QString const& name)
 }
 
 //! Create the view associated with a geometry
-IView* ViewManager::createView(Backend::Core::Geometry const& geometry, VertexField const& field, QString const& name)
+IView* ViewManager::createGeometryView(Backend::Core::Geometry const& geometry, VertexField const& field, QString const& name)
 {
     // Set the view as the current one if it has been already created
-    IView* pBaseView = findView(geometry);
+    IView* pBaseView = findGeometryView(geometry);
     if (pBaseView)
     {
         GeometryView* pView = (GeometryView*) pBaseView;
@@ -201,10 +202,10 @@ IView* ViewManager::createView(Backend::Core::Geometry const& geometry, VertexFi
 }
 
 //! Create the view associated with a log
-IView* ViewManager::createView(QString const& log, QString const& name)
+IView* ViewManager::createLogView(QString const& log, QString const& name)
 {
     // Set the view as the current one if it has been already created
-    IView* pBaseView = findView(log);
+    IView* pBaseView = findLogView(log);
     if (pBaseView)
     {
         LogView* pView = (LogView*) pBaseView;
@@ -227,10 +228,10 @@ IView* ViewManager::createView(QString const& log, QString const& name)
 }
 
 //! Create the view associated with a flutter solution
-IView* ViewManager::createView(Backend::Core::FlutterSolution const& solution, QString const& name)
+IView* ViewManager::createFlutterView(Backend::Core::FlutterSolution const& solution, QString const& name)
 {
     // Set the view as the current one if it has been already created
-    IView* pBaseView = findView(solution);
+    IView* pBaseView = findFlutterView(solution);
     if (pBaseView)
     {
         FlutterView* pView = (FlutterView*) pBaseView;
@@ -240,12 +241,27 @@ IView* ViewManager::createView(Backend::Core::FlutterSolution const& solution, Q
         return pView;
     }
 
-    // Create the log view otherwise
+    // Create the flutter view otherwise
     FlutterView* pView = new FlutterView(solution);
     pView->plot();
 
     // Add it to the tab
     QString label = name.isEmpty() ? getDefaultViewName(IView::kFlutter) : name;
+    mpTabWidget->addTab(pView, label);
+    mpTabWidget->setCurrentWidget(pView);
+
+    return pView;
+}
+
+//! Create the table view associated with a flutter solution
+IView* ViewManager::createTableView(Backend::Core::FlutterSolution const& solution, QString const& name)
+{
+    // Create the flutter view otherwise
+    TableView* pView = new TableView(solution);
+    pView->plot();
+
+    // Add it to the tab
+    QString label = name.isEmpty() ? getDefaultViewName(IView::kTable) : name;
     mpTabWidget->addTab(pView, label);
     mpTabWidget->setCurrentWidget(pView);
 
@@ -308,7 +324,7 @@ void ViewManager::processModelItems(QList<HierarchyItem*> const& items, QSet<IVi
             SubprojectHierarchyItem* pItem = (SubprojectHierarchyItem*) pBaseItem;
             Core::Subproject& subproject = pItem->subproject();
             QString label = getViewName(pItem);
-            pView = (ModelView*) createView(subproject.model(), label);
+            pView = (ModelView*) createModelView(subproject.model(), label);
             pView->selector().deselectAll();
             modifiedViews.insert(pView);
             break;
@@ -317,7 +333,7 @@ void ViewManager::processModelItems(QList<HierarchyItem*> const& items, QSet<IVi
         {
             ModelHierarchyItem* pItem = (ModelHierarchyItem*) pBaseItem;
             QString label = getViewName(pItem);
-            pView = (ModelView*) createView(pItem->kclModel(), label);
+            pView = (ModelView*) createModelView(pItem->kclModel(), label);
             pView->selector().deselectAll();
             modifiedViews.insert(pView);
             break;
@@ -347,7 +363,7 @@ void ViewManager::processModelItems(QList<HierarchyItem*> const& items, QSet<IVi
 
             // Create the view, if necessary
             QString label = getViewName(pItem);
-            pView = (ModelView*) createView(*pModel, label);
+            pView = (ModelView*) createModelView(*pModel, label);
             if (!modifiedViews.contains(pView))
                 pView->selector().deselectAll();
 
@@ -384,13 +400,13 @@ void ViewManager::processGeometryItems(QList<HierarchyItem*> const& items, QSet<
             ModalPoleHierarchyItem* pItem = (ModalPoleHierarchyItem*) pBaseItem;
             QString label = getViewName(pItem);
             VertexField field(pItem->iMode(), pItem->frequency(), pItem->modeShape());
-            IView* pBaseView = findView(pItem->geometry());
+            IView* pBaseView = findGeometryView(pItem->geometry());
             if (pBaseView)
             {
                 if (!modifiedViews.contains(pBaseView))
                     static_cast<GeometryView*>(pBaseView)->clearFields();
             }
-            pView = (GeometryView*) createView(pItem->geometry(), field, label);
+            pView = (GeometryView*) createGeometryView(pItem->geometry(), field, label);
             modifiedViews.insert(pView);
             break;
         }
@@ -411,7 +427,7 @@ void ViewManager::processLogItems(QList<HierarchyItem*> const& items, QSet<IView
     {
         LogHierarchyItem* pItem = (LogHierarchyItem*) pBaseItem;
         QString label = getViewName(pItem);
-        LogView* pView = (LogView*) createView(pItem->log(), label);
+        LogView* pView = (LogView*) createLogView(pItem->log(), label);
         modifiedViews.insert(pView);
     }
 }
@@ -422,24 +438,28 @@ void ViewManager::processFlutterItems(QList<HierarchyItem*> const& items, QSet<I
     for (HierarchyItem* pBaseItem : items)
     {
         auto type = pBaseItem->type();
-        FlutterView* pView = nullptr;
+        IView* pView = nullptr;
         switch (type)
         {
         case HierarchyItem::kFlutterSolution:
         {
             FlutterSolutionHierarchyItem* pItem = (FlutterSolutionHierarchyItem*) pBaseItem;
             QString label = getViewName(pItem);
-            pView = (FlutterView*) createView(pItem->solution(), label);
+            pView = createFlutterView(pItem->solution(), label);
             break;
         }
         case HierarchyItem::kFlutterRoots:
         {
-            // TODO
+            FlutterRootsHierarchyItem* pItem = (FlutterRootsHierarchyItem*) pBaseItem;
+            QString label = getViewName(pItem);
+            pView = createFlutterView(pItem->solution(), label);
             break;
         }
         case HierarchyItem::kFlutterCritData:
         {
-            // TODO
+            FlutterCritDataHierarchyItem* pItem = (FlutterCritDataHierarchyItem*) pBaseItem;
+            QString label = getViewName(pItem);
+            pView = createTableView(pItem->solution(), label);
             break;
         }
         default:
@@ -471,7 +491,7 @@ void ViewManager::plot()
 //! Replot the model associated view
 void ViewManager::replot(KCL::Model const& model)
 {
-    IView* pBaseView = findView(model);
+    IView* pBaseView = findModelView(model);
     if (!pBaseView)
         return;
     auto pView = (ModelView*) pBaseView;
@@ -507,7 +527,7 @@ void ViewManager::initialize()
     vtkObject::GlobalWarningDisplayOff();
 
     // Heat up the renderer
-    createView(KCL::Model());
+    createModelView(KCL::Model());
     mpTabWidget->removeTab(0);
 }
 
@@ -528,6 +548,9 @@ QString ViewManager::getDefaultViewName(IView::Type type)
         break;
     case IView::kFlutter:
         prefix = tr("Flutter");
+        break;
+    case IView::kTable:
+        prefix = tr("Table");
         break;
     default:
         break;

@@ -266,15 +266,15 @@ private:
 class FlutterRootsHierarchyItem : public HierarchyItem
 {
 public:
-    FlutterRootsHierarchyItem(Eigen::VectorXd const& flow, Eigen::MatrixXcd const& roots);
+    FlutterRootsHierarchyItem(Backend::Core::FlutterSolution const& solution);
     virtual ~FlutterRootsHierarchyItem() = default;
 
     Eigen::VectorXd const& flow() const;
     Eigen::MatrixXcd const& roots() const;
+    Backend::Core::FlutterSolution const& solution() const;
 
 private:
-    Eigen::VectorXd const& mFlow;
-    Eigen::MatrixXcd const& mRoots;
+    Backend::Core::FlutterSolution const& mSolution;
 };
 
 class FlutterCritDataHierarchyItem : public HierarchyItem
@@ -289,14 +289,10 @@ public:
     Eigen::VectorXd const& circFrequency() const;
     Eigen::VectorXd const& strouhal() const;
     Eigen::VectorXd const& damping() const;
+    Backend::Core::FlutterSolution const& solution() const;
 
 private:
-    Eigen::VectorXd const& mFlow;
-    Eigen::VectorXd const& mSpeed;
-    Eigen::VectorXd const& mFrequency;
-    Eigen::VectorXd const& mCircFrequency;
-    Eigen::VectorXd const& mStrouhal;
-    Eigen::VectorXd const& mDamping;
+    Backend::Core::FlutterSolution const& mSolution;
 };
 
 class OptimSolverHierarchyItem : public HierarchyItem
