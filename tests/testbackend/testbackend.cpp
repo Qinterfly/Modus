@@ -152,11 +152,11 @@ void TestBackend::testOptimSolverSimpleWing()
     options.numModes = 10;
 
     // Set the objectives
-    problem.resize(numModes);
-    problem.targetIndices.setLinSpaced(0, numModes - 1);
+    problem.target.resize(numModes);
+    problem.target.indices.setLinSpaced(0, numModes - 1);
     for (int i = 0; i != numModes; ++i)
-        problem.targetFrequencies[i] = eigenSolution.frequencies[problem.targetIndices[i]] * (1.0 + generateDouble({-error, error}));
-    problem.targetWeights.setOnes();
+        problem.target.frequencies[i] = eigenSolution.frequencies[problem.target.indices[i]] * (1.0 + generateDouble({-error, error}));
+    problem.target.weights.setOnes();
 
     // Start the solver
     connect(pSolver, &OptimSolver::logAppended, [](QString message) { std::cout << message.toStdString() << std::endl; });

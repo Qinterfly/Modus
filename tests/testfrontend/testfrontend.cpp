@@ -26,7 +26,7 @@ void TestFrontend::testOpenProject()
     QString fileName = QString("tests.%1").arg(Core::Project::fileSuffix());
     QString pathFile = Utility::combineFilePath(EXAMPLES_DIR, fileName);
     QVERIFY(mpMainWindow->openProject(pathFile));
-    // mpMainWindow->show();
+    mpMainWindow->show();
 }
 
 //! View a model
@@ -62,20 +62,21 @@ void TestFrontend::testViewLog()
     Core::Subproject& subproject = mpMainWindow->project().subprojects()[iSubproject];
     Core::ISolver* pBaseSolver = subproject.solvers()[iSolver];
     QVERIFY(pBaseSolver);
-    QString log;
+    QString* pLog = nullptr;
     switch (pBaseSolver->type())
     {
     case Core::ISolver::kModal:
-        log = static_cast<Core::ModalSolver*>(pBaseSolver)->log;
+        pLog = &static_cast<Core::ModalSolver*>(pBaseSolver)->log;
         break;
     case Core::ISolver::kFlutter:
-        log = static_cast<Core::FlutterSolver*>(pBaseSolver)->log;
+        pLog = &static_cast<Core::FlutterSolver*>(pBaseSolver)->log;
         break;
     case Core::ISolver::kOptim:
-        log = static_cast<Core::OptimSolver*>(pBaseSolver)->log;
+        pLog = &static_cast<Core::OptimSolver*>(pBaseSolver)->log;
         break;
     }
-    mpMainWindow->viewManager()->createLogView(log);
+    if (pLog)
+        mpMainWindow->viewManager()->createLogView(*pLog);
 }
 
 //! View a flutter solution
@@ -166,7 +167,7 @@ void TestFrontend::testEditorManager()
         Core::OptimProblem& problem = pOptimSolver->problem;
         pManager->createEditor(pOptimSolver->options);
         pManager->createEditor(problem.constraints);
-        pManager->createEditor(problem.targetIndices, problem.targetFrequencies, problem.targetWeights, problem.targetSolution);
+        pManager->createEditor(problem.target);
     }
     pManager->setCurrentEditor(pManager->numEditors() - 1);
     if (!mpMainWindow->isVisible())

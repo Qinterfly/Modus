@@ -23,24 +23,57 @@ using SolverFun = std::function<KCL::EigenSolution(KCL::Model const&)>;
 using CompareFun = std::function<ModalComparison(ModalSolution const& solution)>;
 using ElementMap = QMap<KCL::ElementType, QList<KCL::AbstractElement*>>;
 
+struct OptimTarget : public ISerializable
+{
+    Q_GADGET
+    Q_PROPERTY(Eigen::VectorXi indices MEMBER indices)
+    Q_PROPERTY(Eigen::VectorXd frequencies MEMBER frequencies)
+    Q_PROPERTY(Eigen::VectorXd weights MEMBER weights)
+    Q_PROPERTY(ModalSolution solution MEMBER solution)
+    Q_PROPERTY(Matches matches MEMBER matches)
+
+public:
+    OptimTarget();
+    virtual ~OptimTarget() = default;
+
+    bool isValid() const;
+    void resize(int numModes);
+
+    bool operator==(OptimTarget const& another) const;
+    bool operator!=(OptimTarget const& another) const;
+
+    void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
+    void deserialize(QXmlStreamReader& stream) override;
+
+    //! Indices of the modes to be updated
+    Eigen::VectorXi indices;
+
+    //! Frequencies of the modes to be updated
+    Eigen::VectorXd frequencies;
+
+    //! Participation factors of mode residuals
+    Eigen::VectorXd weights;
+
+    //! Target modal solution (optional)
+    ModalSolution solution;
+
+    //! Vertex correspondence between model and target solutions
+    Matches matches;
+};
+
 struct OptimProblem : public ISerializable
 {
     Q_GADGET
     Q_PROPERTY(KCL::Model model MEMBER model)
-    Q_PROPERTY(Eigen::VectorXi targetIndices MEMBER targetIndices)
-    Q_PROPERTY(Eigen::VectorXd targetFrequencies MEMBER targetFrequencies)
-    Q_PROPERTY(Eigen::VectorXd targetWeights MEMBER targetWeights)
-    Q_PROPERTY(ModalSolution targetSolution MEMBER targetSolution)
-    Q_PROPERTY(Matches targetMatches MEMBER targetMatches)
+    Q_PROPERTY(OptimTarget target MEMBER target)
     Q_PROPERTY(Selector selector MEMBER selector)
     Q_PROPERTY(Constraints constraints MEMBER constraints)
 
 public:
     OptimProblem();
-    ~OptimProblem();
+    virtual ~OptimProblem() = default;
 
     bool isValid() const;
-    void resize(int numModes);
 
     bool operator==(OptimProblem const& another) const;
     bool operator!=(OptimProblem const& another) const;
@@ -51,20 +84,8 @@ public:
     //! Model to be updated
     KCL::Model model;
 
-    //! Indices of the modes to be updated
-    Eigen::VectorXi targetIndices;
-
-    //! Frequencies of the modes to be updated
-    Eigen::VectorXd targetFrequencies;
-
-    //! Participation factors of mode residuals
-    Eigen::VectorXd targetWeights;
-
-    //! Target modal solution (optional)
-    ModalSolution targetSolution;
-
-    //! Vertex correspondence between model and target solutions
-    Matches targetMatches;
+    //! Target values
+    OptimTarget target;
 
     //! Selection of entities to be updated
     Selector selector;
@@ -87,7 +108,7 @@ struct OptimOptions : public ISerializable
 
 public:
     OptimOptions();
-    ~OptimOptions();
+    virtual ~OptimOptions() = default;
 
     bool operator==(OptimOptions const& another) const;
     bool operator!=(OptimOptions const& another) const;
@@ -134,7 +155,7 @@ struct OptimSolution : public ISerializable
 
 public:
     OptimSolution();
-    ~OptimSolution();
+    virtual ~OptimSolution() = default;
 
     bool operator==(OptimSolution const& another) const;
     bool operator!=(OptimSolution const& another) const;
@@ -162,7 +183,8 @@ class OptimSolver : public QObject, public ISolver
 
 public:
     OptimSolver();
-    ~OptimSolver();
+    virtual ~OptimSolver() = default;
+
     OptimSolver(OptimSolver const& another);
     OptimSolver(OptimSolver&& another);
     OptimSolver& operator=(OptimSolver const& another);
@@ -225,22 +247,20 @@ private:
     Constraints mConstraints;
     QList<double> mParameterScales;
     QList<PairDouble> mParameterBounds;
-    ModalSolution mTargetSolution;
-    Matches mTargetMatches;
+    OptimTarget mTarget;
 };
 
 //! Functor to compute residuals
 class ObjectiveFunctor
 {
 public:
-    ObjectiveFunctor(Eigen::VectorXi const& targetIndices, Eigen::VectorXd const& targetWeights, OptimOptions const& options,
-                     UnwrapFun unwrapFun, SolverFun solverFun, CompareFun compareFun);
+    ObjectiveFunctor(OptimTarget const& target, OptimOptions const& options, UnwrapFun unwrapFun, SolverFun solverFun, CompareFun compareFun);
     ~ObjectiveFunctor() = default;
+
     bool operator()(double const* const* parameters, double* residuals) const;
 
 private:
-    Eigen::VectorXi const& mTargetIndices;
-    Eigen::VectorXd const& mTargetWeights;
+    OptimTarget const& mTarget;
     OptimOptions const& mOptions;
     UnwrapFun mUnwrapFun;
     SolverFun mSolverFun;
@@ -253,9 +273,10 @@ class OptimCallback : public QObject, public ceres::IterationCallback
     Q_OBJECT
 
 public:
-    OptimCallback(QList<double>& parameters, Eigen::VectorXi const& targetIndices, Eigen::VectorXd const& targetWeights,
-                  ModalSolution const& targetSolution, OptimOptions const& options, UnwrapFun unwrapFun, SolverFun solverFun,
+    OptimCallback(QList<double>& parameters, OptimTarget const& target, OptimOptions const& options, UnwrapFun unwrapFun, SolverFun solverFun,
                   CompareFun compareFun);
+    ~OptimCallback() = default;
+
     ceres::CallbackReturnType operator()(ceres::IterationSummary const& summary);
 
 signals:
@@ -264,9 +285,7 @@ signals:
 
 private:
     QList<double>& mParameterValues;
-    Eigen::VectorXi const& mTargetIndices;
-    Eigen::VectorXd const& mTargetWeights;
-    ModalSolution const& mTargetSolution;
+    OptimTarget const& mTarget;
     OptimOptions const& mOptions;
     UnwrapFun mUnwrapFun;
     SolverFun mSolverFun;

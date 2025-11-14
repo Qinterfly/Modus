@@ -631,8 +631,7 @@ void OptimSolverHierarchyItem::appendChildren()
 {
     Core::OptimProblem& problem = mpSolver->problem;
     appendRow(new OptimOptionsHierarchyItem(mpSolver->options));
-    appendRow(new OptimTargetHierarchyItem(problem.targetIndices, problem.targetFrequencies, problem.targetWeights, problem.targetSolution,
-                                           problem.targetMatches));
+    appendRow(new OptimTargetHierarchyItem(problem.target));
     appendRow(new OptimSelectorHierarchyItem(problem.selector));
     appendRow(new OptimConstraintsHierarchyItem(problem.constraints));
     int numSolutions = mpSolver->solutions.size();
@@ -658,40 +657,15 @@ Core::OptimOptions& OptimOptionsHierarchyItem::options()
     return mOptions;
 }
 
-OptimTargetHierarchyItem::OptimTargetHierarchyItem(Eigen::VectorXi& indices, Eigen::VectorXd& frequencies, Eigen::VectorXd& weights,
-                                                   Core::ModalSolution& solution, Core::Matches& matches)
+OptimTargetHierarchyItem::OptimTargetHierarchyItem(Core::OptimTarget& target)
     : HierarchyItem(kOptimTarget, QIcon(":/icons/target.svg"), QObject::tr("Target"))
-    , mIndices(indices)
-    , mFrequencies(frequencies)
-    , mWeights(weights)
-    , mSolution(solution)
-    , mMatches(matches)
+    , mTarget(target)
 {
 }
 
-Eigen::VectorXi& OptimTargetHierarchyItem::indices()
+Core::OptimTarget& OptimTargetHierarchyItem::target()
 {
-    return mIndices;
-}
-
-Eigen::VectorXd& OptimTargetHierarchyItem::frequencies()
-{
-    return mFrequencies;
-}
-
-Eigen::VectorXd& OptimTargetHierarchyItem::weights()
-{
-    return mWeights;
-}
-
-Core::ModalSolution& OptimTargetHierarchyItem::solution()
-{
-    return mSolution;
-}
-
-Core::Matches& OptimTargetHierarchyItem::matches()
-{
-    return mMatches;
+    return mTarget;
 }
 
 OptimSelectorHierarchyItem::OptimSelectorHierarchyItem(Core::Selector& selector)

@@ -90,7 +90,7 @@ DoubleLineEdit::DoubleLineEdit(QWidget* pParent)
     double const kRangeValue = 1e9;
 
     mpValidator = new QDoubleValidator(this);
-    mpValidator->setNotation(QDoubleValidator::ScientificNotation);
+    mpValidator->setNotation(QDoubleValidator::StandardNotation);
     mpValidator->setRange(-kRangeValue, kRangeValue, kNumDecimals);
     mpValidator->setLocale(QLocale::C);
     setValidator(mpValidator);

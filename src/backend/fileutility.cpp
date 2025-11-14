@@ -274,6 +274,8 @@ bool areEqual(QVariant const& first, QVariant const& second)
         flag = first.value<Selector>() == second.value<Selector>();
     else if (type == qMetaTypeId<OptimProblem>())
         flag = first.value<OptimProblem>() == second.value<OptimProblem>();
+    else if (type == qMetaTypeId<OptimTarget>())
+        flag = first.value<OptimTarget>() == second.value<OptimTarget>();
     else if (type == qMetaTypeId<OptimOptions>())
         flag = first.value<OptimOptions>() == second.value<OptimOptions>();
     else if (type == qMetaTypeId<FlutterOptions>())

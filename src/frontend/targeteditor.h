@@ -9,6 +9,7 @@
 namespace Backend::Core
 {
 struct ModalSolution;
+struct OptimTarget;
 }
 
 namespace Frontend
@@ -22,8 +23,7 @@ class TargetEditor : public Editor
     Q_OBJECT
 
 public:
-    TargetEditor(Eigen::VectorXi& indices, Eigen::VectorXd& frequencies, Eigen::VectorXd& weights, Backend::Core::ModalSolution const& solution,
-                 QString const& name, QWidget* pParent = nullptr);
+    TargetEditor(Backend::Core::OptimTarget& target, QString const& name, QWidget* pParent = nullptr);
     virtual ~TargetEditor() = default;
 
     QSize sizeHint() const override;
@@ -37,10 +37,7 @@ private:
     void executeCommand(Eigen::VectorXi const& indices, Eigen::VectorXd const& frequencies, Eigen::VectorXd const& weights);
 
 private:
-    Eigen::VectorXi& mIndices;
-    Eigen::VectorXd& mFrequencies;
-    Eigen::VectorXd& mWeights;
-    Backend::Core::ModalSolution const& mSolution;
+    Backend::Core::OptimTarget& mTarget;
     Edit1i* mpNumModesEdit;
     CustomTable* mpTable;
 };

@@ -3,19 +3,15 @@
 
 #include "customtable.h"
 #include "lineedit.h"
-#include "modalsolver.h"
+#include "optimsolver.h"
 #include "targeteditor.h"
 
 using namespace Backend;
 using namespace Frontend;
 
-TargetEditor::TargetEditor(Eigen::VectorXi& indices, Eigen::VectorXd& frequencies, Eigen::VectorXd& weights, Core::ModalSolution const& solution,
-                           QString const& name, QWidget* pParent)
-    : Editor(kTarget, name, QIcon(":/icons/target.svg"), pParent)
-    , mIndices(indices)
-    , mFrequencies(frequencies)
-    , mWeights(weights)
-    , mSolution(solution)
+TargetEditor::TargetEditor(Backend::Core::OptimTarget& target, QString const& name, QWidget* pParent)
+    : Editor(kOptimTarget, name, QIcon(":/icons/target.svg"), pParent)
+    , mTarget(target)
 {
     createContent();
     createConnections();
@@ -34,7 +30,7 @@ void TargetEditor::refresh()
     int const kNumColumns = 3;
 
     // Slice dimensions
-    int numRows = mIndices.size();
+    int numRows = mTarget.indices.size();
 
     // Set the number of modes
     QSignalBlocker blockerNumModes(mpNumModesEdit);
@@ -50,13 +46,13 @@ void TargetEditor::refresh()
     mpTable->setHorizontalHeaderLabels({tr("Index"), tr("Frequencies"), tr("Weights")});
 
     // Set the table data
-    bool isSolution = !mSolution.isEmpty();
+    bool isSolution = !mTarget.solution.isEmpty();
     for (int i = 0; i != numRows; ++i)
     {
         // Slice data
-        int iMode = mIndices[i];
-        double frequency = isSolution ? mSolution.frequencies[iMode] : mFrequencies[i];
-        double weight = mWeights[i];
+        int iMode = mTarget.indices[i];
+        double frequency = isSolution ? mTarget.solution.frequencies[iMode] : mTarget.frequencies[i];
+        double weight = mTarget.weights[i];
 
         // Create the widgets
         Edit1i* pIndexEdit = new Edit1i;
@@ -74,8 +70,9 @@ void TargetEditor::refresh()
         pWeightEdit->setAlignment(Qt::AlignCenter);
 
         // Set the limits
-        int maxIndex = isSolution ? mSolution.numModes() : mpNumModesEdit->value();
-        pIndexEdit->setMaximum(maxIndex);
+        pIndexEdit->setMinimum(0);
+        if (isSolution)
+            pIndexEdit->setMaximum(mTarget.solution.numModes());
         pFrequencyEdit->setMinimum(0.0);
 
         // Set the current values
@@ -135,7 +132,7 @@ void TargetEditor::createConnections()
 //! Change number of modes
 void TargetEditor::setNumModes()
 {
-    int oldCount = mIndices.size();
+    int oldCount = mTarget.indices.size();
     int newCount = mpNumModesEdit->value();
 
     // Allocate the target values
@@ -155,9 +152,9 @@ void TargetEditor::setNumModes()
     int count = std::min(oldCount, newCount);
     for (int i = 0; i != count; ++i)
     {
-        indices[i] = mIndices[i];
-        frequencies[i] = mFrequencies[i];
-        weights[i] = mWeights[i];
+        indices[i] = mTarget.indices[i];
+        frequencies[i] = mTarget.frequencies[i];
+        weights[i] = mTarget.weights[i];
     }
 
     // Apply the changes
@@ -191,9 +188,9 @@ void TargetEditor::setData()
 //! Apply the changes via command
 void TargetEditor::executeCommand(Eigen::VectorXi const& indices, Eigen::VectorXd const& frequencies, Eigen::VectorXd const& weights)
 {
-    QList<EditCommand*> commands;
-    commands.push_back(new EditObject<Eigen::VectorXi>(mIndices, QString(), indices));
-    commands.push_back(new EditObject<Eigen::VectorXd>(mFrequencies, QString(), frequencies));
-    commands.push_back(new EditObject<Eigen::VectorXd>(mWeights, QString(), weights));
-    emit commandExecuted(new MultiEditCommand(commands, name()));
+    Core::OptimTarget target = mTarget;
+    target.indices = indices;
+    target.weights = weights;
+    target.frequencies = frequencies;
+    emit commandExecuted(new EditObject<Core::OptimTarget>(mTarget, name(), target));
 }
