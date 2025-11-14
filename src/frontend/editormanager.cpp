@@ -14,7 +14,6 @@
 #include "fluttersolver.h"
 #include "generaldataeditor.h"
 #include "masseditor.h"
-#include "solveroptionseditor.h"
 #include "modalsolver.h"
 #include "modeleditor.h"
 #include "optimsolver.h"
@@ -22,7 +21,9 @@
 #include "polyexponentseditor.h"
 #include "rawdataeditor.h"
 #include "selectionset.h"
+#include "solveroptionseditor.h"
 #include "springdampereditor.h"
+#include "targeteditor.h"
 #include "uiutility.h"
 
 using namespace Backend;
@@ -178,6 +179,13 @@ void EditorManager::createEditor(Backend::Core::Constraints& constraints)
     addEditor(pEditor);
     auto setEdited = [this, &constraints]() { emit constraintsEdited(constraints); };
     connectEditCommand(pEditor, setEdited);
+}
+
+//! Create editor of optimization targets
+void EditorManager::createEditor(Eigen::VectorXi& indices, Eigen::VectorXd& weights, Core::ModalSolution& solution)
+{
+    Editor* pEditor = new TargetEditor(indices, weights, solution, tr("Optimization target"));
+    addEditor(pEditor);
 }
 
 //! Set the current editor to work with

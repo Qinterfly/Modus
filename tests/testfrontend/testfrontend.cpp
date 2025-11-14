@@ -26,7 +26,7 @@ void TestFrontend::testOpenProject()
     QString fileName = QString("tests.%1").arg(Core::Project::fileSuffix());
     QString pathFile = Utility::combineFilePath(EXAMPLES_DIR, fileName);
     QVERIFY(mpMainWindow->openProject(pathFile));
-    mpMainWindow->show();
+    // mpMainWindow->show();
 }
 
 //! View a model
@@ -165,6 +165,7 @@ void TestFrontend::testEditorManager()
     {
         pManager->createEditor(pOptimSolver->options);
         pManager->createEditor(pOptimSolver->problem.constraints);
+        pManager->createEditor(pOptimSolver->problem.targetIndices, pOptimSolver->problem.targetWeights, pOptimSolver->problem.targetSolution);
     }
     pManager->setCurrentEditor(pManager->numEditors() - 1);
     if (!mpMainWindow->isVisible())

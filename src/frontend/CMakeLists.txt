@@ -57,6 +57,7 @@ set(FRONTEND_HEADERS
     logview.h
     flutterview.h
     tableview.h
+    targeteditor.h
 )
 
 set(FRONTEND_SOURCES
@@ -90,6 +91,7 @@ set(FRONTEND_SOURCES
     logview.cpp
     flutterview.cpp
     tableview.cpp
+    targeteditor.cpp
 )
 
 qt_add_library(frontend STATIC

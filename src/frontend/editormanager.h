@@ -1,6 +1,7 @@
 #ifndef EDITORMANAGER_H
 #define EDITORMANAGER_H
 
+#include <Eigen/Core>
 #include <QDialog>
 #include <QMetaProperty>
 #include <QUndoCommand>
@@ -23,6 +24,7 @@ struct ModalOptions;
 struct FlutterOptions;
 struct OptimOptions;
 class Constraints;
+struct ModalSolution;
 }
 
 namespace Frontend
@@ -52,7 +54,8 @@ public:
         kModalOptions,
         kFlutterOptions,
         kOptimOptions,
-        kConstraints
+        kConstraints,
+        kTarget
     };
 
     Editor() = delete;
@@ -95,6 +98,7 @@ public:
     void createEditor(Backend::Core::FlutterOptions& options);
     void createEditor(Backend::Core::OptimOptions& options);
     void createEditor(Backend::Core::Constraints& constraints);
+    void createEditor(Eigen::VectorXi& indices, Eigen::VectorXd& weights, Backend::Core::ModalSolution& solution);
     void setCurrentEditor(int index);
     void refreshCurrentEditor();
 

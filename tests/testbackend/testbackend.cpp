@@ -50,12 +50,7 @@ void TestBackend::testLoadModalSolution()
 {
     Example const example = Example::kHunterWing;
 
-    // Slice the subproject
-    Subproject& subproject = mProject.subprojects()[example];
-    auto pSolver = (OptimSolver*) subproject.addSolver(ISolver::kOptim);
-    ModalSolution& solution = pSolver->problem.targetSolution;
-
-    // Read the geometry and modal data
+    ModalSolution solution;
     solution.read(Utility::combineFilePath(EXAMPLES_DIR, mFileNames[example]));
     QVERIFY(solution.numModes() == 8);
 }
