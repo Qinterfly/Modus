@@ -25,6 +25,7 @@ struct FlutterOptions;
 struct OptimOptions;
 class Constraints;
 struct ModalSolution;
+struct OptimProblem;
 }
 
 namespace Frontend
@@ -98,7 +99,8 @@ public:
     void createEditor(Backend::Core::FlutterOptions& options);
     void createEditor(Backend::Core::OptimOptions& options);
     void createEditor(Backend::Core::Constraints& constraints);
-    void createEditor(Eigen::VectorXi& indices, Eigen::VectorXd& weights, Backend::Core::ModalSolution& solution);
+    void createEditor(Eigen::VectorXi& indices, Eigen::VectorXd& frequencies, Eigen::VectorXd& weights,
+                      Backend::Core::ModalSolution const& solution);
     void setCurrentEditor(int index);
     void refreshCurrentEditor();
 
@@ -108,6 +110,7 @@ signals:
     void flutterOptionsEdited(Backend::Core::FlutterOptions& options);
     void optimOptionsEdited(Backend::Core::OptimOptions& options);
     void constraintsEdited(Backend::Core::Constraints& constraints);
+    void targetEdited(Eigen::VectorXi& indices, Eigen::VectorXd& frequencies, Eigen::VectorXd& weights);
 
 private:
     void createContent();
@@ -196,6 +199,20 @@ private:
     T& mObject;
     T mOldValue;
     T mNewValue;
+};
+
+//! Run multiple editing commands at once
+class MultiEditCommand : public EditCommand
+{
+public:
+    MultiEditCommand(QList<EditCommand*> const& commands, QString const& name);
+    virtual ~MultiEditCommand() = default;
+
+    void undo() override;
+    void redo() override;
+
+private:
+    QList<EditCommand*> mCommands;
 };
 }
 

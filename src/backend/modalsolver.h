@@ -134,7 +134,7 @@ signals:
     void logAppended(QString message);
 
 private:
-    void appendLog(QString const& message);
+    void appendLog(QString const& message, QtMsgType type = QtMsgType::QtInfoMsg);
 
 public:
     QString name;

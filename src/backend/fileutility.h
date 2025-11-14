@@ -42,7 +42,7 @@ QString combineFilePath(T const& first, Args... args)
     return QDir(first).filePath(combineFilePath(args...));
 }
 
-void appendLog(QString& log, QString const& message, bool isTime = true);
+void appendLog(QString& log, QString const& message, QtMsgType type);
 QString toString(QVariant const& variant);
 QString toString(bool value);
 QString toString(int value);

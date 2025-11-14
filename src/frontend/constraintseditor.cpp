@@ -107,7 +107,7 @@ void ConstraintsEditor::createContent()
         *ppEdit = new Edit1d;
         auto pEdit = *ppEdit;
         pEdit->setAlignment(Qt::AlignCenter);
-        pEdit->setStyleSheet(pEdit->styleSheet().append("border: none;"));
+        pEdit->hideBorders();
         mpTable->setCellWidget(iRow, iColumn, pEdit);
     };
 

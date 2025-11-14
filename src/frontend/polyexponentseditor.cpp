@@ -63,7 +63,7 @@ void PolyExponentsEditor::refresh()
             auto pEdit = rowEdits[jColumn];
             pEdit->setMinimum(0);
             pEdit->setAlignment(Qt::AlignCenter);
-            pEdit->setStyleSheet(pEdit->styleSheet().append("border: none;"));
+            pEdit->hideBorders();
             pEdit->setValue(rowData[jColumn]);
             connect(pEdit, &Edit1i::valueChanged, this, &PolyExponentsEditor::setElementData);
             mpDataTable->setCellWidget(iRow, jColumn, pEdit);

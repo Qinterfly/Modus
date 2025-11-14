@@ -182,10 +182,13 @@ void EditorManager::createEditor(Backend::Core::Constraints& constraints)
 }
 
 //! Create editor of optimization targets
-void EditorManager::createEditor(Eigen::VectorXi& indices, Eigen::VectorXd& weights, Core::ModalSolution& solution)
+void EditorManager::createEditor(Eigen::VectorXi& indices, Eigen::VectorXd& frequencies, Eigen::VectorXd& weights,
+                                 Core::ModalSolution const& solution)
 {
-    Editor* pEditor = new TargetEditor(indices, weights, solution, tr("Optimization target"));
+    Editor* pEditor = new TargetEditor(indices, frequencies, weights, solution, tr("Optimization target"));
     addEditor(pEditor);
+    auto setEdited = [this, &indices, &frequencies, &weights]() { emit targetEdited(indices, frequencies, weights); };
+    connectEditCommand(pEditor, setEdited);
 }
 
 //! Set the current editor to work with
@@ -442,8 +445,48 @@ void EditObject<T>::redo()
     }
 }
 
+MultiEditCommand::MultiEditCommand(QList<EditCommand*> const& commands, QString const& name)
+    : mCommands(commands)
+{
+    setText(QObject::tr("Multiple edits %1").arg(name));
+}
+
+//! Revert the changes
+void MultiEditCommand::undo()
+{
+    try
+    {
+        for (EditCommand* pCommand : std::as_const(mCommands))
+        {
+            pCommand->undo();
+            pCommand->setEdited();
+        }
+    }
+    catch (...)
+    {
+    }
+}
+
+//! Apply the changes
+void MultiEditCommand::redo()
+{
+    try
+    {
+        for (EditCommand* pCommand : std::as_const(mCommands))
+        {
+            pCommand->redo();
+            pCommand->setEdited();
+        }
+    }
+    catch (...)
+    {
+    }
+}
+
 // Explicit template instantiation
 template class Frontend::EditProperty<Backend::Core::ModalOptions>;
 template class Frontend::EditProperty<Backend::Core::FlutterOptions>;
 template class Frontend::EditProperty<Backend::Core::OptimOptions>;
 template class Frontend::EditObject<Backend::Core::Constraints>;
+template class Frontend::EditObject<Eigen::VectorXi>;
+template class Frontend::EditObject<Eigen::VectorXd>;

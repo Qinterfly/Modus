@@ -152,15 +152,11 @@ void TestBackend::testOptimSolverSimpleWing()
     options.numModes = 10;
 
     // Set the objectives
-    ModalSolution solution(eigenSolution);
-    Eigen::VectorXd targetFrequencies = solution.frequencies;
     problem.resize(numModes);
     problem.targetIndices.setLinSpaced(0, numModes - 1);
+    for (int i = 0; i != numModes; ++i)
+        problem.targetFrequencies[i] = eigenSolution.frequencies[problem.targetIndices[i]] * (1.0 + generateDouble({-error, error}));
     problem.targetWeights.setOnes();
-    for (double& value : targetFrequencies)
-        value *= 1.0 + generateDouble({-error, error});
-    problem.targetSolution = ModalSolution(solution.geometry, targetFrequencies, solution.modeShapes);
-    problem.fillMatches();
 
     // Start the solver
     connect(pSolver, &OptimSolver::logAppended, [](QString message) { std::cout << message.toStdString() << std::endl; });

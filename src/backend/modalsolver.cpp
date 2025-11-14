@@ -455,8 +455,8 @@ bool ModalSolver::operator!=(ISolver const* pBaseSolver) const
     return !(this == pBaseSolver);
 }
 
-void ModalSolver::appendLog(QString const& message)
+void ModalSolver::appendLog(QString const& message, QtMsgType type)
 {
-    Utility::appendLog(log, message);
+    Utility::appendLog(log, message, type);
     emit logAppended(message);
 }

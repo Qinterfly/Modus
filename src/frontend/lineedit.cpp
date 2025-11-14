@@ -41,10 +41,12 @@ int IntLineEdit::maximum() const
 //! Set the current value
 void IntLineEdit::setValue(int value)
 {
+    bool isOk = false;
+    int oldValue = text().toInt(&isOk);
+    if (isOk && value == oldValue)
+        return;
     QString newText = QString::number(value);
     mpValidator->fixup(newText);
-    if (newText == text())
-        return;
     setText(newText);
 }
 
@@ -64,6 +66,12 @@ void IntLineEdit::setMaximum(int value)
 void IntLineEdit::setRange(int minimum, int maximum)
 {
     mpValidator->setRange(minimum, maximum);
+}
+
+//! Hide borders using stylesheet
+void IntLineEdit::hideBorders()
+{
+    setStyleSheet(styleSheet().append("border: none;"));
 }
 
 //! Slot function to handle termination of editing
@@ -128,9 +136,11 @@ void DoubleLineEdit::setValue(double value)
 {
     if (isReadOnly())
         return;
-    QString newText = QString::number(value, 'g');
-    if (newText == text())
+    bool isOk = false;
+    double oldValue = text().toDouble(&isOk);
+    if (isOk && std::abs(value - oldValue) < std::numeric_limits<double>::epsilon())
         return;
+    QString newText = QString::number(value, 'g', 6);
     setText(newText);
 }
 
@@ -156,6 +166,12 @@ void DoubleLineEdit::setRange(double minimum, double maximum)
 void DoubleLineEdit::setDecimals(int number)
 {
     mpValidator->setDecimals(number);
+}
+
+//! Hide borders using stylesheet
+void DoubleLineEdit::hideBorders()
+{
+    setStyleSheet(styleSheet().append("border: none;"));
 }
 
 //! Slot function to handle text changes

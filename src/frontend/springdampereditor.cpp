@@ -454,7 +454,7 @@ void SpringDamperEditor::showMatrixEditor(bool isStiffness)
         {
             Edit1d* pEdit = new Edit1d;
             pEdit->setReadOnly(true);
-            pEdit->setStyleSheet(pEdit->styleSheet().append("border: none;"));
+            pEdit->hideBorders();
             pEdit->setAlignment(Qt::AlignCenter);
             pTable->setCellWidget(i, j, pEdit);
         }

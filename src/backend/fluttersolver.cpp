@@ -259,8 +259,8 @@ bool FlutterSolver::operator!=(ISolver const* pBaseSolver) const
     return !(*this == pBaseSolver);
 }
 
-void FlutterSolver::appendLog(QString const& message)
+void FlutterSolver::appendLog(QString const& message, QtMsgType type)
 {
-    Utility::appendLog(log, message);
+    Utility::appendLog(log, message, type);
     emit logAppended(message);
 }

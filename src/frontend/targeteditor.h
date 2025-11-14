@@ -22,8 +22,8 @@ class TargetEditor : public Editor
     Q_OBJECT
 
 public:
-    TargetEditor(Eigen::VectorXi& indices, Eigen::VectorXd& weights, Backend::Core::ModalSolution& solution, QString const& name,
-                 QWidget* pParent = nullptr);
+    TargetEditor(Eigen::VectorXi& indices, Eigen::VectorXd& frequencies, Eigen::VectorXd& weights, Backend::Core::ModalSolution const& solution,
+                 QString const& name, QWidget* pParent = nullptr);
     virtual ~TargetEditor() = default;
 
     QSize sizeHint() const override;
@@ -32,11 +32,15 @@ public:
 private:
     void createContent();
     void createConnections();
+    void setNumModes();
+    void setData();
+    void executeCommand(Eigen::VectorXi const& indices, Eigen::VectorXd const& frequencies, Eigen::VectorXd const& weights);
 
 private:
     Eigen::VectorXi& mIndices;
+    Eigen::VectorXd& mFrequencies;
     Eigen::VectorXd& mWeights;
-    Backend::Core::ModalSolution& mSolution;
+    Backend::Core::ModalSolution const& mSolution;
     Edit1i* mpNumModesEdit;
     CustomTable* mpTable;
 };

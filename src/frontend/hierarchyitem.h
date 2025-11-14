@@ -339,17 +339,19 @@ private:
 class OptimTargetHierarchyItem : public HierarchyItem
 {
 public:
-    OptimTargetHierarchyItem(Eigen::VectorXi& indices, Eigen::VectorXd& weights, Backend::Core::ModalSolution& solution,
-                             Backend::Core::Matches& matches);
+    OptimTargetHierarchyItem(Eigen::VectorXi& indices, Eigen::VectorXd& frequencies, Eigen::VectorXd& weights,
+                             Backend::Core::ModalSolution& solution, Backend::Core::Matches& matches);
     virtual ~OptimTargetHierarchyItem() = default;
 
     Eigen::VectorXi& indices();
+    Eigen::VectorXd& frequencies();
     Eigen::VectorXd& weights();
     Backend::Core::ModalSolution& solution();
     Backend::Core::Matches& matches();
 
 private:
     Eigen::VectorXi& mIndices;
+    Eigen::VectorXd& mFrequencies;
     Eigen::VectorXd& mWeights;
     Backend::Core::ModalSolution& mSolution;
     Backend::Core::Matches& mMatches;

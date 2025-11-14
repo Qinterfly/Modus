@@ -163,9 +163,10 @@ void TestFrontend::testEditorManager()
         pManager->createEditor(pFlutterSolver->options);
     if (pOptimSolver)
     {
+        Core::OptimProblem& problem = pOptimSolver->problem;
         pManager->createEditor(pOptimSolver->options);
-        pManager->createEditor(pOptimSolver->problem.constraints);
-        pManager->createEditor(pOptimSolver->problem.targetIndices, pOptimSolver->problem.targetWeights, pOptimSolver->problem.targetSolution);
+        pManager->createEditor(problem.constraints);
+        pManager->createEditor(problem.targetIndices, problem.targetFrequencies, problem.targetWeights, problem.targetSolution);
     }
     pManager->setCurrentEditor(pManager->numEditors() - 1);
     if (!mpMainWindow->isVisible())

@@ -6,12 +6,14 @@
 #include "modalsolver.h"
 #include "targeteditor.h"
 
+using namespace Backend;
 using namespace Frontend;
 
-TargetEditor::TargetEditor(Eigen::VectorXi& indices, Eigen::VectorXd& weights, Backend::Core::ModalSolution& solution, QString const& name,
-                           QWidget* pParent)
+TargetEditor::TargetEditor(Eigen::VectorXi& indices, Eigen::VectorXd& frequencies, Eigen::VectorXd& weights, Core::ModalSolution const& solution,
+                           QString const& name, QWidget* pParent)
     : Editor(kTarget, name, QIcon(":/icons/target.svg"), pParent)
     , mIndices(indices)
+    , mFrequencies(frequencies)
     , mWeights(weights)
     , mSolution(solution)
 {
@@ -48,12 +50,13 @@ void TargetEditor::refresh()
     mpTable->setHorizontalHeaderLabels({tr("Index"), tr("Frequencies"), tr("Weights")});
 
     // Set the table data
+    bool isSolution = !mSolution.isEmpty();
     for (int i = 0; i != numRows; ++i)
     {
         // Slice data
         int iMode = mIndices[i];
-        double frequency = mSolution.frequencies[iMode];
-        double weight = mWeights[iMode];
+        double frequency = isSolution ? mSolution.frequencies[iMode] : mFrequencies[i];
+        double weight = mWeights[i];
 
         // Create the widgets
         Edit1i* pIndexEdit = new Edit1i;
@@ -61,18 +64,30 @@ void TargetEditor::refresh()
         Edit1d* pWeightEdit = new Edit1d;
 
         // Set the styles
-        pIndexEdit->setStyleSheet(pIndexEdit->styleSheet().append("border: none;"));
-        pFrequencyEdit->setStyleSheet(pFrequencyEdit->styleSheet().append("border: none;"));
-        pWeightEdit->setStyleSheet(pWeightEdit->styleSheet().append("border: none;"));
+        pIndexEdit->hideBorders();
+        pFrequencyEdit->hideBorders();
+        pWeightEdit->hideBorders();
 
-        // Set the minimum values
-        pIndexEdit->setMinimum(1);
+        // Set the text alignment
+        pIndexEdit->setAlignment(Qt::AlignCenter);
+        pFrequencyEdit->setAlignment(Qt::AlignCenter);
+        pWeightEdit->setAlignment(Qt::AlignCenter);
+
+        // Set the limits
+        int maxIndex = isSolution ? mSolution.numModes() : mpNumModesEdit->value();
+        pIndexEdit->setMaximum(maxIndex);
         pFrequencyEdit->setMinimum(0.0);
 
         // Set the current values
         pIndexEdit->setValue(1 + iMode);
         pFrequencyEdit->setValue(frequency);
         pWeightEdit->setValue(weight);
+
+        // Set the connections
+        pFrequencyEdit->setReadOnly(isSolution);
+        connect(pIndexEdit, &Edit1i::valueChanged, this, &TargetEditor::setData);
+        connect(pFrequencyEdit, &Edit1d::valueChanged, this, &TargetEditor::setData);
+        connect(pWeightEdit, &Edit1d::valueChanged, this, &TargetEditor::setData);
 
         // Set the widgets
         mpTable->setCellWidget(i, 0, pIndexEdit);
@@ -114,5 +129,71 @@ void TargetEditor::createContent()
 //! Specify the widget connections
 void TargetEditor::createConnections()
 {
-    // TODO
+    connect(mpNumModesEdit, &Edit1i::valueChanged, this, &TargetEditor::setNumModes);
+}
+
+//! Change number of modes
+void TargetEditor::setNumModes()
+{
+    int oldCount = mIndices.size();
+    int newCount = mpNumModesEdit->value();
+
+    // Allocate the target values
+    Eigen::VectorXi indices(newCount);
+    Eigen::VectorXd frequencies(newCount);
+    Eigen::VectorXd weights(newCount);
+
+    // Initialize the vectors by default values
+    for (int i = 0; i != newCount; ++i)
+    {
+        indices[i] = 0;
+        frequencies[i] = 0.0;
+        weights[i] = 1.0;
+    }
+
+    // Copy the old data
+    int count = std::min(oldCount, newCount);
+    for (int i = 0; i != count; ++i)
+    {
+        indices[i] = mIndices[i];
+        frequencies[i] = mFrequencies[i];
+        weights[i] = mWeights[i];
+    }
+
+    // Apply the changes
+    executeCommand(indices, frequencies, weights);
+
+    // Update the widget
+    refresh();
+}
+
+//! Apply the changes
+void TargetEditor::setData()
+{
+    // Allocate the objects
+    int numModes = mpNumModesEdit->value();
+    Eigen::VectorXi indices(numModes);
+    Eigen::VectorXd frequencies(numModes);
+    Eigen::VectorXd weights(numModes);
+
+    // Set the new values
+    for (int i = 0; i != numModes; ++i)
+    {
+        indices[i] = static_cast<Edit1i*>(mpTable->cellWidget(i, 0))->value() - 1;
+        frequencies[i] = static_cast<Edit1d*>(mpTable->cellWidget(i, 1))->value();
+        weights[i] = static_cast<Edit1d*>(mpTable->cellWidget(i, 2))->value();
+    }
+
+    // Apply the changes
+    executeCommand(indices, frequencies, weights);
+}
+
+//! Apply the changes via command
+void TargetEditor::executeCommand(Eigen::VectorXi const& indices, Eigen::VectorXd const& frequencies, Eigen::VectorXd const& weights)
+{
+    QList<EditCommand*> commands;
+    commands.push_back(new EditObject<Eigen::VectorXi>(mIndices, QString(), indices));
+    commands.push_back(new EditObject<Eigen::VectorXd>(mFrequencies, QString(), frequencies));
+    commands.push_back(new EditObject<Eigen::VectorXd>(mWeights, QString(), weights));
+    emit commandExecuted(new MultiEditCommand(commands, name()));
 }

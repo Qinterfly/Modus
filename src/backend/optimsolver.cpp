@@ -15,11 +15,14 @@ using namespace KCL;
 
 QList<double> getStiffnessVector(SpringDamper const* pElement);
 
-ObjectiveFunctor::ObjectiveFunctor(OptimProblem const& problem, OptimOptions const& options, UnwrapFun unwrapFun, SolverFun solverFun)
-    : mProblem(problem)
+ObjectiveFunctor::ObjectiveFunctor(Eigen::VectorXi const& targetIndices, Eigen::VectorXd const& targetWeights, OptimOptions const& options,
+                                   UnwrapFun unwrapFun, SolverFun solverFun, CompareFun compareFun)
+    : mTargetIndices(targetIndices)
+    , mTargetWeights(targetWeights)
     , mOptions(options)
     , mUnwrapFun(unwrapFun)
     , mSolverFun(solverFun)
+    , mCompareFun(compareFun)
 {
 }
 
@@ -34,18 +37,18 @@ bool ObjectiveFunctor::operator()(double const* const* parameters, double* resid
         return false;
 
     // Compare the solution with the target one
-    ModalComparison comparison = mProblem.targetSolution.compare(solution, mProblem.targetIndices, mProblem.targetMatches, mOptions.minMAC);
+    ModalComparison comparison = mCompareFun(solution);
     if (!comparison.isValid())
         return false;
 
     // Set the residuals
-    int numTargets = mProblem.targetIndices.size();
+    int numTargets = mTargetIndices.size();
     int iResidual = 0;
     for (int i = 0; i != numTargets; ++i)
     {
         double errorFrequency = comparison.errorFrequencies[i];
         double errorMAC = comparison.errorsMAC[i];
-        double weight = mProblem.targetWeights[i];
+        double weight = mTargetWeights[i];
         if (weight > std::numeric_limits<double>::epsilon())
         {
             residuals[iResidual] = weight * (std::pow(errorFrequency, 2.0) + mOptions.penaltyMAC * std::pow(errorMAC, 2.0));
@@ -56,13 +59,17 @@ bool ObjectiveFunctor::operator()(double const* const* parameters, double* resid
     return true;
 }
 
-OptimCallback::OptimCallback(QList<double>& parameterValues, OptimProblem const& problem, OptimOptions const& options, UnwrapFun unwrapFun,
-                             SolverFun solverFun)
+OptimCallback::OptimCallback(QList<double>& parameterValues, Eigen::VectorXi const& targetIndices, Eigen::VectorXd const& targetWeights,
+                             ModalSolution const& targetSolution, OptimOptions const& options, UnwrapFun unwrapFun, SolverFun solverFun,
+                             CompareFun compareFun)
     : mParameterValues(parameterValues)
-    , mProblem(problem)
+    , mTargetIndices(targetIndices)
+    , mTargetWeights(targetWeights)
+    , mTargetSolution(targetSolution)
     , mOptions(options)
     , mUnwrapFun(unwrapFun)
     , mSolverFun(solverFun)
+    , mCompareFun(compareFun)
 {
 }
 
@@ -80,8 +87,7 @@ ceres::CallbackReturnType OptimCallback::operator()(ceres::IterationSummary cons
         return ceres::SOLVER_CONTINUE;
 
     // Compare the solution with the target one
-    ModalComparison modalComparison = mProblem.targetSolution.compare(modalSolution, mProblem.targetIndices, mProblem.targetMatches,
-                                                                      mOptions.minMAC);
+    ModalComparison modalComparison = mCompareFun(modalSolution);
     if (!modalComparison.isValid())
         return ceres::SOLVER_CONTINUE;
 
@@ -95,18 +101,18 @@ ceres::CallbackReturnType OptimCallback::operator()(ceres::IterationSummary cons
     stream << Qt::endl << Qt::endl;
 
     // Print the data
-    int numTargets = mProblem.targetIndices.size();
+    int numTargets = mTargetIndices.size();
     auto constexpr dataFormat = "  {:^3d} {:^3d} {:^9.3f} {:^6.3g} {:^6.3g} {:10.2e}";
     double maxError = 0;
     for (int i = 0; i != numTargets; ++i)
     {
-        int iTargetMode = mProblem.targetIndices[i];
+        int iTargetMode = mTargetIndices[i];
         int iCurrentMode = modalComparison.pairs[i].first;
         double MAC = modalComparison.pairs[i].second;
-        double targetFrequency = mProblem.targetSolution.frequencies[i];
+        double targetFrequency = mTargetSolution.frequencies[i];
         double currentFrequency = modalSolution.frequencies[iCurrentMode];
         double error = modalComparison.errorFrequencies[i] * 100;
-        double weight = mProblem.targetWeights[i];
+        double weight = mTargetWeights[i];
         maxError = std::max(maxError, std::abs(error));
         stream << std::format(dataFormat, 1 + iTargetMode, 1 + iCurrentMode, MAC, currentFrequency, targetFrequency, error).c_str();
         if (weight < std::numeric_limits<double>::epsilon())
@@ -198,7 +204,7 @@ void OptimSolver::solve()
     // Check if the optimization data is valid
     if (!problem.isValid())
     {
-        appendLog("[Error] Optimization data is not valid\n");
+        appendLog("Optimization data is not valid\n", QtMsgType::QtCriticalMsg);
         return;
     }
 
@@ -239,6 +245,17 @@ void OptimSolver::solve()
         std::function<EigenSolution()> fun = [&model, &stream]() { return model.solveEigen(stream); };
         return Utility::solve(fun, options.timeoutIteration);
     };
+    CompareFun compareFun = [this](ModalSolution const& solution)
+    { return mTargetSolution.compare(solution, problem.targetIndices, mTargetMatches, options.minMAC); };
+
+    // Set up the targets
+    setTargetSolution(solverFun);
+    if (mTargetSolution.isEmpty())
+    {
+        emit solverFinished();
+        return;
+    }
+    setTargetMatches();
 
     // Assign options to compute Jacobian
     ceres::NumericDiffOptions diffOptions;
@@ -246,7 +263,7 @@ void OptimSolver::solve()
 
     // Create the cost function
     appendLog("* Constructing the cost function\n");
-    ObjectiveFunctor functor(problem, options, unwrapFun, solverFun);
+    ObjectiveFunctor functor(problem.targetIndices, problem.targetWeights, options, unwrapFun, solverFun, compareFun);
     auto* costFunction = new ceres::DynamicNumericDiffCostFunction<ObjectiveFunctor, ceres::FORWARD>(&functor, ceres::DO_NOT_TAKE_OWNERSHIP,
                                                                                                      diffOptions);
     costFunction->AddParameterBlock(numParameters);
@@ -277,14 +294,15 @@ void OptimSolver::solve()
 
     // Set the callback functions
     ceresOptions.update_state_every_iteration = true;
-    OptimCallback callback(parameterValues, problem, options, unwrapFun, solverFun);
+    OptimCallback callback(parameterValues, problem.targetIndices, problem.targetWeights, mTargetSolution, options, unwrapFun, solverFun,
+                           compareFun);
     connect(&callback, &OptimCallback::iterationFinished, this,
             [this](OptimSolution solution)
             {
                 solutions.push_back(solution);
                 emit iterationFinished(solution);
             });
-    connect(&callback, &OptimCallback::logRequested, this, &OptimSolver::appendLog);
+    connect(&callback, &OptimCallback::logRequested, this, [this](QString const& message) { appendLog(message); });
     ceresOptions.callbacks.push_back(&callback);
 
     // Solve the problem
@@ -303,6 +321,45 @@ void OptimSolver::solve()
     printReport(ceresSummary);
 
     emit solverFinished();
+}
+
+//! Set the target modal solution (compute, if necessary)
+void OptimSolver::setTargetSolution(SolverFun solverFun)
+{
+    mTargetSolution = problem.targetSolution;
+    if (mTargetSolution.isEmpty())
+    {
+        appendLog("* Evaluating the target solution\n");
+        mTargetSolution = solverFun(mInitModel);
+        int numModes = mTargetSolution.numModes();
+        int numTargets = problem.targetIndices.size();
+        for (int i = 0; i != numTargets; ++i)
+        {
+            int iTarget = problem.targetIndices[i];
+            if (iTarget >= 0 && iTarget < numModes)
+            {
+                mTargetSolution.frequencies[iTarget] = problem.targetFrequencies[i];
+            }
+            else
+            {
+                appendLog("Could not set the target modal solution\n", QtMsgType::QtCriticalMsg);
+                break;
+            }
+        }
+    }
+}
+
+//! Set the target matches (fill, if necessary)
+void OptimSolver::setTargetMatches()
+{
+    mTargetMatches = problem.targetMatches;
+    if (mTargetMatches.isEmpty())
+    {
+        int numVertices = mTargetSolution.geometry.numVertices();
+        mTargetMatches.resize(numVertices);
+        for (int i = 0; i != numVertices; ++i)
+            mTargetMatches[i] = {i, i};
+    }
 }
 
 //! Set model parameters for further updating
@@ -763,9 +820,9 @@ void OptimSolver::printReport(ceres::Solver::Summary const& summary)
 }
 
 //! Add a message to a log
-void OptimSolver::appendLog(QString const& message)
+void OptimSolver::appendLog(QString const& message, QtMsgType type)
 {
-    Utility::appendLog(log, message);
+    Utility::appendLog(log, message, type);
     emit logAppended(message);
 }
 
@@ -871,29 +928,20 @@ OptimProblem::~OptimProblem()
 bool OptimProblem::isValid() const
 {
     int numModes = targetIndices.size();
-    bool isSlice = numModes == targetWeights.size() && numModes <= targetSolution.frequencies.size()
-                   && numModes <= targetSolution.modeShapes.size();
-    return !model.isEmpty() && numModes > 0 && isSlice;
+    if (model.isEmpty() || numModes == 0)
+        return false;
+    if (targetSolution.isEmpty())
+        return numModes == targetWeights.size() && numModes == targetFrequencies.size();
+    else
+        return numModes == targetWeights.size() && numModes <= targetSolution.frequencies.size() && numModes <= targetSolution.modeShapes.size();
+    return true;
 }
 
 void OptimProblem::resize(int numModes)
 {
     targetIndices.resize(numModes);
+    targetFrequencies.resize(numModes);
     targetWeights.resize(numModes);
-}
-
-//! Pair all the vertices automatically
-void OptimProblem::fillMatches()
-{
-    if (targetSolution.isEmpty())
-    {
-        qWarning() << QObject::tr("Could not fill the matches because the target solution has not been set");
-        return;
-    }
-    int numVertices = targetSolution.geometry.numVertices();
-    targetMatches.resize(numVertices);
-    for (int i = 0; i != numVertices; ++i)
-        targetMatches[i] = {i, i};
 }
 
 bool OptimProblem::operator==(OptimProblem const& another) const
@@ -911,6 +959,7 @@ void OptimProblem::serialize(QXmlStreamWriter& stream, QString const& elementNam
     stream.writeStartElement(elementName);
     Utility::serialize(stream, "model", model);
     Utility::serialize(stream, "targetIndices", targetIndices);
+    Utility::serialize(stream, "targetFrequencies", targetFrequencies);
     Utility::serialize(stream, "targetWeights", targetWeights);
     targetSolution.serialize(stream, "targetSolution");
     Utility::serialize(stream, "targetMatches", targetMatches);
@@ -927,6 +976,8 @@ void OptimProblem::deserialize(QXmlStreamReader& stream)
             Utility::deserialize(stream, model);
         else if (stream.name() == "targetIndices")
             Utility::deserialize(stream, targetIndices);
+        else if (stream.name() == "targetFrequencies")
+            Utility::deserialize(stream, targetFrequencies);
         else if (stream.name() == "targetWeights")
             Utility::deserialize(stream, targetWeights);
         else if (stream.name() == "targetSolution")

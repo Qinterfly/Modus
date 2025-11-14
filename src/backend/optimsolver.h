@@ -20,6 +20,7 @@ namespace Backend::Core
 
 using UnwrapFun = std::function<KCL::Model(const double* const)>;
 using SolverFun = std::function<KCL::EigenSolution(KCL::Model const&)>;
+using CompareFun = std::function<ModalComparison(ModalSolution const& solution)>;
 using ElementMap = QMap<KCL::ElementType, QList<KCL::AbstractElement*>>;
 
 struct OptimProblem : public ISerializable
@@ -27,6 +28,7 @@ struct OptimProblem : public ISerializable
     Q_GADGET
     Q_PROPERTY(KCL::Model model MEMBER model)
     Q_PROPERTY(Eigen::VectorXi targetIndices MEMBER targetIndices)
+    Q_PROPERTY(Eigen::VectorXd targetFrequencies MEMBER targetFrequencies)
     Q_PROPERTY(Eigen::VectorXd targetWeights MEMBER targetWeights)
     Q_PROPERTY(ModalSolution targetSolution MEMBER targetSolution)
     Q_PROPERTY(Matches targetMatches MEMBER targetMatches)
@@ -39,7 +41,6 @@ public:
 
     bool isValid() const;
     void resize(int numModes);
-    void fillMatches();
 
     bool operator==(OptimProblem const& another) const;
     bool operator!=(OptimProblem const& another) const;
@@ -53,10 +54,13 @@ public:
     //! Indices of the modes to be updated
     Eigen::VectorXi targetIndices;
 
+    //! Frequencies of the modes to be updated
+    Eigen::VectorXd targetFrequencies;
+
     //! Participation factors of mode residuals
     Eigen::VectorXd targetWeights;
 
-    //! Target modal solution
+    //! Target modal solution (optional)
     ModalSolution targetSolution;
 
     //! Vertex correspondence between model and target solutions
@@ -181,9 +185,16 @@ signals:
     void logAppended(QString message);
 
 private:
+    // Process targets
+    void setTargetSolution(SolverFun solverFun);
+    void setTargetMatches();
+
+    // Process model
     void setModelParameters();
     QList<double> wrapModel();
     KCL::Model unwrapModel(QList<double> const& paramValues);
+
+    // Process properties
     Eigen::MatrixXd getProperties(QList<KCL::AbstractElement*> const& elements, VariableType type);
     Eigen::MatrixXd getProperties(KCL::SpringDamper* pElement, QList<bool>& mask);
     void setProperties(Eigen::MatrixXd const& properties, QList<KCL::AbstractElement*>& elements, VariableType type);
@@ -191,8 +202,12 @@ private:
     void wrapProperties(QList<double>& parameterValues, Eigen::MatrixXd const& properties, VariableType type);
     Eigen::MatrixXd unwrapProperties(int& iParameter, QList<double> const& parameterValues, Eigen::MatrixXd const& initProperties,
                                      VariableType type);
+
+    // Logging
     void printReport(ceres::Solver::Summary const& summary);
-    void appendLog(QString const& message);
+    void appendLog(QString const& message, QtMsgType type = QtMsgType::QtInfoMsg);
+
+    // Slicing
     QMap<int, ElementMap> getSurfaceElements(KCL::Model& model);
     QMap<VariableType, QList<int>> getVariableIndices();
     QMap<KCL::ElementType, QList<VariableType>> getElementVariables();
@@ -210,21 +225,26 @@ private:
     Constraints mConstraints;
     QList<double> mParameterScales;
     QList<PairDouble> mParameterBounds;
+    ModalSolution mTargetSolution;
+    Matches mTargetMatches;
 };
 
 //! Functor to compute residuals
 class ObjectiveFunctor
 {
 public:
-    ObjectiveFunctor(OptimProblem const& problem, OptimOptions const& options, UnwrapFun unwrapFun, SolverFun solverFun);
+    ObjectiveFunctor(Eigen::VectorXi const& targetIndices, Eigen::VectorXd const& targetWeights, OptimOptions const& options,
+                     UnwrapFun unwrapFun, SolverFun solverFun, CompareFun compareFun);
     ~ObjectiveFunctor() = default;
     bool operator()(double const* const* parameters, double* residuals) const;
 
 private:
-    OptimProblem const& mProblem;
+    Eigen::VectorXi const& mTargetIndices;
+    Eigen::VectorXd const& mTargetWeights;
     OptimOptions const& mOptions;
     UnwrapFun mUnwrapFun;
     SolverFun mSolverFun;
+    CompareFun mCompareFun;
 };
 
 //! Functor to be called after every optimization iteration
@@ -233,7 +253,9 @@ class OptimCallback : public QObject, public ceres::IterationCallback
     Q_OBJECT
 
 public:
-    OptimCallback(QList<double>& parameters, OptimProblem const& problem, OptimOptions const& options, UnwrapFun unwrapFun, SolverFun solverFun);
+    OptimCallback(QList<double>& parameters, Eigen::VectorXi const& targetIndices, Eigen::VectorXd const& targetWeights,
+                  ModalSolution const& targetSolution, OptimOptions const& options, UnwrapFun unwrapFun, SolverFun solverFun,
+                  CompareFun compareFun);
     ceres::CallbackReturnType operator()(ceres::IterationSummary const& summary);
 
 signals:
@@ -242,10 +264,13 @@ signals:
 
 private:
     QList<double>& mParameterValues;
-    OptimProblem const& mProblem;
+    Eigen::VectorXi const& mTargetIndices;
+    Eigen::VectorXd const& mTargetWeights;
+    ModalSolution const& mTargetSolution;
     OptimOptions const& mOptions;
     UnwrapFun mUnwrapFun;
     SolverFun mSolverFun;
+    CompareFun mCompareFun;
 };
 }
 

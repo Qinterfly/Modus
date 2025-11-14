@@ -797,7 +797,7 @@ void GeometryView::showSettingsEditor()
         Edit1d* pScaleEdit = new Edit1d;
         pScaleEdit->setValue(scale);
         pScaleEdit->setAlignment(Qt::AlignCenter);
-        pScaleEdit->setStyleSheet(pScaleEdit->styleSheet().append("border: none;"));
+        pScaleEdit->hideBorders();
         connect(pScaleEdit, &Edit1d::valueChanged, this, updateFun);
         pTable->setCellWidget(i, 2, pScaleEdit);
 
@@ -807,7 +807,7 @@ void GeometryView::showSettingsEditor()
         Edit1d* pPhaseEdit = new Edit1d;
         pPhaseEdit->setValue(qRadiansToDegrees(phase));
         pPhaseEdit->setAlignment(Qt::AlignCenter);
-        pPhaseEdit->setStyleSheet(pPhaseEdit->styleSheet().append("border: none;"));
+        pPhaseEdit->hideBorders();
         connect(pPhaseEdit, &Edit1d::valueChanged, this, updateFun);
         pTable->setCellWidget(i, 3, pPhaseEdit);
     }

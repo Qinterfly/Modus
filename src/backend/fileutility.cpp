@@ -57,11 +57,27 @@ QString toString(QVariant const& variant)
     return QString();
 }
 
-void appendLog(QString& log, QString const& message, bool isTime)
+void appendLog(QString& log, QString const& message, QtMsgType type)
 {
     QTextStream stream(&log);
-    if (isTime)
-        stream << Qt::endl << QString("[%1]").arg(QTime::currentTime().toString()) << Qt::endl;
+    QString prefix;
+    switch (type)
+    {
+    case QtMsgType::QtWarningMsg:
+        prefix = "Warning";
+        break;
+    case QtMsgType::QtFatalMsg:
+        prefix = "Error";
+        break;
+    case QtMsgType::QtCriticalMsg:
+        prefix = "Error";
+        break;
+    default:
+        break;
+    }
+    stream << Qt::endl << QString("[%1]").arg(QTime::currentTime().toString()) << Qt::endl;
+    if (!prefix.isEmpty())
+        stream << QString("[%1]: ").arg(prefix);
     stream << message;
 }
 

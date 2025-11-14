@@ -347,6 +347,12 @@ void ProjectBrowser::createItemEditor(HierarchyItem* pBaseItem)
     case HierarchyItem::kOptimConstraints:
         mpEditorManager->createEditor(static_cast<OptimConstraintsHierarchyItem*>(pBaseItem)->constraints());
         break;
+    case HierarchyItem::kOptimTarget:
+    {
+        OptimTargetHierarchyItem* pItem = (OptimTargetHierarchyItem*) pBaseItem;
+        mpEditorManager->createEditor(pItem->indices(), pItem->frequencies(), pItem->weights(), pItem->solution());
+        break;
+    }
     default:
         break;
     }

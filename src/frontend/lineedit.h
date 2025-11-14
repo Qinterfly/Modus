@@ -28,6 +28,8 @@ public:
     void setMaximum(int value);
     void setRange(int minimum, int maximum);
 
+    void hideBorders();
+
 signals:
     void valueChanged();
 
@@ -58,6 +60,8 @@ public:
     void setMaximum(double value);
     void setRange(double minimum, double maximum);
     void setDecimals(int number);
+
+    void hideBorders();
 
 signals:
     void valueChanged();
