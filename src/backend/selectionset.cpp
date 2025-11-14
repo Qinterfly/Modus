@@ -37,12 +37,17 @@ bool SelectionSet::isSelected(Selection const& selection) const
 
 int SelectionSet::numSelected() const
 {
-    int result = 0;
+    return selected().size();
+}
+
+QList<Selection> SelectionSet::selected() const
+{
+    QList<Selection> result;
     QList<Selection> const selections = mDataSet.keys();
     for (Selection const& selection : selections)
     {
         if (mDataSet[selection])
-            ++result;
+            result.push_back(selection);
     }
     return result;
 }

@@ -34,6 +34,7 @@ struct OptimOptions;
 struct OptimSolution;
 struct OptimTarget;
 class Selector;
+class SelectionSet;
 class Constraints;
 struct Selection;
 }
@@ -65,6 +66,7 @@ public:
         kOptimOptions,
         kOptimTarget,
         kOptimSelector,
+        kOptimSelectionSet,
         kOptimConstraints,
         kGroupOptimSolutions,
         kOptimSolution,
@@ -358,7 +360,22 @@ public:
     Backend::Core::Selector& selector();
 
 private:
+    void appendChildren();
+
     Backend::Core::Selector& mSelector;
+};
+
+class OptimSelectionSetHierarchyItem : public HierarchyItem
+{
+public:
+    OptimSelectionSetHierarchyItem(Backend::Core::SelectionSet& selectionSet, QString const& name);
+    virtual ~OptimSelectionSetHierarchyItem() = default;
+
+    Backend::Core::SelectionSet& selectionSet();
+    KCL::Model* kclModel();
+
+private:
+    Backend::Core::SelectionSet& mSelectionSet;
 };
 
 class OptimConstraintsHierarchyItem : public HierarchyItem

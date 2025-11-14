@@ -110,7 +110,7 @@ signals:
     void flutterOptionsEdited(Backend::Core::FlutterOptions& options);
     void optimOptionsEdited(Backend::Core::OptimOptions& options);
     void constraintsEdited(Backend::Core::Constraints& constraints);
-    void targetEdited(Backend::Core::OptimTarget& target);
+    void optimTargetEdited(Backend::Core::OptimTarget& target);
 
 private:
     void createContent();

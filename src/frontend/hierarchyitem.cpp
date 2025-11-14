@@ -672,11 +672,41 @@ OptimSelectorHierarchyItem::OptimSelectorHierarchyItem(Core::Selector& selector)
     : HierarchyItem(kOptimSelector, QIcon(":/icons/selector.svg"), QObject::tr("Selector"))
     , mSelector(selector)
 {
+    appendChildren();
 }
 
 Core::Selector& OptimSelectorHierarchyItem::selector()
 {
     return mSelector;
+}
+
+void OptimSelectorHierarchyItem::appendChildren()
+{
+    int numSets = mSelector.numSets();
+    for (int i = 0; i != numSets; ++i)
+    {
+        QString name = QObject::tr("Selection Set %1").arg(1 + i);
+        appendRow(new OptimSelectionSetHierarchyItem(mSelector.get(i), name));
+    }
+}
+
+OptimSelectionSetHierarchyItem::OptimSelectionSetHierarchyItem(Core::SelectionSet& selectionSet, QString const& name)
+    : HierarchyItem(kOptimSelectionSet, QIcon(":/icons/selection-set.png"), name)
+    , mSelectionSet(selectionSet)
+{
+}
+
+Core::SelectionSet& OptimSelectionSetHierarchyItem::selectionSet()
+{
+    return mSelectionSet;
+}
+
+KCL::Model* OptimSelectionSetHierarchyItem::kclModel()
+{
+    HierarchyItem* pBaseItem = Utility::findParentByType(this, HierarchyItem::kOptimSolver);
+    if (pBaseItem)
+        return &static_cast<OptimSolverHierarchyItem*>(pBaseItem)->solver()->problem.model;
+    return nullptr;
 }
 
 OptimConstraintsHierarchyItem::OptimConstraintsHierarchyItem(Core::Constraints& constraints)

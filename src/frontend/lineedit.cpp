@@ -41,13 +41,11 @@ int IntLineEdit::maximum() const
 //! Set the current value
 void IntLineEdit::setValue(int value)
 {
-    bool isOk = false;
-    int oldValue = text().toInt(&isOk);
-    if (isOk && value == oldValue)
-        return;
     QString newText = QString::number(value);
     mpValidator->fixup(newText);
-    setText(newText);
+    if (newText != mPreviousText)
+        setText(newText);
+    mPreviousText = newText;
 }
 
 //! Set the lower value boundary
@@ -79,8 +77,13 @@ void IntLineEdit::processEditingFinished()
 {
     int position = 0;
     QString newText = text();
-    if (mpValidator->validate(newText, position) == QValidator::Acceptable)
-        emit valueChanged();
+    auto state = mpValidator->validate(newText, position);
+    if (state == QValidator::Acceptable)
+    {
+        if (mPreviousText != newText)
+            emit valueChanged();
+        mPreviousText = newText;
+    }
 }
 
 DoubleLineEdit::DoubleLineEdit(QWidget* pParent)
@@ -136,12 +139,10 @@ void DoubleLineEdit::setValue(double value)
 {
     if (isReadOnly())
         return;
-    bool isOk = false;
-    double oldValue = text().toDouble(&isOk);
-    if (isOk && std::abs(value - oldValue) < std::numeric_limits<double>::epsilon())
-        return;
     QString newText = QString::number(value, 'g', 6);
-    setText(newText);
+    if (mPreviousText != newText)
+        setText(newText);
+    mPreviousText = newText;
 }
 
 //! Set the lower value boundary
@@ -184,6 +185,7 @@ void DoubleLineEdit::processTextEdited()
         QSignalBlocker blocker(this);
         newText.replace(",", ".");
         setText(newText);
+        mPreviousText = newText;
     }
 }
 
@@ -194,5 +196,9 @@ void DoubleLineEdit::processEditingFinished()
     QString newText = text();
     auto state = mpValidator->validate(newText, position);
     if (state == QValidator::Acceptable)
-        emit valueChanged();
+    {
+        if (mPreviousText != newText)
+            emit valueChanged();
+        mPreviousText = newText;
+    }
 }

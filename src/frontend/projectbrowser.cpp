@@ -154,6 +154,7 @@ void ProjectBrowser::createContent()
     connect(mpEditorManager, &EditorManager::flutterOptionsEdited, this, &ProjectBrowser::edited);
     connect(mpEditorManager, &EditorManager::optimOptionsEdited, this, &ProjectBrowser::edited);
     connect(mpEditorManager, &EditorManager::constraintsEdited, this, &ProjectBrowser::edited);
+    connect(mpEditorManager, &EditorManager::optimTargetEdited, this, &ProjectBrowser::edited);
 
     // Create the view widget
     mpView = new QTreeView;

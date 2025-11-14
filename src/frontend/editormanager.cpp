@@ -186,7 +186,7 @@ void EditorManager::createEditor(Core::OptimTarget& target)
 {
     Editor* pEditor = new TargetEditor(target, tr("Optimization target"));
     addEditor(pEditor);
-    auto setEdited = [this, &target]() { emit targetEdited(target); };
+    auto setEdited = [this, &target]() { emit optimTargetEdited(target); };
     connectEditCommand(pEditor, setEdited);
 }
 
@@ -277,6 +277,7 @@ void EditorManager::addEditor(Editor* pEditor)
     mpEditorsList->addItem(pEditor->icon(), pEditor->name());
 }
 
+//! Set the connections for editing command
 void EditorManager::connectEditCommand(Editor* pEditor, std::function<void()> setEdited)
 {
     if (!pEditor)

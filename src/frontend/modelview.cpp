@@ -1008,7 +1008,7 @@ int ModelViewSelector::numSelected() const
 }
 
 //! Retrieve selected model entities
-QList<Backend::Core::Selection> ModelViewSelector::selected() const
+QList<Core::Selection> ModelViewSelector::selected() const
 {
     QList<Core::Selection> result;
     QList<vtkActor*> actors = mSelection.keys();
@@ -1098,7 +1098,7 @@ void ModelViewSelector::select(vtkActor* actor, Flags flags)
 }
 
 //! Select all the actors associated with a model entity
-void ModelViewSelector::select(Backend::Core::Selection key, Flags flags)
+void ModelViewSelector::select(Core::Selection key, Flags flags)
 {
     // Check if there are any actors to select
     if (!mActors.contains(key))
@@ -1113,6 +1113,14 @@ void ModelViewSelector::select(Backend::Core::Selection key, Flags flags)
     int numValues = values.size();
     for (int i = 0; i != numValues; ++i)
         select(values[i], ModelViewSelector::kMultipleSelection);
+}
+
+//! Select all the actors associated with a set of model entities
+void ModelViewSelector::select(QList<Core::Selection> const& keys)
+{
+    int numKeys = keys.size();
+    for (int i = 0; i != numKeys; ++i)
+        select(keys[i], ModelViewSelector::kMultipleSelection);
 }
 
 //! Remove the actor from the selection set
@@ -1137,7 +1145,7 @@ void ModelViewSelector::deselect(vtkActor* actor)
 }
 
 //! Deselect all the actors associated with a model entity
-void ModelViewSelector::deselect(Backend::Core::Selection key)
+void ModelViewSelector::deselect(Core::Selection key)
 {
     if (!mActors.contains(key))
         return;
@@ -1162,7 +1170,7 @@ void ModelViewSelector::deselectAll()
 }
 
 //! Construct the reference from the model selection to the actor on the scene
-void ModelViewSelector::registerActor(Backend::Core::Selection const& key, vtkActor* value)
+void ModelViewSelector::registerActor(Core::Selection const& key, vtkActor* value)
 {
     mActors[key].push_back(value);
 }
@@ -1181,7 +1189,7 @@ Core::Selection ModelViewSelector::find(vtkActor* actor) const
 }
 
 //! Find a list of actors by selection
-QList<vtkActor*> ModelViewSelector::find(Backend::Core::Selection selection)
+QList<vtkActor*> ModelViewSelector::find(Core::Selection selection)
 {
     if (mActors.contains(selection))
         return mActors[selection];

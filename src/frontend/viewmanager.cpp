@@ -287,8 +287,8 @@ IView* ViewManager::createTableView(Core::ModalSolution const& solution, QString
 void ViewManager::processItems(QList<HierarchyItem*> const& items)
 {
     // Constants
-    QSet<HierarchyItem::Type> kModelTypes = {HierarchyItem::kSubproject, HierarchyItem::kModel, HierarchyItem::kSurface,
-                                             HierarchyItem::kGroupElements, HierarchyItem::kElement};
+    QSet<HierarchyItem::Type> kModelTypes = {HierarchyItem::kSubproject,    HierarchyItem::kModel,   HierarchyItem::kSurface,
+                                             HierarchyItem::kGroupElements, HierarchyItem::kElement, HierarchyItem::kOptimSelectionSet};
     QSet<HierarchyItem::Type> kGeometryTypes = {HierarchyItem::kModalSolution, HierarchyItem::kModalFrequencies, HierarchyItem::kModalPole};
     QSet<HierarchyItem::Type> kFlutterTypes = {HierarchyItem::kFlutterSolution, HierarchyItem::kFlutterRoots, HierarchyItem::kFlutterCritData};
 
@@ -384,6 +384,25 @@ void ViewManager::processModelItems(QList<HierarchyItem*> const& items, QSet<IVi
 
             // Add the selection set to the view
             pView->selector().select(selection, ModelViewSelector::kMultipleSelection);
+            break;
+        }
+        case HierarchyItem::kOptimSelectionSet:
+        {
+            OptimSelectionSetHierarchyItem* pItem = (OptimSelectionSetHierarchyItem*) pBaseItem;
+
+            // Slice the model
+            KCL::Model* pModel = pItem->kclModel();
+            if (!pModel)
+                continue;
+
+            // Create the view, if necessary
+            QString label = getViewName(pItem);
+            pView = (ModelView*) createModelView(*pModel, label);
+            if (!modifiedViews.contains(pView))
+                pView->selector().deselectAll();
+
+            // Add the selection set to the view
+            pView->selector().select(pItem->selectionSet().selected());
             break;
         }
         default:

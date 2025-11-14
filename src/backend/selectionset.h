@@ -67,6 +67,7 @@ public:
     QString const& name() const;
     bool isSelected(Selection const& selection) const;
     int numSelected() const;
+    QList<Selection> selected() const;
     QMap<Selection, bool> const& selections() const;
 
     void selectAll();

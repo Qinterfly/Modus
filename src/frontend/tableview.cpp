@@ -94,16 +94,20 @@ void TableView::createContent()
     // Create the text widget
     mpTable = new CustomTable;
     mpTable->setSizeAdjustPolicy(QTableWidget::AdjustToContents);
-    mpTable->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    mpTable->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
     mpTable->horizontalHeader()->setVisible(false);
     mpTable->verticalHeader()->setVisible(false);
 
-    // Set the layout
-    QHBoxLayout* pLayout = new QHBoxLayout;
-    pLayout->addWidget(mpTable);
-    pLayout->setAlignment(Qt::AlignTop);
-    pLayout->addStretch();
-    setLayout(pLayout);
+    // Set the table layout
+    QHBoxLayout* pTableLayout = new QHBoxLayout;
+    pTableLayout->addWidget(mpTable);
+    pTableLayout->addStretch();
+
+    // Set the main layout
+    QVBoxLayout* pMainLayout = new QVBoxLayout;
+    pMainLayout->addLayout(pTableLayout);
+    pMainLayout->addStretch();
+    setLayout(pMainLayout);
 }
 
 //! Set vector data

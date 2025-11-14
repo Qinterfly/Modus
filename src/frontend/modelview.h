@@ -61,6 +61,7 @@ public:
     void selectAll();
     void select(vtkActor* actor, Flags flags);
     void select(Backend::Core::Selection key, Flags flags);
+    void select(QList<Backend::Core::Selection> const& keys);
     void deselect(vtkActor* actor);
     void deselect(Backend::Core::Selection key);
     void deselectAll();

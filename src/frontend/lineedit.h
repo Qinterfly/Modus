@@ -38,6 +38,7 @@ private:
 
 private:
     QIntValidator* mpValidator;
+    QString mPreviousText;
 };
 
 //! Line editor of double values
@@ -72,6 +73,7 @@ private:
 
 private:
     QDoubleValidator* mpValidator;
+    QString mPreviousText;
 };
 
 }
