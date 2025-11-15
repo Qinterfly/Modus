@@ -5,10 +5,10 @@
 #include <ceres/ceres.h>
 #include <kcl/model.h>
 
-#include "constraints.h"
 #include "isolver.h"
 #include "modalsolver.h"
-#include "selector.h"
+#include "optimconstraints.h"
+#include "optimselector.h"
 
 namespace KCL
 {
@@ -66,8 +66,8 @@ struct OptimProblem : public ISerializable
     Q_GADGET
     Q_PROPERTY(KCL::Model model MEMBER model)
     Q_PROPERTY(OptimTarget target MEMBER target)
-    Q_PROPERTY(Selector selector MEMBER selector)
-    Q_PROPERTY(Constraints constraints MEMBER constraints)
+    Q_PROPERTY(OptimSelector selector MEMBER selector)
+    Q_PROPERTY(OptimConstraints constraints MEMBER constraints)
 
 public:
     OptimProblem();
@@ -88,10 +88,10 @@ public:
     OptimTarget target;
 
     //! Selection of entities to be updated
-    Selector selector;
+    OptimSelector selector;
 
     //! Optimization constraints
-    Constraints constraints;
+    OptimConstraints constraints;
 };
 
 struct OptimOptions : public ISerializable
@@ -244,7 +244,7 @@ public:
 private:
     KCL::Model mInitModel;
     QList<Selection> mSelections;
-    Constraints mConstraints;
+    OptimConstraints mConstraints;
     QList<double> mParameterScales;
     QList<PairDouble> mParameterBounds;
     OptimTarget mTarget;

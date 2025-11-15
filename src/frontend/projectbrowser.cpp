@@ -254,6 +254,8 @@ void ProjectBrowser::processContextMenuRequest(QPoint const& point)
 
     // Create the item associated actions
     createModelActions(pMenu, items);
+    createSelectorActions(pMenu, items);
+    createSelectionSetActions(pMenu, items);
 
     // Fill up the menu with the common actions
     if (!pMenu->actions().isEmpty())
@@ -425,6 +427,86 @@ void ProjectBrowser::createModelActions(QMenu* pMenu, QList<HierarchyItem*> cons
         pMenu->addSeparator();
     pMenu->addAction(pOpenAction);
     pMenu->addAction(pSaveAsAction);
+}
+
+//! Create selector associated actions
+void ProjectBrowser::createSelectorActions(QMenu* pMenu, QList<HierarchyItem*> const& items)
+{
+    // Obtain the selector hierarchy item
+    if (items.size() != 1)
+        return;
+    HierarchyItem* pBaseItem = items.first();
+    if (pBaseItem->type() != HierarchyItem::kOptimSelector)
+        return;
+    OptimSelectorHierarchyItem* pItem = (OptimSelectorHierarchyItem*) pBaseItem;
+    Core::OptimSelector* pSelector = &pItem->selector();
+    KCL::Model* pModel = pItem->kclModel();
+
+    // Create the actions
+    QAction* pAddAction = new QAction(QIcon(":/icons/list-add.svg"), tr("&Add selection set"), this);
+    QAction* pClearAction = new QAction(QIcon(":/icons/list-remove.svg"), tr("&Remove all selection sets"), this);
+
+    // Set the connections
+    connect(pAddAction, &QAction::triggered, this,
+            [this, pSelector, pModel]()
+            {
+                pSelector->add(*pModel);
+                refresh();
+                emit edited();
+            });
+    connect(pClearAction, &QAction::triggered, this,
+            [this, pSelector]()
+            {
+                pSelector->clear();
+                refresh();
+                emit edited();
+            });
+
+    // Add the actions to the menu
+    if (!pMenu->actions().isEmpty())
+        pMenu->addSeparator();
+    pMenu->addAction(pAddAction);
+    pMenu->addAction(pClearAction);
+}
+
+//! Create selection associated actions
+void ProjectBrowser::createSelectionSetActions(QMenu* pMenu, QList<HierarchyItem*> const& items)
+{
+    // Obtain the selection set hierarchy item
+    if (items.size() != 1)
+        return;
+    HierarchyItem* pBaseItem = items.first();
+    if (pBaseItem->type() != HierarchyItem::kOptimSelectionSet)
+        return;
+    OptimSelectionSetHierarchyItem* pItem = (OptimSelectionSetHierarchyItem*) pBaseItem;
+
+    // Get the data
+    KCL::Model* pModel = pItem->kclModel();
+    if (!pModel)
+        return;
+    Core::SelectionSet* pSelectionSet = &pItem->selectionSet();
+    int iSelectionSet = pItem->iSelectionSet();
+    Core::OptimSelector* pSelector = &pItem->selector();
+
+    // Create the actions
+    QAction* pSetAction = new QAction(QIcon(":/icons/edit-select.svg"), tr("&Set by view"), this);
+    QAction* pRemoveAction = new QAction(QIcon(":/icons/list-remove.svg"), tr("&Remove"), this);
+
+    // Set the connections
+    connect(pSetAction, &QAction::triggered, this, [this, pModel, pSelectionSet]() { emit requestSetSelectionByView(*pModel, *pSelectionSet); });
+    connect(pRemoveAction, &QAction::triggered, this,
+            [this, pSelector, iSelectionSet]()
+            {
+                pSelector->remove(iSelectionSet);
+                refresh();
+                emit edited();
+            });
+
+    // Add the actions to the menu
+    if (!pMenu->actions().isEmpty())
+        pMenu->addSeparator();
+    pMenu->addAction(pSetAction);
+    pMenu->addAction(pRemoveAction);
 }
 
 //! Set selected and expanded states of the tree model

@@ -268,10 +268,10 @@ bool areEqual(QVariant const& first, QVariant const& second)
         flag = first.value<ModalSolution>() == second.value<ModalSolution>();
     else if (type == qMetaTypeId<ModalComparison>())
         flag = first.value<ModalComparison>() == second.value<ModalComparison>();
-    else if (type == qMetaTypeId<Constraints>())
-        flag = first.value<Constraints>() == second.value<Constraints>();
-    else if (type == qMetaTypeId<Selector>())
-        flag = first.value<Selector>() == second.value<Selector>();
+    else if (type == qMetaTypeId<OptimConstraints>())
+        flag = first.value<OptimConstraints>() == second.value<OptimConstraints>();
+    else if (type == qMetaTypeId<OptimSelector>())
+        flag = first.value<OptimSelector>() == second.value<OptimSelector>();
     else if (type == qMetaTypeId<OptimProblem>())
         flag = first.value<OptimProblem>() == second.value<OptimProblem>();
     else if (type == qMetaTypeId<OptimTarget>())

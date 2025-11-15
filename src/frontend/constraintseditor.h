@@ -1,7 +1,7 @@
 #ifndef CONSTRAINTSEDITOR_H
 #define CONSTRAINTSEDITOR_H
 
-#include "constraints.h"
+#include "optimconstraints.h"
 #include "editormanager.h"
 #include "uialiasdata.h"
 
@@ -21,7 +21,7 @@ class ConstraintsEditor : public Editor
     Q_OBJECT
 
 public:
-    ConstraintsEditor(Backend::Core::Constraints& constraints, QString const& name, QWidget* pParent = nullptr);
+    ConstraintsEditor(Backend::Core::OptimConstraints& constraints, QString const& name, QWidget* pParent = nullptr);
     virtual ~ConstraintsEditor() = default;
 
     QSize sizeHint() const override;
@@ -35,7 +35,7 @@ private:
     void updateBoundEdits();
 
 private:
-    Backend::Core::Constraints& mConstraints;
+    Backend::Core::OptimConstraints& mConstraints;
     CustomTable* mpTable;
     variableBoolEdits mEnabledEdits;
     variableBoolEdits mUnitedEdits;

@@ -91,6 +91,13 @@ void SelectionSet::setSelected(Selection const& selection, bool flag)
         mDataSet[selection] = flag;
 }
 
+//! Set the selected state of the elements
+void SelectionSet::setSelected(QList<Selection> const& selections, bool flag)
+{
+    for (Selection const& selection : selections)
+        setSelected(selection, flag);
+}
+
 //! Set the selected state by surface index
 void SelectionSet::setSelected(int iSurface, bool flag)
 {

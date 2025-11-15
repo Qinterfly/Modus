@@ -325,6 +325,21 @@ void ViewManager::processItems(QList<HierarchyItem*> const& items)
         (*iter)->refresh();
 }
 
+//! Set the selection set by the model view
+void ViewManager::setSelectionByView(KCL::Model& model, Core::SelectionSet& selectionSet)
+{
+    // Find the view
+    IView* pBaseView = findModelView(model);
+    if (!pBaseView)
+        return;
+    ModelView* pView = (ModelView*) pBaseView;
+
+    // Copy the selection
+    QList<Core::Selection> selections = pView->selector().selected();
+    selectionSet.selectNone();
+    selectionSet.setSelected(selections, true);
+}
+
 //! Process hierarchy items associated with the ModelView
 void ViewManager::processModelItems(QList<HierarchyItem*> const& items, QSet<IView*>& modifiedViews)
 {

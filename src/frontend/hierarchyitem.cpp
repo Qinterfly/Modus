@@ -668,37 +668,60 @@ Core::OptimTarget& OptimTargetHierarchyItem::target()
     return mTarget;
 }
 
-OptimSelectorHierarchyItem::OptimSelectorHierarchyItem(Core::Selector& selector)
-    : HierarchyItem(kOptimSelector, QIcon(":/icons/selector.svg"), QObject::tr("Selector"))
+OptimSelectorHierarchyItem::OptimSelectorHierarchyItem(Core::OptimSelector& selector)
+    : HierarchyItem(kOptimSelector, QIcon(":/icons/selector.svg"), QObject::tr("OptimSelector"))
     , mSelector(selector)
 {
     appendChildren();
 }
 
-Core::Selector& OptimSelectorHierarchyItem::selector()
+Core::OptimSelector& OptimSelectorHierarchyItem::selector()
 {
     return mSelector;
+}
+
+KCL::Model* OptimSelectorHierarchyItem::kclModel()
+{
+    HierarchyItem* pFoundItem = Utility::findParentByType(this, HierarchyItem::kOptimSolver);
+    if (pFoundItem)
+        return &static_cast<OptimSolverHierarchyItem*>(pFoundItem)->solver()->problem.model;
+    return nullptr;
 }
 
 void OptimSelectorHierarchyItem::appendChildren()
 {
     int numSets = mSelector.numSets();
     for (int i = 0; i != numSets; ++i)
-    {
-        QString name = QObject::tr("Selection Set %1").arg(1 + i);
-        appendRow(new OptimSelectionSetHierarchyItem(mSelector.get(i), name));
-    }
+        appendRow(new OptimSelectionSetHierarchyItem(mSelector, i));
 }
 
-OptimSelectionSetHierarchyItem::OptimSelectionSetHierarchyItem(Core::SelectionSet& selectionSet, QString const& name)
-    : HierarchyItem(kOptimSelectionSet, QIcon(":/icons/selection-set.png"), name)
-    , mSelectionSet(selectionSet)
+OptimSelectionSetHierarchyItem::OptimSelectionSetHierarchyItem(Core::OptimSelector& selector, int iSelectionSet)
+    : HierarchyItem(kOptimSelectionSet)
+    , mSelector(selector)
+    , mISelectionSet(iSelectionSet)
 {
+    setEditable(true);
+    setIcon(QIcon(":/icons/selection-set.png"));
+    Core::SelectionSet const& currentSet = selectionSet();
+    QString name = currentSet.name();
+    if (name.isEmpty())
+        name = QObject::tr("Selection Set %1 (N = %2)").arg(1 + mISelectionSet).arg(currentSet.numSelected());
+    setText(name);
+}
+
+Backend::Core::OptimSelector& OptimSelectionSetHierarchyItem::selector()
+{
+    return mSelector;
 }
 
 Core::SelectionSet& OptimSelectionSetHierarchyItem::selectionSet()
 {
-    return mSelectionSet;
+    return mSelector.get(mISelectionSet);
+}
+
+int OptimSelectionSetHierarchyItem::iSelectionSet()
+{
+    return mISelectionSet;
 }
 
 KCL::Model* OptimSelectionSetHierarchyItem::kclModel()
@@ -709,13 +732,13 @@ KCL::Model* OptimSelectionSetHierarchyItem::kclModel()
     return nullptr;
 }
 
-OptimConstraintsHierarchyItem::OptimConstraintsHierarchyItem(Core::Constraints& constraints)
-    : HierarchyItem(kOptimConstraints, QIcon(":/icons/constraints.png"), QObject::tr("Constraints"))
+OptimConstraintsHierarchyItem::OptimConstraintsHierarchyItem(Core::OptimConstraints& constraints)
+    : HierarchyItem(kOptimConstraints, QIcon(":/icons/constraints.png"), QObject::tr("OptimConstraints"))
     , mConstraints(constraints)
 {
 }
 
-Core::Constraints& OptimConstraintsHierarchyItem::constraints()
+Core::OptimConstraints& OptimConstraintsHierarchyItem::constraints()
 {
     return mConstraints;
 }

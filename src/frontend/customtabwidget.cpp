@@ -66,7 +66,7 @@ bool CustomTabWidget::eventFilter(QObject* pObject, QEvent* pEvent)
                     QAction* pCloseAllAction = new QAction(tr("&Close all tabs"), this);
 
                     // Set the icons
-                    pCloseAction->setIcon(QIcon(":/icons/edit-delete.svg"));
+                    pCloseAction->setIcon(QIcon(":/icons/edit-remove.svg"));
                     pRenameAction->setIcon(QIcon(":/icons/edit-edit.svg"));
 
                     // Set the connections

@@ -21,6 +21,7 @@ class Subproject;
 struct Geometry;
 struct ModalSolution;
 struct FlutterSolution;
+class SelectionSet;
 }
 
 namespace Frontend
@@ -62,6 +63,7 @@ public:
     IView* createTableView(Backend::Core::ModalSolution const& solution, QString const& name = QString());
 
     void processItems(QList<HierarchyItem*> const& items);
+    void setSelectionByView(KCL::Model& model, Backend::Core::SelectionSet& selectionSet);
     void refresh();
     void plot();
     void replot(KCL::Model const& model);

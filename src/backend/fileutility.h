@@ -9,7 +9,7 @@
 #include <QString>
 #include <QXmlStreamWriter>
 
-#include "constraints.h"
+#include "optimconstraints.h"
 #include "iserializable.h"
 #include "isolver.h"
 

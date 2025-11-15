@@ -23,7 +23,7 @@ struct Selection;
 struct ModalOptions;
 struct FlutterOptions;
 struct OptimOptions;
-class Constraints;
+class OptimConstraints;
 struct ModalSolution;
 struct OptimProblem;
 struct OptimTarget;
@@ -99,7 +99,7 @@ public:
     void createEditor(Backend::Core::ModalOptions& options);
     void createEditor(Backend::Core::FlutterOptions& options);
     void createEditor(Backend::Core::OptimOptions& options);
-    void createEditor(Backend::Core::Constraints& constraints);
+    void createEditor(Backend::Core::OptimConstraints& constraints);
     void createEditor(Backend::Core::OptimTarget& target);
     void setCurrentEditor(int index);
     void refreshCurrentEditor();
@@ -109,7 +109,7 @@ signals:
     void modalOptionsEdited(Backend::Core::ModalOptions& options);
     void flutterOptionsEdited(Backend::Core::FlutterOptions& options);
     void optimOptionsEdited(Backend::Core::OptimOptions& options);
-    void constraintsEdited(Backend::Core::Constraints& constraints);
+    void constraintsEdited(Backend::Core::OptimConstraints& constraints);
     void optimTargetEdited(Backend::Core::OptimTarget& target);
 
 private:

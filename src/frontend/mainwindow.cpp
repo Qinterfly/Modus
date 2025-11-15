@@ -245,6 +245,13 @@ void MainWindow::createConnections()
                 mpViewManager->replot(model);
                 updateSolvers(model);
             });
+    connect(mpProjectBrowser, &ProjectBrowser::requestSetSelectionByView, this,
+            [this](KCL::Model& model, Core::SelectionSet& selectionSet)
+            {
+                setModified(true);
+                mpViewManager->setSelectionByView(model, selectionSet);
+                mpProjectBrowser->refresh();
+            });
 
     // View manager
     connect(mpViewManager, &ViewManager::selectItemsRequested, mpProjectBrowser, &ProjectBrowser::selectItems);
@@ -586,8 +593,12 @@ void MainWindow::updateSolvers(KCL::Model const& model)
             static_cast<Core::FlutterSolver*>(pBaseSolver)->model = model;
             break;
         case Core::ISolver::kOptim:
-            static_cast<Core::OptimSolver*>(pBaseSolver)->problem.model = model;
+        {
+            Core::OptimSolver* pSolver = (Core::OptimSolver*) pBaseSolver;
+            pSolver->problem.model = model;
+            pSolver->problem.selector.update(model);
             break;
+        }
         }
     }
 }

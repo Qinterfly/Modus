@@ -13,9 +13,9 @@ set(BACKEND_HEADERS
     mathutility.h
     project.h
     subproject.h
-    selector.h
+    optimselector.h
     selectionset.h
-    constraints.h
+    optimconstraints.h
     geometry.h
     modalsolver.h
     optimsolver.h
@@ -28,9 +28,9 @@ set(BACKEND_SOURCES
     mathutility.cpp
     project.cpp
     subproject.cpp
-    selector.cpp
+    optimselector.cpp
     selectionset.cpp
-    constraints.cpp
+    optimconstraints.cpp
     geometry.cpp
     modalsolver.cpp
     optimsolver.cpp

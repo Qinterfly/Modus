@@ -1,5 +1,5 @@
-#ifndef CONSTRAINTS_H
-#define CONSTRAINTS_H
+#ifndef OPTIMCONSTRAINTS_H
+#define OPTIMCONSTRAINTS_H
 
 #include <QMap>
 #include <QMetaType>
@@ -30,7 +30,7 @@ using VariableValues = QMap<VariableType, double>;
 using VariableBounds = QMap<VariableType, PairDouble>;
 
 //! Updating constraints applied to variables
-class Constraints : public ISerializable
+class OptimConstraints : public ISerializable
 {
     Q_GADGET
     Q_PROPERTY(VariableFlags enabledState MEMBER mEnabledState)
@@ -41,11 +41,11 @@ class Constraints : public ISerializable
     Q_PROPERTY(VariableBounds bounds MEMBER mBounds)
 
 public:
-    Constraints();
-    ~Constraints();
+    OptimConstraints();
+    ~OptimConstraints();
 
-    bool operator==(Constraints const& another) const;
-    bool operator!=(Constraints const& another) const;
+    bool operator==(OptimConstraints const& another) const;
+    bool operator!=(OptimConstraints const& another) const;
 
     void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
@@ -92,4 +92,4 @@ private:
 };
 }
 
-#endif // CONSTRAINTS_H
+#endif // OPTIMCONSTRAINTS_H

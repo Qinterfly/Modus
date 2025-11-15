@@ -3,12 +3,12 @@
 #include <QObject>
 #include <QXmlStreamWriter>
 
-#include "constraints.h"
+#include "optimconstraints.h"
 #include "fileutility.h"
 
 using namespace Backend::Core;
 
-Constraints::Constraints()
+OptimConstraints::OptimConstraints()
 {
     double inf = std::numeric_limits<double>::infinity();
     // Insert the keys
@@ -31,21 +31,21 @@ Constraints::Constraints()
     setDefaultBounds();
 }
 
-Constraints::~Constraints()
+OptimConstraints::~OptimConstraints()
 {
 }
 
-bool Constraints::operator==(Constraints const& another) const
+bool OptimConstraints::operator==(OptimConstraints const& another) const
 {
     return Utility::areEqual(*this, another);
 }
 
-bool Constraints::operator!=(Constraints const& another) const
+bool OptimConstraints::operator!=(OptimConstraints const& another) const
 {
     return !(*this == another);
 }
 
-void Constraints::serialize(QXmlStreamWriter& stream, QString const& elementName) const
+void OptimConstraints::serialize(QXmlStreamWriter& stream, QString const& elementName) const
 {
     stream.writeStartElement(elementName);
     Utility::serialize(stream, "enabledState", mEnabledState);
@@ -57,7 +57,7 @@ void Constraints::serialize(QXmlStreamWriter& stream, QString const& elementName
     stream.writeEndElement();
 }
 
-void Constraints::deserialize(QXmlStreamReader& stream)
+void OptimConstraints::deserialize(QXmlStreamReader& stream)
 {
     while (stream.readNextStartElement())
     {
@@ -78,38 +78,38 @@ void Constraints::deserialize(QXmlStreamReader& stream)
     }
 }
 
-bool Constraints::isEnabled(VariableType type) const
+bool OptimConstraints::isEnabled(VariableType type) const
 {
     return mEnabledState[type];
 }
 
-bool Constraints::isUnited(VariableType type) const
+bool OptimConstraints::isUnited(VariableType type) const
 {
     return mUnitedState[type];
 }
 
-bool Constraints::isMultiplied(VariableType type) const
+bool OptimConstraints::isMultiplied(VariableType type) const
 {
     return mMultipliedState[type];
 }
 
-bool Constraints::isNonzero(VariableType type) const
+bool OptimConstraints::isNonzero(VariableType type) const
 {
     return mNonzeroState[type];
 }
 
-double Constraints::scale(VariableType type) const
+double OptimConstraints::scale(VariableType type) const
 {
     return mScales[type];
 }
 
-PairDouble Constraints::bounds(VariableType type) const
+PairDouble OptimConstraints::bounds(VariableType type) const
 {
     return mBounds[type];
 }
 
 //! Retrieve all variable types
-QList<VariableType> Constraints::types()
+QList<VariableType> OptimConstraints::types()
 {
     constexpr auto values = magic_enum::enum_values<VariableType>();
     int numValues = values.size();
@@ -120,7 +120,7 @@ QList<VariableType> Constraints::types()
 }
 
 //! Enable all the variables for updating
-void Constraints::setAllEnabled(bool flag)
+void OptimConstraints::setAllEnabled(bool flag)
 {
     QList<VariableType> const keys = types();
     for (VariableType key : keys)
@@ -128,7 +128,7 @@ void Constraints::setAllEnabled(bool flag)
 }
 
 //! Set united state of all the variables
-void Constraints::setAllUnited(bool flag)
+void OptimConstraints::setAllUnited(bool flag)
 {
     QList<VariableType> const keys = types();
     for (VariableType key : keys)
@@ -136,7 +136,7 @@ void Constraints::setAllUnited(bool flag)
 }
 
 //! Set multiplied state of all the variables
-void Constraints::setAllMultiplied(bool flag)
+void OptimConstraints::setAllMultiplied(bool flag)
 {
     QList<VariableType> const keys = types();
     for (VariableType key : keys)
@@ -144,7 +144,7 @@ void Constraints::setAllMultiplied(bool flag)
 }
 
 //! Set nonzero state of all the variables
-void Constraints::setAllNonzero(bool flag)
+void OptimConstraints::setAllNonzero(bool flag)
 {
     QList<VariableType> const keys = types();
     for (VariableType key : keys)
@@ -152,7 +152,7 @@ void Constraints::setAllNonzero(bool flag)
 }
 
 //! Set scale of all the variables
-void Constraints::setAllScale(double value)
+void OptimConstraints::setAllScale(double value)
 {
     QList<VariableType> const keys = types();
     for (VariableType key : keys)
@@ -160,7 +160,7 @@ void Constraints::setAllScale(double value)
 }
 
 //! Set all boundaries to infinite values
-void Constraints::setAllInfiniteBounds()
+void OptimConstraints::setAllInfiniteBounds()
 {
     QList<VariableType> const keys = types();
     for (VariableType key : keys)
@@ -168,13 +168,13 @@ void Constraints::setAllInfiniteBounds()
 }
 
 //! Enable the variable for updating
-void Constraints::setEnabled(VariableType type, bool flag)
+void OptimConstraints::setEnabled(VariableType type, bool flag)
 {
     mEnabledState[type] = flag;
 }
 
 //! Set united state of variables
-void Constraints::setUnited(VariableType type, bool flag)
+void OptimConstraints::setUnited(VariableType type, bool flag)
 {
     if (flag && mMultipliedState[type])
     {
@@ -186,7 +186,7 @@ void Constraints::setUnited(VariableType type, bool flag)
 }
 
 //! Set multiplied state of variables
-void Constraints::setMultiplied(VariableType type, bool flag)
+void OptimConstraints::setMultiplied(VariableType type, bool flag)
 {
     if (flag && mUnitedState[type])
     {
@@ -198,7 +198,7 @@ void Constraints::setMultiplied(VariableType type, bool flag)
 }
 
 //! Set nonzero state of variables
-void Constraints::setNonzero(VariableType type, bool flag)
+void OptimConstraints::setNonzero(VariableType type, bool flag)
 {
     if (flag && (mUnitedState[type] || mMultipliedState[type]))
     {
@@ -210,26 +210,26 @@ void Constraints::setNonzero(VariableType type, bool flag)
 }
 
 //! Set the variable scaling factor
-void Constraints::setScale(VariableType type, double value)
+void OptimConstraints::setScale(VariableType type, double value)
 {
     mScales[type] = value;
 }
 
 //! Assign the variable boundaries
-void Constraints::setBounds(VariableType type, PairDouble const& bounds)
+void OptimConstraints::setBounds(VariableType type, PairDouble const& bounds)
 {
     mBounds[type] = bounds;
 }
 
 //! Assign the variable infinite boundaries
-void Constraints::setInfiniteBounds(VariableType type)
+void OptimConstraints::setInfiniteBounds(VariableType type)
 {
     double inf = std::numeric_limits<double>::infinity();
     mBounds[type] = {-inf, inf};
 }
 
 //! Enable default variables
-void Constraints::setDefaultEnabled()
+void OptimConstraints::setDefaultEnabled()
 {
     // Beams
     mEnabledState[VariableType::kBeamStiffness] = true;
@@ -243,27 +243,27 @@ void Constraints::setDefaultEnabled()
 }
 
 //! Set default united state
-void Constraints::setDefaultUnited()
+void OptimConstraints::setDefaultUnited()
 {
     setAllUnited(false);
 }
 
 //! Set default multiplied state
-void Constraints::setDefaultMultiplied()
+void OptimConstraints::setDefaultMultiplied()
 {
     setAllMultiplied(true);
     mMultipliedState[VariableType::kSpringStiffness] = false;
 }
 
 //! Set default nonzero state
-void Constraints::setDefaultNonzero()
+void OptimConstraints::setDefaultNonzero()
 {
     setAllNonzero(false);
     mNonzeroState[VariableType::kSpringStiffness] = true;
 }
 
 //! Set default scales
-void Constraints::setDefaultScales()
+void OptimConstraints::setDefaultScales()
 {
     // Beams
     mScales[VariableType::kBeamStiffness] = 1e-4;
@@ -278,7 +278,7 @@ void Constraints::setDefaultScales()
 }
 
 //! Set default boundaries
-void Constraints::setDefaultBounds()
+void OptimConstraints::setDefaultBounds()
 {
     // Beams
     mBounds[VariableType::kBeamStiffness] = {0, 1e9};

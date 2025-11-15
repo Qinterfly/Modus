@@ -33,9 +33,9 @@ struct OptimProblem;
 struct OptimOptions;
 struct OptimSolution;
 struct OptimTarget;
-class Selector;
+class OptimSelector;
 class SelectionSet;
-class Constraints;
+class OptimConstraints;
 struct Selection;
 }
 
@@ -354,40 +354,44 @@ private:
 class OptimSelectorHierarchyItem : public HierarchyItem
 {
 public:
-    OptimSelectorHierarchyItem(Backend::Core::Selector& selector);
+    OptimSelectorHierarchyItem(Backend::Core::OptimSelector& selector);
     virtual ~OptimSelectorHierarchyItem() = default;
 
-    Backend::Core::Selector& selector();
+    Backend::Core::OptimSelector& selector();
+    KCL::Model* kclModel();
 
 private:
     void appendChildren();
 
-    Backend::Core::Selector& mSelector;
+    Backend::Core::OptimSelector& mSelector;
 };
 
 class OptimSelectionSetHierarchyItem : public HierarchyItem
 {
 public:
-    OptimSelectionSetHierarchyItem(Backend::Core::SelectionSet& selectionSet, QString const& name);
+    OptimSelectionSetHierarchyItem(Backend::Core::OptimSelector& selector, int iSelectionSet);
     virtual ~OptimSelectionSetHierarchyItem() = default;
 
+    Backend::Core::OptimSelector& selector();
     Backend::Core::SelectionSet& selectionSet();
+    int iSelectionSet();
     KCL::Model* kclModel();
 
 private:
-    Backend::Core::SelectionSet& mSelectionSet;
+    Backend::Core::OptimSelector& mSelector;
+    int mISelectionSet;
 };
 
 class OptimConstraintsHierarchyItem : public HierarchyItem
 {
 public:
-    OptimConstraintsHierarchyItem(Backend::Core::Constraints& constraints);
+    OptimConstraintsHierarchyItem(Backend::Core::OptimConstraints& constraints);
     virtual ~OptimConstraintsHierarchyItem() = default;
 
-    Backend::Core::Constraints& constraints();
+    Backend::Core::OptimConstraints& constraints();
 
 private:
-    Backend::Core::Constraints& mConstraints;
+    Backend::Core::OptimConstraints& mConstraints;
 };
 
 class OptimSolutionHierarchyItem : public HierarchyItem

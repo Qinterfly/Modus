@@ -173,7 +173,7 @@ void EditorManager::createEditor(Backend::Core::OptimOptions& options)
 }
 
 //! Create editor of optimization constraints
-void EditorManager::createEditor(Backend::Core::Constraints& constraints)
+void EditorManager::createEditor(Backend::Core::OptimConstraints& constraints)
 {
     Editor* pEditor = new ConstraintsEditor(constraints, tr("Optimization constraints"));
     addEditor(pEditor);
@@ -450,6 +450,6 @@ template class Frontend::EditProperty<Backend::Core::ModalOptions>;
 template class Frontend::EditProperty<Backend::Core::FlutterOptions>;
 template class Frontend::EditProperty<Backend::Core::OptimOptions>;
 template class Frontend::EditObject<Backend::Core::OptimTarget>;
-template class Frontend::EditObject<Backend::Core::Constraints>;
+template class Frontend::EditObject<Backend::Core::OptimConstraints>;
 template class Frontend::EditObject<Eigen::VectorXi>;
 template class Frontend::EditObject<Eigen::VectorXd>;

@@ -17,7 +17,7 @@ using namespace Core;
 auto skTypes = magic_enum::enum_values<Core::VariableType>();
 int const skNumTypes = skTypes.size();
 
-ConstraintsEditor::ConstraintsEditor(Constraints& constraints, QString const& name, QWidget* pParent)
+ConstraintsEditor::ConstraintsEditor(OptimConstraints& constraints, QString const& name, QWidget* pParent)
     : Editor(kConstraints, name, QIcon(":/icons/constraints.png"), pParent)
     , mConstraints(constraints)
 {
@@ -171,7 +171,7 @@ void ConstraintsEditor::setData()
     updateBoundEdits();
 
     // Set the new values of constraints
-    Constraints newConstraints = mConstraints;
+    OptimConstraints newConstraints = mConstraints;
     for (auto type : skTypes)
     {
         newConstraints.setEnabled(type, mEnabledEdits[type]->isChecked());
@@ -183,7 +183,7 @@ void ConstraintsEditor::setData()
     }
 
     // Apply the changes
-    emit commandExecuted(new EditObject<Constraints>(mConstraints, tr("Constraints"), newConstraints));
+    emit commandExecuted(new EditObject<OptimConstraints>(mConstraints, tr("OptimConstraints"), newConstraints));
 }
 
 //! Update edits which set flags
@@ -199,12 +199,12 @@ bool ConstraintsEditor::validateFlagEdits()
         // Validate flags
         if (isUnited && isMultiplied)
         {
-            QMessageBox::warning(this, tr("Constraints Warning"), tr("Unification and multiplication flags cannot be both enabled at once"));
+            QMessageBox::warning(this, tr("OptimConstraints Warning"), tr("Unification and multiplication flags cannot be both enabled at once"));
             return false;
         }
         if (isNonzero && (isUnited || isMultiplied))
         {
-            QMessageBox::warning(this, tr("Constraints Warning"),
+            QMessageBox::warning(this, tr("OptimConstraints Warning"),
                                  tr("Nonzero flag cannot be used with unification or multiplication flags at once"));
             return false;
         }

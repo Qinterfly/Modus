@@ -1,5 +1,5 @@
-#ifndef SELECTOR_H
-#define SELECTOR_H
+#ifndef OPTIMSELECTOR_H
+#define OPTIMSELECTOR_H
 
 #include <QList>
 
@@ -14,17 +14,17 @@ namespace Backend::Core
 {
 
 //! Class to handle selection sets of a model
-class Selector : public ISerializable
+class OptimSelector : public ISerializable
 {
     Q_GADGET
     Q_PROPERTY(QList<Backend::Core::SelectionSet> selectionSets MEMBER mSelectionSets)
 
 public:
-    Selector();
-    ~Selector();
+    OptimSelector();
+    ~OptimSelector();
 
-    SelectionSet& add(KCL::Model const& model, QString const& name);
-    bool remove(QString const& name);
+    SelectionSet& add(KCL::Model const& model, QString const& name = QString());
+    bool remove(int index);
     void clear();
     void update(KCL::Model const& model);
 
@@ -39,8 +39,8 @@ public:
     int numSets() const;
     bool isEmpty() const;
 
-    bool operator==(Selector const& another) const;
-    bool operator!=(Selector const& another) const;
+    bool operator==(OptimSelector const& another) const;
+    bool operator!=(OptimSelector const& another) const;
 
     void serialize(QXmlStreamWriter& stream, QString const& elementName) const override;
     void deserialize(QXmlStreamReader& stream) override;
@@ -50,4 +50,4 @@ private:
 };
 }
 
-#endif // SELECTOR_H
+#endif // OPTIMSELECTOR_H

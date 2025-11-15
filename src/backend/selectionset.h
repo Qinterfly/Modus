@@ -61,7 +61,7 @@ class SelectionSet : public ISerializable
 
 public:
     SelectionSet();
-    SelectionSet(KCL::Model const& model, QString const& name);
+    SelectionSet(KCL::Model const& model, QString const& name = QString());
     ~SelectionSet();
 
     QString const& name() const;
@@ -74,6 +74,7 @@ public:
     void selectNone();
     void inverse();
     void setSelected(Selection const& selection, bool flag);
+    void setSelected(QList<Selection> const& selections, bool flag);
     void setSelected(int iSurface, bool flag);
     void setSelected(KCL::ElementType type, bool flag);
     void setSelected(int iSurface, KCL::ElementType type, bool flag);

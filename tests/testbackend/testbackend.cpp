@@ -4,7 +4,7 @@
 #include "fileutility.h"
 #include "fluttersolver.h"
 #include "optimsolver.h"
-#include "selector.h"
+#include "optimselector.h"
 #include "subproject.h"
 #include "testbackend.h"
 
@@ -64,7 +64,7 @@ void TestBackend::testSelector()
     Subproject& subproject = mProject.subprojects()[example];
 
     // Select all the elements
-    Selector selector;
+    OptimSelector selector;
     SelectionSet& set = selector.add(subproject.model(), "all");
     set.selectAll();
     QVERIFY(set.numSelected() == 84);
@@ -131,7 +131,7 @@ void TestBackend::testOptimSolverSimpleWing()
     // Alias the data
     OptimProblem& problem = pSolver->problem;
     OptimOptions& options = pSolver->options;
-    Constraints& constraints = problem.constraints;
+    OptimConstraints& constraints = problem.constraints;
 
     // Set the model
     problem.model = model;

@@ -176,7 +176,7 @@ void OptimSolver::clear()
 {
     mInitModel = KCL::Model();
     mSelections.clear();
-    mConstraints = Constraints();
+    mConstraints = OptimConstraints();
     mParameterScales.clear();
     mParameterBounds.clear();
     log = QString();

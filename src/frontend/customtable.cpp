@@ -40,7 +40,7 @@ void CustomTable::createActions()
 {
     addAction(QIcon(":/icons/edit-copy.svg"), tr("&Copy data"), QKeySequence::Copy, this, &CustomTable::copySelection);
     addAction(QIcon(":/icons/edit-paste.svg"), tr("&Paste data"), QKeySequence::Paste, this, &CustomTable::pasteSelection);
-    addAction(QIcon(":/icons/edit-delete.svg"), tr("&Clear data"), QKeySequence::Delete, this, &CustomTable::clearSelection);
+    addAction(QIcon(":/icons/edit-remove.svg"), tr("&Clear data"), QKeySequence::Delete, this, &CustomTable::clearSelection);
 }
 
 //! Copy selected data to the clipboard

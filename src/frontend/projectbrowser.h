@@ -19,6 +19,7 @@ namespace Backend::Core
 {
 class Project;
 struct Selection;
+class SelectionSet;
 }
 
 namespace Frontend
@@ -52,6 +53,7 @@ signals:
     void edited();
     void modelEdited(KCL::Model& model);
     void modelSubstituted(KCL::Model& model);
+    void requestSetSelectionByView(KCL::Model& model, Backend::Core::SelectionSet& selectionSet);
 
 private:
     // Content
@@ -69,6 +71,8 @@ private:
     void createItemEditor(HierarchyItem* pBaseItem);
     void createItemEditors(QList<HierarchyItem*> const& items);
     void createModelActions(QMenu* pMenu, QList<HierarchyItem*> const& items);
+    void createSelectorActions(QMenu* pMenu, QList<HierarchyItem*> const& items);
+    void createSelectionSetActions(QMenu* pMenu, QList<HierarchyItem*> const& items);
 
     // Subproject management
     void setModelState();
