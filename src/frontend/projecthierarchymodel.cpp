@@ -42,13 +42,13 @@ void ProjectHierarchyModel::selectItems(KCL::Model const& model, QList<Backend::
 void ProjectHierarchyModel::appendChildren()
 {
     QStandardItem* pRootItem = invisibleRootItem();
-    QUuid const& parentID = mProject.id();
 
     // Subprojects
     for (auto& subproject : mProject.subprojects())
         pRootItem->appendRow(new SubprojectHierarchyItem(subproject));
 }
 
+//! Rename project entities
 void ProjectHierarchyModel::processItemChange(QStandardItem* pItem)
 {
     QString text = pItem->text();
@@ -68,6 +68,9 @@ void ProjectHierarchyModel::processItemChange(QStandardItem* pItem)
         break;
     case HierarchyItem::kOptimSolver:
         static_cast<OptimSolverHierarchyItem*>(pItem)->solver()->name = text;
+        break;
+    case HierarchyItem::kOptimSelectionSet:
+        static_cast<OptimSelectionSetHierarchyItem*>(pItem)->selectionSet().name() = text;
         break;
     default:
         break;

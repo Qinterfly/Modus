@@ -65,6 +65,7 @@ public:
     ~SelectionSet();
 
     QString const& name() const;
+    QString& name();
     bool isSelected(Selection const& selection) const;
     int numSelected() const;
     QList<Selection> selected() const;

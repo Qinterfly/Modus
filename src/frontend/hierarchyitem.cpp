@@ -36,11 +36,20 @@ HierarchyItem::HierarchyItem(Type itemType, QIcon const& icon, QString const& te
     setIcon(icon);
 }
 
+//! Retrieve unique item identifier
 QString const& HierarchyItem::id()
 {
     if (mID.isEmpty())
-        evaluateID();
+        evaluate();
     return mID;
+}
+
+//! Retrieve item path (might not be unique)
+QString const& HierarchyItem::path()
+{
+    if (mPath.isEmpty())
+        evaluate();
+    return mPath;
 }
 
 int HierarchyItem::type() const
@@ -48,26 +57,34 @@ int HierarchyItem::type() const
     return mkType;
 }
 
-//! Compute item identifier (might not be unique)
-void HierarchyItem::evaluateID()
+//! Compute item identifier as well as path
+void HierarchyItem::evaluate()
 {
-    // Constants
-    QString const kDelimiter = "/";
-
-    // Retrieve the parent identifier
-    QString parentKey;
+    // Retrieve the parent data
+    QString parentID;
+    QString parentPath;
     QStandardItem* pParent = parent();
     if (pParent && HierarchyItem::isValid(pParent->type()))
-        parentKey = static_cast<HierarchyItem*>(pParent)->id();
+    {
+        parentID = static_cast<HierarchyItem*>(pParent)->id();
+        parentPath = static_cast<HierarchyItem*>(pParent)->path();
+    }
 
-    // Retrieve the object identifier
-    QString objectKey = data(Qt::DisplayRole).toString();
+    // Retrieve the object data
+    QString objectID = QString::number(row());
+    QString objectPath = data(Qt::DisplayRole).toString();
 
-    // Build up the id
-    if (parentKey.isEmpty())
-        mID = objectKey;
+    // Build up the identifier
+    if (parentID.isEmpty())
+        mID = objectID;
     else
-        mID = QString("%1%3%2").arg(parentKey, objectKey, kDelimiter);
+        mID = QString("%1%3%2").arg(parentID, objectID, separator());
+
+    // Build up the path
+    if (parentPath.isEmpty())
+        mPath = objectPath;
+    else
+        mPath = QString("%1%3%2").arg(parentPath, objectPath, separator());
 }
 
 //! Set the expanded state of the hierarchy item
@@ -117,6 +134,12 @@ void HierarchyItem::setSelected(bool flag)
 bool HierarchyItem::isValid(int iType)
 {
     return iType >= Qt::UserRole;
+}
+
+//! Retrieve identifier separator
+QString HierarchyItem::separator()
+{
+    return "/";
 }
 
 SubprojectHierarchyItem::SubprojectHierarchyItem(Backend::Core::Subproject& subproject)
@@ -698,14 +721,14 @@ void OptimSelectorHierarchyItem::appendChildren()
 OptimSelectionSetHierarchyItem::OptimSelectionSetHierarchyItem(Core::OptimSelector& selector, int iSelectionSet)
     : HierarchyItem(kOptimSelectionSet)
     , mSelector(selector)
-    , mISelectionSet(iSelectionSet)
+    , mkISelectionSet(iSelectionSet)
 {
     setEditable(true);
     setIcon(QIcon(":/icons/selection-set.png"));
     Core::SelectionSet const& currentSet = selectionSet();
     QString name = currentSet.name();
     if (name.isEmpty())
-        name = QObject::tr("Selection Set %1 (N = %2)").arg(1 + mISelectionSet).arg(currentSet.numSelected());
+        name = QObject::tr("Selection Set %1 (N = %2)").arg(1 + mkISelectionSet).arg(currentSet.numSelected());
     setText(name);
 }
 
@@ -716,12 +739,12 @@ Backend::Core::OptimSelector& OptimSelectionSetHierarchyItem::selector()
 
 Core::SelectionSet& OptimSelectionSetHierarchyItem::selectionSet()
 {
-    return mSelector.get(mISelectionSet);
+    return mSelector.get(mkISelectionSet);
 }
 
 int OptimSelectionSetHierarchyItem::iSelectionSet()
 {
-    return mISelectionSet;
+    return mkISelectionSet;
 }
 
 KCL::Model* OptimSelectionSetHierarchyItem::kclModel()

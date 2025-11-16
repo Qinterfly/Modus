@@ -245,6 +245,13 @@ void MainWindow::createConnections()
                 mpViewManager->replot(model);
                 updateSolvers(model);
             });
+    connect(mpProjectBrowser, &ProjectBrowser::requestRemoveSubproject, this,
+            [this](Backend::Core::Subproject& subproject)
+            {
+                setModified(true);
+                mpViewManager->removeView(mpViewManager->findModelView(subproject.model()));
+                // TODO
+            });
     connect(mpProjectBrowser, &ProjectBrowser::requestSetSelectionByView, this,
             [this](KCL::Model& model, Core::SelectionSet& selectionSet)
             {

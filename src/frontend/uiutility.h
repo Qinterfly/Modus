@@ -84,6 +84,10 @@ void setupModel(KCL::Model& model);
 KCL::Model readModel(QString const& pathFile);
 bool writeModel(QString const& pathFile, KCL::Model const& model);
 QString toString(KCL::Model const& model);
+Backend::Core::Subproject createDefaultSubproject();
+KCL::Model createDefaultModel();
+KCL::ElasticSurface createDefaultSurface();
+KCL::ElasticSurface createDefaultSpecialSurface();
 
 // Rendering
 QList<int> jarvisMarch(QList<Point> const& points);

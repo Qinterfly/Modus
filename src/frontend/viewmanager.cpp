@@ -283,6 +283,25 @@ IView* ViewManager::createTableView(Core::ModalSolution const& solution, QString
     return pView;
 }
 
+//! Remove view which is used as one of the tabs
+void ViewManager::removeView(IView* pView)
+{
+    if (!pView)
+        return;
+    int count = numViews();
+    int iFound = -1;
+    for (int i = 0; i != count; ++i)
+    {
+        if (mpTabWidget->widget(i) == pView)
+        {
+            iFound = i;
+            break;
+        }
+    }
+    if (iFound >= 0)
+        mpTabWidget->removePage(iFound);
+}
+
 //! Create views associated with project hierarchy items
 void ViewManager::processItems(QList<HierarchyItem*> const& items)
 {
@@ -619,23 +638,22 @@ QString ViewManager::getViewName(HierarchyItem* pItem)
 {
     // Constants
     int const kMaxNumTokens = 1;
-    QChar const kDelimiter = '/';
 
-    // Get the full name
-    QString name = pItem->id();
-    int numName = name.size();
+    // Get the full path
+    QString path = pItem->path();
+    int numPath = path.size();
 
     // Slice the N parts of the name
     int numTokens = 0;
     int iLast = 0;
-    for (iLast = 0; iLast != numName; ++iLast)
+    for (iLast = 0; iLast != numPath; ++iLast)
     {
-        if (name.at(iLast) == kDelimiter)
+        if (path.at(iLast) == HierarchyItem::separator())
         {
             ++numTokens;
             if (numTokens > kMaxNumTokens)
                 break;
         }
     }
-    return name.first(iLast);
+    return path.first(iLast);
 }

@@ -62,6 +62,8 @@ public:
     IView* createTableView(Backend::Core::FlutterSolution const& solution, QString const& name = QString());
     IView* createTableView(Backend::Core::ModalSolution const& solution, QString const& name = QString());
 
+    void removeView(IView* pView);
+
     void processItems(QList<HierarchyItem*> const& items);
     void setSelectionByView(KCL::Model& model, Backend::Core::SelectionSet& selectionSet);
     void refresh();

@@ -18,6 +18,7 @@ struct Model;
 namespace Backend::Core
 {
 class Project;
+class Subproject;
 struct Selection;
 class SelectionSet;
 }
@@ -53,6 +54,7 @@ signals:
     void edited();
     void modelEdited(KCL::Model& model);
     void modelSubstituted(KCL::Model& model);
+    void requestRemoveSubproject(Backend::Core::Subproject& subproject);
     void requestSetSelectionByView(KCL::Model& model, Backend::Core::SelectionSet& selectionSet);
 
 private:
@@ -70,7 +72,9 @@ private:
     void createElementEditor(HierarchyItem* pBaseItem);
     void createItemEditor(HierarchyItem* pBaseItem);
     void createItemEditors(QList<HierarchyItem*> const& items);
+    void createSubprojectActions(QMenu* pMenu, QList<HierarchyItem*> const& items);
     void createModelActions(QMenu* pMenu, QList<HierarchyItem*> const& items);
+    void createSurfaceActions(QMenu* pMenu, QList<HierarchyItem*> const& items);
     void createSelectorActions(QMenu* pMenu, QList<HierarchyItem*> const& items);
     void createSelectionSetActions(QMenu* pMenu, QList<HierarchyItem*> const& items);
 

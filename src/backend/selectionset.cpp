@@ -27,6 +27,11 @@ QString const& SelectionSet::name() const
     return mName;
 }
 
+QString& SelectionSet::name()
+{
+    return mName;
+}
+
 bool SelectionSet::isSelected(Selection const& selection) const
 {
     if (mDataSet.contains(selection))

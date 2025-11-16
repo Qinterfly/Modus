@@ -1,6 +1,7 @@
 #include <QFileDialog>
 #include <QLineEdit>
 #include <QMenu>
+#include <QMessageBox>
 #include <QSortFilterProxyModel>
 #include <QToolBar>
 #include <QTreeView>
@@ -253,7 +254,9 @@ void ProjectBrowser::processContextMenuRequest(QPoint const& point)
     }
 
     // Create the item associated actions
+    createSubprojectActions(pMenu, items);
     createModelActions(pMenu, items);
+    createSurfaceActions(pMenu, items);
     createSelectorActions(pMenu, items);
     createSelectionSetActions(pMenu, items);
 
@@ -369,6 +372,37 @@ void ProjectBrowser::createItemEditors(QList<HierarchyItem*> const& items)
     }
 }
 
+//! Create subproject associated actions
+void ProjectBrowser::createSubprojectActions(QMenu* pMenu, QList<HierarchyItem*> const& items)
+{
+    // Obtain the subproject hierarchy item
+    if (items.size() != 1)
+        return;
+    HierarchyItem* pBaseItem = items.first();
+    if (pBaseItem->type() != HierarchyItem::kSubproject)
+        return;
+    SubprojectHierarchyItem* pItem = (SubprojectHierarchyItem*) pBaseItem;
+    Core::Subproject* pSubproject = &pItem->subproject();
+
+    // Create the actions
+    QAction* pRemoveAction = new QAction(tr("&Remove"), this);
+
+    // Set the connections
+    connect(pRemoveAction, &QAction::triggered, this,
+            [this, pSubproject]()
+            {
+                QString title = tr("Remove subproject");
+                QString text = tr("Are you sure you want to remove '%1' subproject?").arg(pSubproject->name());
+                if (QMessageBox::Yes == QMessageBox().question(this, title, text))
+                    emit requestRemoveSubproject(*pSubproject);
+            });
+
+    // Add the actions to the menu
+    if (!pMenu->actions().isEmpty())
+        pMenu->addSeparator();
+    pMenu->addAction(pRemoveAction);
+}
+
 //! Create model associated actions
 void ProjectBrowser::createModelActions(QMenu* pMenu, QList<HierarchyItem*> const& items)
 {
@@ -429,6 +463,46 @@ void ProjectBrowser::createModelActions(QMenu* pMenu, QList<HierarchyItem*> cons
     pMenu->addAction(pSaveAsAction);
 }
 
+//! Create surface associated actions
+void ProjectBrowser::createSurfaceActions(QMenu* pMenu, QList<HierarchyItem*> const& items)
+{
+    // Obtain the surface hierarchy item
+    if (items.size() != 1)
+        return;
+    HierarchyItem* pBaseItem = items.first();
+    if (pBaseItem->type() != HierarchyItem::kSurface)
+        return;
+    SurfaceHierarchyItem* pItem = (SurfaceHierarchyItem*) pBaseItem;
+    int iSurface = pItem->iSurface();
+    if (iSurface < 0)
+        return;
+    KCL::Model* pModel = pItem->kclModel();
+    if (!pModel)
+        return;
+
+    // Create the actions
+    QAction* pRemoveAction = new QAction(QIcon(":/icons/list-remove.svg"), tr("&Remove"), this);
+
+    // Set the connections
+    connect(pRemoveAction, &QAction::triggered, this,
+            [this, pModel, iSurface]()
+            {
+                QString title = tr("Remove elastic surface");
+                QString text = tr("Are you sure you want to remove '%1' elastic surface?").arg(pModel->surfaces[iSurface].name);
+                if (QMessageBox::Yes == QMessageBox().question(this, title, text))
+                {
+                    pModel->surfaces.erase(pModel->surfaces.begin() + iSurface);
+                    refresh();
+                    emit modelEdited(*pModel);
+                }
+            });
+
+    // Add the actions to the menu
+    if (!pMenu->actions().isEmpty())
+        pMenu->addSeparator();
+    pMenu->addAction(pRemoveAction);
+}
+
 //! Create selector associated actions
 void ProjectBrowser::createSelectorActions(QMenu* pMenu, QList<HierarchyItem*> const& items)
 {
@@ -441,6 +515,8 @@ void ProjectBrowser::createSelectorActions(QMenu* pMenu, QList<HierarchyItem*> c
     OptimSelectorHierarchyItem* pItem = (OptimSelectorHierarchyItem*) pBaseItem;
     Core::OptimSelector* pSelector = &pItem->selector();
     KCL::Model* pModel = pItem->kclModel();
+    if (!pModel)
+        return;
 
     // Create the actions
     QAction* pAddAction = new QAction(QIcon(":/icons/list-add.svg"), tr("&Add selection set"), this);
@@ -481,12 +557,12 @@ void ProjectBrowser::createSelectionSetActions(QMenu* pMenu, QList<HierarchyItem
     OptimSelectionSetHierarchyItem* pItem = (OptimSelectionSetHierarchyItem*) pBaseItem;
 
     // Get the data
-    KCL::Model* pModel = pItem->kclModel();
-    if (!pModel)
-        return;
     Core::SelectionSet* pSelectionSet = &pItem->selectionSet();
     int iSelectionSet = pItem->iSelectionSet();
     Core::OptimSelector* pSelector = &pItem->selector();
+    KCL::Model* pModel = pItem->kclModel();
+    if (!pModel)
+        return;
 
     // Create the actions
     QAction* pSetAction = new QAction(QIcon(":/icons/edit-select.svg"), tr("&Set by view"), this);

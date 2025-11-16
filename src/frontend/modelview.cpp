@@ -876,6 +876,7 @@ void ModelView::drawSprings(bool isReflect, KCL::ElementType type)
 
     // Process all the elements
     int numElements = elements.size();
+    int numSurfaces = mModel.surfaces.size();
     for (int iElement = 0; iElement != numElements; ++iElement)
     {
         KCL::AbstractElement const* pBaseElement = elements[iElement];
@@ -886,7 +887,10 @@ void ModelView::drawSprings(bool isReflect, KCL::ElementType type)
         auto pElement = (KCL::SpringDamper const*) pBaseElement;
 
         // Process the first elastic surface
-        auto firstSurface = mModel.surfaces[pElement->iFirstSurface - 1];
+        int iFirstSurface = pElement->iFirstSurface - 1;
+        if (iFirstSurface < 0 || iFirstSurface >= numSurfaces)
+            continue;
+        auto firstSurface = mModel.surfaces[iFirstSurface];
         auto pFirstData = (KCL::GeneralData*) firstSurface.element(KCL::OD);
         auto firstTransform = Utility::computeTransformation(pFirstData->coords, pFirstData->dihedralAngle, pFirstData->sweepAngle,
                                                              pFirstData->zAngle);
@@ -904,7 +908,10 @@ void ModelView::drawSprings(bool isReflect, KCL::ElementType type)
         Vector3d secondPosition = {0.0, 0.0, 0.0};
         if (pElement->iSecondSurface > 0)
         {
-            auto secondSurface = mModel.surfaces[pElement->iSecondSurface - 1];
+            int iSecondSurface = pElement->iSecondSurface - 1;
+            if (iSecondSurface < 0 || iSecondSurface >= numSurfaces)
+                continue;
+            auto secondSurface = mModel.surfaces[iSecondSurface];
             auto pSecondData = (KCL::GeneralData*) secondSurface.element(KCL::OD);
             auto secondTransform = Utility::computeTransformation(pSecondData->coords, pSecondData->dihedralAngle, pSecondData->sweepAngle,
                                                                   pSecondData->zAngle);

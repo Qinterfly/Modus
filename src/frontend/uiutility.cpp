@@ -33,6 +33,7 @@
 #include "isolver.h"
 #include "lineedit.h"
 #include "selectionset.h"
+#include "subproject.h"
 #include "uiconstants.h"
 #include "uiutility.h"
 
@@ -457,6 +458,79 @@ QString toString(KCL::Model const& model)
         qWarning() << QObject::tr("Unexpected error occurred while converting model to text");
     }
     return result;
+}
+
+//! Create a default subproject
+Core::Subproject createDefaultSubproject()
+{
+    Core::Subproject subproject;
+    subproject.model() = createDefaultModel();
+    return subproject;
+}
+
+//! Create a default model
+KCL::Model createDefaultModel()
+{
+    KCL::Model model;
+    model.title = "new";
+    model.surfaces.push_back(createDefaultSurface());
+    model.specialSurface = createDefaultSpecialSurface();
+    return model;
+}
+
+//! Create a default elastic suface
+KCL::ElasticSurface createDefaultSurface()
+{
+    KCL::ElasticSurface surface;
+
+    // Set default general data
+    auto pData = (KCL::GeneralData*) surface.insertElement(KCL::OD);
+    pData->referenceLength = 1.0;
+    pData->iSymmetry = 1;
+    pData->torsionalFactor = 1.0;
+    pData->bendingFactor = 1.0;
+
+    // Set default polynomials
+    surface.setPolyData(KCL::PolyType::Plate);
+
+    // Set default aerodynamic trapezium
+    surface.insertElement(KCL::AE, {}, KCL::AE1);
+    auto pTrapezium = (KCL::AerodynamicTrapezium2*) surface.insertElement(KCL::AE, {}, KCL::AE2);
+    pTrapezium->numPanels = 5;
+    pTrapezium->numStrips = 5;
+
+    return surface;
+}
+
+//! Create a default special elastic surface
+KCL::ElasticSurface createDefaultSpecialSurface()
+{
+    KCL::ElasticSurface surface;
+
+    // Set default analysis parameters
+    auto pParameters = (KCL::AnalysisParameters*) surface.insertElement(KCL::WP);
+    pParameters->numLowModes = 10;
+    pParameters->iFlow = 1;
+    pParameters->initFlow = 0.0;
+    pParameters->flowStep = 10.0;
+    pParameters->numFlowSteps = 50;
+    pParameters->iSymmetry = -1;
+    pParameters->integrationParams = {7, 7};
+
+    // Set default decrements
+    auto pDecrements = (KCL::Decrements*) surface.insertElement(KCL::TE);
+    pDecrements->set(KCL::VecN(20, 0.05));
+
+    // Set default constants
+    auto pConstants = (KCL::Constants*) surface.insertElement(KCL::CO);
+    pConstants->gravityAcceleration = 9.81;
+    pConstants->referenceLength = 2.25;
+    pConstants->airDensity = 2.25;
+    pConstants->machNumber = 0.1;
+    pConstants->strouhalNumber = 0.5;
+    pConstants->referenceChord = 0.4;
+
+    return surface;
 }
 
 //! Check whether three points are located clockwise or counterclockwise

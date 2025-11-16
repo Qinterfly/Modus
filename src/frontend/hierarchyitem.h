@@ -80,18 +80,21 @@ public:
     virtual ~HierarchyItem() = default;
 
     QString const& id();
+    QString const& path();
     int type() const override final;
     void setExpanded(bool flag = true);
     void setSelected(bool flag = true);
 
     static bool isValid(int iType);
+    static QString separator();
 
 private:
-    void evaluateID();
+    void evaluate();
 
 protected:
     Type const mkType;
     QString mID;
+    QString mPath;
 };
 
 class SubprojectHierarchyItem : public HierarchyItem
@@ -379,7 +382,7 @@ public:
 
 private:
     Backend::Core::OptimSelector& mSelector;
-    int mISelectionSet;
+    int const mkISelectionSet;
 };
 
 class OptimConstraintsHierarchyItem : public HierarchyItem
